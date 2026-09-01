@@ -259,7 +259,7 @@ struct LabImportView: View {
         }
     }
 
-    private func handle(_ result: Result<[URL], Error>) {
+    private func handle(_ result: Result<[URL], any Error>) {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }

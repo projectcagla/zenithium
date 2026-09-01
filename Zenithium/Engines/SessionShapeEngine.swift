@@ -69,7 +69,6 @@ enum SessionShapeEngine {
                 guard members.count >= SessionShape.minimumOccurrences else { return nil }
                 guard let last = members.map(\.interval.start).max() else { return nil }
 
-                let minutes = members.map { $0.interval.duration / 60 }
                 let distances = members.compactMap { $0.distanceMeters.map { $0 / 1_000 } }
                 let rates = members.compactMap(\.averageHeartRate)
 

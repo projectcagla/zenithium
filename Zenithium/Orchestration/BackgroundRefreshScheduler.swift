@@ -84,11 +84,11 @@ final class BackgroundRefreshScheduler {
                 // is encrypted until it is unlocked. Running the pass anyway produced a
                 // guaranteed failure, and reporting that failure taught the system to wake
                 // us less often. Adım 3.
-                if await scheduler.canReadProtectedData() {
+                if scheduler.canReadProtectedData() {
                     let success = await Self.runPass(coordinator: coordinator, nowProvider: nowProvider)
                     box.task.setTaskCompleted(success: success)
                 } else {
-                    await scheduler.deferMorningPass {
+                    scheduler.deferMorningPass {
                         _ = await Self.runPass(coordinator: coordinator, nowProvider: nowProvider)
                     }
                     // Reported as a success because nothing failed: the work is queued and
