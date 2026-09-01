@@ -15,7 +15,7 @@
 	     rather than drifting copies. Must match AppGroup.identifier. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.zenithium.app</string>
+		<string>group.com.cagla.zenithium</string>
 	</array>
 </dict>
 </plist>

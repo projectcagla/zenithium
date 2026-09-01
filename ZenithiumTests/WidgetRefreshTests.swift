@@ -196,7 +196,7 @@ struct SharedPersistenceFactoryTests {
         // see those. `Scripts/check-target-sources.py` compares all four, because a mismatch
         // produces no compiler error and no crash — just a container that silently is not
         // shared, which is the hardest failure in this project to notice.
-        #expect(AppGroup.identifier == "group.com.zenithium.app")
+        #expect(AppGroup.identifier == "group.com.cagla.zenithium")
     }
 
     @Test("Anlık görüntü ve depo aynı konteynerin altında")

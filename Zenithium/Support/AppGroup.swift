@@ -12,7 +12,7 @@ import Foundation
 enum AppGroup {
 
     /// ASSUMPTION STORE-2 — the group identifier declared in both entitlement files.
-    static let identifier = "group.com.zenithium.app"
+    static let identifier = "group.com.cagla.zenithium"
 
     /// The shared container directory, or `nil` when the entitlement is missing.
     ///
