@@ -294,6 +294,11 @@ struct SettingsView: View {
             NavigationLink { PrivacyView() } label: {
                 Label(SafetyCopy.privacyTitle, systemImage: "lock.shield")
             }
+            if let supportURL = SystemURL.support {
+                Link(destination: supportURL) {
+                    Label("Destek ve İletişim", systemImage: "questionmark.circle")
+                }
+            }
         } header: {
             Text("Zenithium hakkında")
         }

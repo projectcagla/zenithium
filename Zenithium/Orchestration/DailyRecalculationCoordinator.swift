@@ -46,6 +46,9 @@ actor DailyRecalculationCoordinator {
     /// The in-flight pass, if any. This is the single-flight gate.
     private var inFlight: Task<RecalculationResult, any Error>?
 
+    /// The in-flight deep historical backfill, so multiple passes do not duplicate 90-day history walks.
+    private var inFlightBackfill: Task<Void, Never>?
+
     /// Subscribers to completed passes, so a background refresh updates a foregrounded UI.
     private var subscribers: [UUID: AsyncStream<RecalculationResult>.Continuation] = [:]
 
@@ -189,13 +192,32 @@ actor DailyRecalculationCoordinator {
         // is real history rather than the single day this pass happened to compute.
         await refreshWidgetTrend(now: now, result: result)
 
-        // Run deep historical backfill in the background if history is missing or sparse
-        Task.detached(priority: .utility) { [weak self] in
-            guard let self else { return }
-            try? await self.backfillHistoricalDays(now: now, windowDays: 90)
-        }
+        // Run deep historical backfill in the background with a single-flight gate if history is sparse
+        scheduleHistoricalBackfillIfNeeded(now: now)
 
         return result
+    }
+
+    private func scheduleHistoricalBackfillIfNeeded(now: Date) {
+        guard inFlightBackfill == nil else { return }
+        let task = Task.detached(priority: .utility) { [weak self] in
+            guard let self else { return }
+            defer {
+                Task { await self.clearBackfillTask() }
+            }
+            do {
+                try await self.backfillHistoricalDays(now: now, windowDays: 90)
+            } catch {
+                ZenithiumLog.orchestration.notice(
+                    "Historical backfill stopped or cancelled: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+        inFlightBackfill = task
+    }
+
+    private func clearBackfillTask() {
+        inFlightBackfill = nil
     }
 
     /// The whole pipeline for one day. Parameterised by day so the backfill path and the

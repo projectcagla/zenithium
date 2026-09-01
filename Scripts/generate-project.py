@@ -566,6 +566,20 @@ def main() -> int:
     objects.append("/* End PBXTargetDependency section */\n")
 
     # ---- XCBuildConfiguration ----
+    def read_project_yml_setting(key: str) -> str | None:
+        yml_path = ROOT / "project.yml"
+        if not yml_path.exists():
+            return None
+        for line in yml_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith(f"{key}:"):
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    val = parts[1].strip().strip('"').strip("'")
+                    if val:
+                        return val
+        return None
+
     shared_base = {
         "CLANG_ENABLE_MODULES": "YES",
         "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
@@ -580,6 +594,9 @@ def main() -> int:
         "SWIFT_VERSION": SWIFT_VERSION,
         "CODE_SIGN_STYLE": "Automatic",
     }
+    dev_team = read_project_yml_setting("DEVELOPMENT_TEAM")
+    if dev_team:
+        shared_base["DEVELOPMENT_TEAM"] = dev_team
     debug_extra = {
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG",
         "SWIFT_OPTIMIZATION_LEVEL": '"-Onone"',
@@ -605,7 +622,7 @@ def main() -> int:
             "PRODUCT_NAME": "Zenithium",
             "INFOPLIST_FILE": "Zenithium/Info.plist",
             "CODE_SIGN_ENTITLEMENTS": "Zenithium/Zenithium.entitlements",
-            "TARGETED_DEVICE_FAMILY": '"1,2"',
+            "TARGETED_DEVICE_FAMILY": '"1"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "CURRENT_PROJECT_VERSION": "4",
             "MARKETING_VERSION": "1.0",
@@ -617,7 +634,7 @@ def main() -> int:
             "PRODUCT_NAME": "ZenithiumWidgets",
             "INFOPLIST_FILE": "ZenithiumWidgets/Info.plist",
             "CODE_SIGN_ENTITLEMENTS": "ZenithiumWidgets/ZenithiumWidgets.entitlements",
-            "TARGETED_DEVICE_FAMILY": '"1,2"',
+            "TARGETED_DEVICE_FAMILY": '"1"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "SKIP_INSTALL": "YES",
             "CURRENT_PROJECT_VERSION": "4",

@@ -58,14 +58,14 @@ enum NoDataReason: Sendable, Equatable, Hashable {
         case .noOvernightData:
             return SafetyCopy.noOvernightDataBody
         case .noHeartRateYet:
-            return "Zenithium builds today's strain from your watch's heart rate. It'll fill in as the day goes on."
+            return "Zenithium bugünün zorlanmasını saatinizin kalp atış verilerinden hesaplar. Gün ilerledikçe ve hareket ettikçe veri dolacaktır."
         case .recoveryUnavailable(let reason):
             return reason.explanation
         case .sleepImplausible:
             return "2 saatten kısa ya da 14 saatten uzun geceleri atlıyorum."
         case .notEnoughHistory(let available, let required):
             let remaining = max(0, required - available)
-            return "\(remaining) more \(remaining == 1 ? "day" : "days") of data and this chart fills in."
+            return "Bu grafiğin oluşması için \(remaining) günlük daha veriye ihtiyaç var."
         case .nothingLogged:
             return "İlk kaydını ekle; burada, zaman içinde nasıl değiştiğiyle birlikte görünecek."
         }

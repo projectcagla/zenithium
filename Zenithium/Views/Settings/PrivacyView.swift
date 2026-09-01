@@ -42,6 +42,20 @@ struct PrivacyView: View {
                         }
                     }
                 }
+
+                if let privacyURL = SystemURL.privacyPolicy {
+                    Link(destination: privacyURL) {
+                        HStack {
+                            Text("Web Gizlilik Politikası")
+                                .font(ZenithiumFont.body)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundStyle(ZenithiumColor.accent)
+                        .padding(.vertical, ZenithiumSpacing.s)
+                    }
+                }
             }
             .padding(.horizontal, ZenithiumSpacing.l)
             .padding(.vertical, ZenithiumSpacing.xl)

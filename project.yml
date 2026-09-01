@@ -72,7 +72,7 @@ targets:
         PRODUCT_NAME: Zenithium
         INFOPLIST_FILE: Zenithium/Info.plist
         CODE_SIGN_ENTITLEMENTS: Zenithium/Zenithium.entitlements
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
     dependencies:
       - target: ZenithiumWidgets
@@ -130,7 +130,7 @@ targets:
         PRODUCT_NAME: ZenithiumWidgets
         INFOPLIST_FILE: ZenithiumWidgets/Info.plist
         CODE_SIGN_ENTITLEMENTS: ZenithiumWidgets/ZenithiumWidgets.entitlements
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
     dependencies:

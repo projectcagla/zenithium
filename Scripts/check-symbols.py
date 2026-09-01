@@ -55,6 +55,7 @@ FRAMEWORK_SYMBOLS = {
     "ISO8601DateFormatter", "DateComponentsFormatter", "ByteCountFormatter", "IndexSet",
     "PropertyListDecoder", "PropertyListEncoder", "FileHandle", "Bundle", "ProcessInfo",
     "AnyIterator", "Never", "StaticString", "AnyHashable", "JSONSerialization",
+    "URLResourceValues",
     "Swift", "Foundation",
     # Concurrency
     "Task", "TaskGroup", "ThrowingTaskGroup", "Actor", "MainActor", "AsyncStream",
@@ -74,7 +75,7 @@ FRAMEWORK_SYMBOLS = {
     "CGContext", "CGImage", "CGColorSpace", "CGAffineTransform", "LinearGradient",
     "RadialGradient", "AngularGradient", "Gradient", "Circle", "Ellipse", "Rectangle",
     "RoundedRectangle", "Capsule", "StrokeStyle", "ShapeStyle", "Material", "Label",
-    "ProgressView", "Chart", "ChartProxy", "BarMark", "LineMark", "AreaMark", "PointMark",
+    "Link", "ProgressView", "Chart", "ChartProxy", "BarMark", "LineMark", "AreaMark", "PointMark",
     "RuleMark", "RectangleMark", "AxisMarks", "AxisValueLabel", "AxisGridLine", "AxisTick",
     "PlottableValue", "ScrollViewReader", "TabView", "Tab", "Menu", "ShareLink", "Table",
     "TableColumn", "ContentUnavailableView", "PreviewProvider", "App", "Scene", "WindowGroup",
@@ -201,10 +202,10 @@ EXTENSION = re.compile(r"^\s*extension\s+([A-Za-z_]\w*)", re.M)
 
 def strip_noise(source: str) -> str:
     """Remove comments and string literals, so their contents are not read as code."""
-    source = re.sub(r"/\*.*?\*/", " ", source, flags=re.S)
-    source = re.sub(r"//.*?$", " ", source, flags=re.M)
     source = re.sub(r'"""[\s\S]*?"""', '""', source)
     source = re.sub(r'"(?:\\.|[^"\\])*"', '""', source)
+    source = re.sub(r"/\*.*?\*/", " ", source, flags=re.S)
+    source = re.sub(r"//.*?$", " ", source, flags=re.M)
     return source
 
 

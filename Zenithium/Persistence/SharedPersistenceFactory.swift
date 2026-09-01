@@ -93,6 +93,11 @@ enum SharedPersistenceFactory {
                 at: container,
                 withIntermediateDirectories: true
             )
+            // HealthKit Rule 5.1.3: derived health database must never be backed up to iCloud unencrypted.
+            var mutableContainer = container
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? mutableContainer.setResourceValues(values)
         } catch {
             return .containerUnreachable(
                 identifier: AppGroup.identifier,

@@ -2337,6 +2337,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -2357,6 +2358,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				ENABLE_TESTABILITY = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
@@ -2384,7 +2386,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app;
 				PRODUCT_NAME = Zenithium;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Debug;
 		};
@@ -2400,7 +2402,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app;
 				PRODUCT_NAME = Zenithium;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Release;
 		};
@@ -2415,7 +2417,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.widgets;
 				PRODUCT_NAME = ZenithiumWidgets;
 				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Debug;
 		};
@@ -2430,7 +2432,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.widgets;
 				PRODUCT_NAME = ZenithiumWidgets;
 				SKIP_INSTALL = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = "1";
 			};
 			name = Release;
 		};

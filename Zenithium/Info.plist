@@ -26,8 +26,6 @@
 	<!-- Spec §8. Shown on the HealthKit permission sheet. -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Zenithium uykunu, nabzını, HRV'ni, dinlenme nabzını, solunum hızını, bilek sıcaklığını ve antrenmanlarını okuyarak ne kadar toparlandığını ve bugün ne kadar yüklenebileceğini hesaplar. Hepsi bu cihazda kalır; hiçbir yere gönderilmez.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Zenithium antrenman ve toparlanma analizlerini Sağlık uygulamanızla senkronize etmek için sağlık verilerini günceller.</string>
 
 	<!-- Spec §8, ASSUMPTION BG-1. Must match BackgroundRefreshScheduler.taskIdentifier. -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
@@ -57,13 +55,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
 	<!-- §12: no network entitlement, no analytics, no third-party SDK. There is deliberately

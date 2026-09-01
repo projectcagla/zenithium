@@ -130,7 +130,7 @@ struct TodayView: View {
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(ZenithiumColor.yellow)
-                    Text("Taban çizgisi oturana kadar karar genişletilmiş toleransla hesaplanıyor (%34 kişisel taban).")
+                    Text("Taban çizgisi oturana kadar karar genişletilmiş toleransla hesaplanıyor (%\(Int(confidence * 100)) güven düzeyi).")
                         .font(ZenithiumFont.caption)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)

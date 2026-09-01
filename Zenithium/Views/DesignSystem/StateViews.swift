@@ -18,6 +18,8 @@ enum SystemURL {
     /// would widen the app's surface for no benefit. The value is a documented, stable
     /// system URL.
     static let appSettings = URL(string: "app-settings:")
+    static let privacyPolicy = URL(string: "https://projectcagla.github.io/zenithium/privacy")
+    static let support = URL(string: "https://projectcagla.github.io/zenithium/support")
 }
 
 /// The shared shape of every empty state, so they read as one family.
