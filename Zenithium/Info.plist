@@ -26,6 +26,8 @@
 	<!-- Spec §8. Shown on the HealthKit permission sheet. -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Zenithium uykunu, nabzını, HRV'ni, dinlenme nabzını, solunum hızını, bilek sıcaklığını ve antrenmanlarını okuyarak ne kadar toparlandığını ve bugün ne kadar yüklenebileceğini hesaplar. Hepsi bu cihazda kalır; hiçbir yere gönderilmez.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Zenithium antrenman seanslarını ve toparlanma analizlerini Sağlık uygulamanızla senkronize etmek için sağlık verilerini günceller.</string>
 
 	<!-- Spec §8, ASSUMPTION BG-1. Must match BackgroundRefreshScheduler.taskIdentifier. -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
