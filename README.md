@@ -118,5 +118,19 @@ ZenithiumWidgets/     Lock Screen and Home Screen widgets
 ZenithiumWatch/       watchOS independent workout and biometric tracking target
 ZenithiumTests/       596 unit, integration, and golden vector test cases
 Scripts/              Preflight, validation, and project generation utilities
-docs/                 Scientific specifications, algorithmic assumptions, and design notes
+docs/                 Scientific specifications, legal documents (privacy & support), and web assets
 ```
+
+---
+
+## Legal & App Store Hosting (GitHub Pages)
+
+The public privacy policy and support landing pages are hosted via GitHub Pages from `/docs`:
+- **Privacy Policy**: `https://projectcagla.github.io/zenithium/privacy`
+- **Support Page**: `https://projectcagla.github.io/zenithium/support`
+
+### Enabling GitHub Pages
+1. Navigate to repository **Settings** › **Pages**.
+2. Under **Build and deployment** › **Source**, select **Deploy from a branch**.
+3. Under **Branch**, select **`main`** and folder **`/docs`**, then click **Save**.
+

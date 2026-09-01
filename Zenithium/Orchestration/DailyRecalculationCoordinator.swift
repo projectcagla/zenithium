@@ -200,7 +200,7 @@ actor DailyRecalculationCoordinator {
 
     private func scheduleHistoricalBackfillIfNeeded(now: Date) {
         guard inFlightBackfill == nil else { return }
-        let task = Task.detached(priority: .utility) { [weak self] in
+        let task = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             defer {
                 Task { await self.clearBackfillTask() }
@@ -214,6 +214,15 @@ actor DailyRecalculationCoordinator {
             }
         }
         inFlightBackfill = task
+    }
+
+    /// Explicit cancellation handle for the background backfill task when backgrounding or observer stops.
+    func cancelBackfill() {
+        if let inFlightBackfill {
+            inFlightBackfill.cancel()
+            self.inFlightBackfill = nil
+            ZenithiumLog.orchestration.notice("Historical backfill explicitly cancelled.")
+        }
     }
 
     private func clearBackfillTask() {

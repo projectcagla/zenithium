@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenithium</title>
+    <style>
+        :root {
+            --bg: #090A0F;
+            --surface: #141721;
+            --border: #232838;
+            --text-primary: #F0F2F8;
+            --text-secondary: #9BA3B8;
+            --accent: #38BDF8;
+        }
+        body {
+            margin: 0;
+            padding: 48px 16px;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+        p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn {
+            display: block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: border-color 0.2s;
+        }
+        .btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Zenithium</h1>
+        <p>Cihaz İçi Biyometrik Karar ve Atletik Ölçüm Aleti</p>
+        <div class="links">
+            <a href="privacy.html" class="btn">Gizlilik Politikası / Privacy Policy</a>
+            <a href="support.html" class="btn">Destek ve İletişim / Support</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -115,24 +115,42 @@ struct MuscleMapView: View {
     }
 
     private func summarySection(_ content: MuscleMapViewModel.Content) -> some View {
-        SectionCard(title: "Çalışmaya hazır") {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                ForEach(content.mostReady) { readiness in
-                    HStack(spacing: ZenithiumSpacing.s) {
-                        Image(systemName: readiness.band.symbolName)
-                            .foregroundStyle(ZenithiumColor.color(for: readiness.band))
-                            .accessibilityHidden(true)
-                        Text(readiness.muscle.displayName)
-                            .font(ZenithiumFont.label)
+        SectionCard(title: viewModel.sessions.isEmpty ? "Kas toparlanma durumu" : "Çalışmaya hazır") {
+            if viewModel.sessions.isEmpty {
+                HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .font(.system(size: 24))
+                        .foregroundStyle(ZenithiumColor.spectrumAmber)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                        Text("Kayıtlı Yorgunluk Yok")
+                            .font(ZenithiumFont.headline)
                             .foregroundStyle(ZenithiumColor.textPrimary)
-                        Spacer(minLength: 8)
-                        Text(ZenithiumFormat.score(readiness.readiness) + "%")
-                            .font(ZenithiumFont.callout.monospacedDigit())
+                        Text("Kuvvet seansı kaydettikçe kas gruplarının biyolojik yarı ömürlü toparlanma süreci burada izlenecektir.")
+                            .font(ZenithiumFont.callout)
                             .foregroundStyle(ZenithiumColor.textSecondary)
                     }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(readiness.muscle.displayName)
-                    .accessibilityValue("yüzde \(ZenithiumFormat.score(readiness.readiness)) hazır, \(readiness.trainingLabel)")
+                }
+                .padding(.vertical, ZenithiumSpacing.xs)
+            } else {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                    ForEach(content.mostReady) { readiness in
+                        HStack(spacing: ZenithiumSpacing.s) {
+                            Image(systemName: readiness.band.symbolName)
+                                .foregroundStyle(ZenithiumColor.color(for: readiness.band))
+                                .accessibilityHidden(true)
+                            Text(readiness.muscle.displayName)
+                                .font(ZenithiumFont.label)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                            Spacer(minLength: 8)
+                            Text(ZenithiumFormat.score(readiness.readiness) + "%")
+                                .font(ZenithiumFont.callout.monospacedDigit())
+                                .foregroundStyle(ZenithiumColor.textSecondary)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(readiness.muscle.displayName)
+                        .accessibilityValue("yüzde \(ZenithiumFormat.score(readiness.readiness)) hazır, \(readiness.trainingLabel)")
+                    }
                 }
             }
         }
@@ -152,6 +170,7 @@ struct MuscleMapView: View {
                 BodyMapCanvas(
                     side: viewModel.selectedSide,
                     content: content,
+                    hasSessions: !viewModel.sessions.isEmpty,
                     onSelect: { viewModel.selectedMuscle = $0 },
                     onLogPain: { painTarget = $0 }
                 )
@@ -244,6 +263,7 @@ private struct BodyMapCanvas: View {
 
     let side: BodySide
     let content: MuscleMapViewModel.Content
+    let hasSessions: Bool
     let onSelect: (MuscleGroup) -> Void
     let onLogPain: (MuscleGroup) -> Void
 
@@ -259,9 +279,7 @@ private struct BodyMapCanvas: View {
             let paths = pathCache.paths(for: regions, in: rect)
             ZStack {
                 Canvas { context, _ in
-                    // The body first, in two passes: a soft shadow offset down and right,
-                    // then the body itself. Without the shadow the figure sits flat on the
-                    // card; with it the muscles read as lying on something.
+                    // The body silhouette base
                     for path in paths.silhouette {
                         context.fill(path, with: .color(ZenithiumColor.surface))
                         context.stroke(path, with: .color(ZenithiumColor.hairline), lineWidth: 1)
@@ -272,44 +290,42 @@ private struct BodyMapCanvas: View {
                         let readiness = content.readiness(for: region.muscle)
                         let band = readiness?.band ?? .yellow
                         let value = readiness?.readiness ?? 0
-                        let tint = ZenithiumColor.color(for: band)
-
-                        // Two channels carry readiness, not one: hue for the band, and
-                        // opacity for where inside the band it sits. A red 20 and a red 55
-                        // are then distinguishable without relying on colour vision.
-                        let fraction = MathSupport.clamp(value / 100, 0, 1)
-                        let intensity = 0.28 + 0.52 * fraction
-
-                        // The gradient runs along the muscle's own spine, so a quadriceps
-                        // shades hip-to-knee rather than screen-top-to-bottom. That single
-                        // detail is most of what separates this from a flat fill.
                         let axis = region.gradientAxis(in: rect)
-                        context.fill(
-                            path,
-                            with: .linearGradient(
-                                Gradient(colors: [
-                                    tint.opacity(intensity),
-                                    tint.opacity(intensity * 0.58)
-                                ]),
-                                startPoint: axis.start,
-                                endPoint: axis.end
-                            )
-                        )
 
-                        // A rim rather than a uniform outline: bright where the muscle
-                        // starts, fading out along it, which is how a lit form behaves.
-                        context.stroke(
-                            path,
-                            with: .linearGradient(
-                                Gradient(colors: [
-                                    tint.opacity(0.95),
-                                    tint.opacity(0.35)
-                                ]),
-                                startPoint: axis.start,
-                                endPoint: axis.end
-                            ),
-                            lineWidth: 1.2
-                        )
+                        if !hasSessions {
+                            // Empty state: neutral wireframe without false green
+                            context.fill(path, with: .color(ZenithiumColor.surface.opacity(0.4)))
+                            context.stroke(path, with: .color(ZenithiumColor.hairline), lineWidth: 1.0)
+                        } else {
+                            let tint = ZenithiumColor.color(for: band)
+                            let fraction = MathSupport.clamp(value / 100, 0, 1)
+                            let intensity = 0.28 + 0.52 * fraction
+
+                            context.fill(
+                                path,
+                                with: .linearGradient(
+                                    Gradient(colors: [
+                                        tint.opacity(intensity),
+                                        tint.opacity(intensity * 0.58)
+                                    ]),
+                                    startPoint: axis.start,
+                                    endPoint: axis.end
+                                )
+                            )
+
+                            context.stroke(
+                                path,
+                                with: .linearGradient(
+                                    Gradient(colors: [
+                                        tint.opacity(0.95),
+                                        tint.opacity(0.35)
+                                    ]),
+                                    startPoint: axis.start,
+                                    endPoint: axis.end
+                                ),
+                                lineWidth: 1.2
+                            )
+                        }
                     }
                 }
                 .accessibilityHidden(true)
@@ -320,6 +336,7 @@ private struct BodyMapCanvas: View {
                     shape
                         .fill(Color.white.opacity(0.001))
                         .contentShape(shape)
+                        .frame(minWidth: 44, minHeight: 44)
                         .onTapGesture { onSelect(region.muscle) }
                         .onLongPressGesture(minimumDuration: 0.45) { onLogPain(region.muscle) }
                         .accessibilityElement()
@@ -327,9 +344,6 @@ private struct BodyMapCanvas: View {
                         .accessibilityValue(accessibilityValue(for: readiness))
                         .accessibilityAddTraits(.isButton)
                         .accessibilityHint("\(region.muscle.displayName) ayrıntısını açar")
-                        // A long press is not discoverable by VoiceOver, so the same action
-                        // is offered explicitly — otherwise the feature simply does not
-                        // exist for anyone navigating this map by speech.
                         .accessibilityAction(named: "Ağrı kaydet") { onLogPain(region.muscle) }
                 }
             }
@@ -337,7 +351,7 @@ private struct BodyMapCanvas: View {
     }
 
     private func accessibilityValue(for readiness: MuscleReadiness?) -> String {
-        guard let readiness else { return "Veri yok" }
+        guard hasSessions, let readiness else { return "Kayıtlı yorgunluk yok" }
         return "%\(ZenithiumFormat.score(readiness.readiness)) hazır, \(readiness.trainingLabel)"
     }
 }

@@ -94,10 +94,19 @@ enum SharedPersistenceFactory {
                 withIntermediateDirectories: true
             )
             // HealthKit Rule 5.1.3: derived health database must never be backed up to iCloud unencrypted.
-            var mutableContainer = container
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            try? mutableContainer.setResourceValues(values)
+            let resourceValues = try? container.resourceValues(forKeys: [.isExcludedFromBackupKey])
+            if resourceValues?.isExcludedFromBackup != true {
+                var mutableContainer = container
+                var values = URLResourceValues()
+                values.isExcludedFromBackup = true
+                do {
+                    try mutableContainer.setResourceValues(values)
+                } catch {
+                    ZenithiumLog.store.error(
+                        "Failed to set isExcludedFromBackup on App Group container: \(error.localizedDescription, privacy: .public)"
+                    )
+                }
+            }
         } catch {
             return .containerUnreachable(
                 identifier: AppGroup.identifier,
