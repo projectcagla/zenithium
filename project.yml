@@ -23,7 +23,7 @@ settings:
     # its own copy: two of the three used to hardcode "1.0" while the watch read the build
     # setting — which project.yml never set, so an XcodeGen build gave the watch app an
     # empty CFBundleShortVersionString. App Store Connect rejects that outright.
-    MARKETING_VERSION: "0.1"
+    MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Spec §2.1 — Swift 6 language mode with complete strict concurrency, and warnings
     # treated as errors so a concurrency diagnostic cannot be ignored.

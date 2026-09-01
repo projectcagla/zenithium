@@ -2301,7 +2301,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.widgets;
 				PRODUCT_NAME = ZenithiumWidgets;
 				SKIP_INSTALL = YES;
@@ -2321,7 +2321,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.watchkitapp;
 				PRODUCT_NAME = ZenithiumWatch;
 				SDKROOT = watchos;
@@ -2365,7 +2365,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.watchkitapp;
 				PRODUCT_NAME = ZenithiumWatch;
 				SDKROOT = watchos;
@@ -2388,7 +2388,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app;
 				PRODUCT_NAME = Zenithium;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2422,7 +2422,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app;
 				PRODUCT_NAME = Zenithium;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2476,7 +2476,7 @@
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.widgets;
 				PRODUCT_NAME = ZenithiumWidgets;
 				SKIP_INSTALL = YES;

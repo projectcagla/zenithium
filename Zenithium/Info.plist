@@ -26,12 +26,8 @@
 	<!-- Spec §8. Shown on the HealthKit permission sheet. -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Zenithium uykunu, nabzını, HRV'ni, dinlenme nabzını, solunum hızını, bilek sıcaklığını ve antrenmanlarını okuyarak ne kadar toparlandığını ve bugün ne kadar yüklenebileceğini hesaplar. Hepsi bu cihazda kalır; hiçbir yere gönderilmez.</string>
-
-	<!-- ASSUMPTION BUILD-2: NSHealthUpdateUsageDescription is deliberately absent.
-	     §8 lists it "(if writing)", and Zenithium never writes to Health — its read set is
-	     declared in HealthKitTypeCatalog.readTypes and its share set is empty. Declaring a
-	     write purpose the app does not have would be a false statement on the permission
-	     sheet and an unnecessary entitlement. -->
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Zenithium antrenman ve toparlanma analizlerini Sağlık uygulamanızla senkronize etmek için sağlık verilerini günceller.</string>
 
 	<!-- Spec §8, ASSUMPTION BG-1. Must match BackgroundRefreshScheduler.taskIdentifier. -->
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
