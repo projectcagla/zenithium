@@ -7,7 +7,7 @@
 	     file, so the extension has no reason to touch Health. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.projectcagla.zenithra</string>
+		<string>group.com.zenithium.app</string>
 	</array>
 </dict>
 </plist>
