@@ -39,7 +39,7 @@ struct ZenithiumErrorClassificationTests {
         .persistenceWriteFailed(detail: "busy"),
         .persistenceUnavailable(detail: "no container"),
         .invalidEngineInput(reason: "empty window"),
-        .appGroupUnavailable(identifier: "group.com.cagla.zenithium"),
+        .appGroupUnavailable(identifier: "group.9PF6U63MV3.zenithium"),
         .backgroundTaskSubmissionFailed(detail: "too many pending")
     ]
 

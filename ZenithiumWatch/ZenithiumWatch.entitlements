@@ -6,7 +6,7 @@
 	     shared outbox. -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.cagla.zenithium</string>
+		<string>group.9PF6U63MV3.zenithium</string>
 	</array>
 	<!-- Yol haritası v4, C1 — this target used to hold no HealthKit entitlement, on the
 	     grounds that the phone owned that relationship and the watch was a reader. The live
