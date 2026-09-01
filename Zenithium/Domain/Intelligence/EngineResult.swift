@@ -137,7 +137,7 @@ struct EngineResult<Value: Sendable & Equatable>: Sendable, Equatable {
     }
 
     /// Transforms the wrapped value while preserving epistemic metadata.
-    func map<T>(_ transform: (Value) -> T) -> EngineResult<T> {
+    func map<T: Sendable & Equatable>(_ transform: (Value) -> T) -> EngineResult<T> {
         EngineResult<T>(
             value: transform(value),
             confidence: confidence,

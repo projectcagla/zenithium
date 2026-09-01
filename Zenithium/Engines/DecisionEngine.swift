@@ -59,7 +59,7 @@ enum DecisionEngine {
             TraceStep(
                 stepNumber: stepCounter,
                 engineName: "DataQualityEngine",
-                inputDescription: "Gece Takma: \(String(format: "%.1f", input.dataQuality.nocturnalWearHours)) sa, Kalibrasyon: \(input.calibration.tier.title)",
+                inputDescription: "Gece Takma: \(formatDecimal(input.dataQuality.nocturnalWearHours)) sa, Kalibrasyon: \(input.calibration.tier.title)",
                 outputDescription: "Veri Kalitesi: \(input.dataQuality.grade.rawValue) (Güven: %\(Int(input.dataQuality.confidenceFactor * 100)))",
                 physiologicalImpact: input.dataQuality.isUsableForRecovery ? "Biyometrik sinyaller toparlanma hesaplaması için yeterli." : "Yetersiz gece saati verisi nedeniyle kararlar sınırlandırıldı."
             )
@@ -186,14 +186,14 @@ enum DecisionEngine {
             let target = RecoveryEngine.targetCeiling(forRecovery: recovery)
             action = .push(targetStrain: target)
             headline = "Yüksek Adaptasyon Kapasitesi"
-            rationale = "Otonom sinir sisteminiz ve toparlanma değerleriniz yüksek zorlanmayı karşılamaya hazır. Hedef antrenman yükü: \(String(format: "%.1f", target))."
+            rationale = "Otonom sinir sisteminiz ve toparlanma değerleriniz yüksek zorlanmayı karşılamaya hazır. Hedef antrenman yükü: \(formatDecimal(target))."
             activities = [.running, .cycling, .highIntensityIntervalTraining, .functionalStrengthTraining]
 
         case .yellow:
             let target = RecoveryEngine.targetCeiling(forRecovery: recovery)
             action = .maintain(targetStrain: target)
             headline = "Dengeli Antrenman Günü"
-            rationale = "Temel kardiyovasküler kapasite stabil. Aşırı yüklenmeden kaçınarak planlı antrenmanınıza devam edebilirsiniz (Tavan: \(String(format: "%.1f", target)))."
+            rationale = "Temel kardiyovasküler kapasite stabil. Aşırı yüklenmeden kaçınarak planlı antrenmanınıza devam edebilirsiniz (Tavan: \(formatDecimal(target)))."
             activities = [.running, .functionalStrengthTraining, .swimming, .rowing]
 
         case .red:
@@ -226,5 +226,10 @@ enum DecisionEngine {
             limitations: limitations,
             calculationSteps: steps.map { "Adım \($0.stepNumber): \($0.engineName) -> \($0.outputDescription)" }
         )
+    }
+
+    private static func formatDecimal(_ value: Double, places: Int = 1) -> String {
+        let str = String(format: "%.\(places)f", value)
+        return str.replacingOccurrences(of: ".", with: ",")
     }
 }

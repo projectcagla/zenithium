@@ -334,6 +334,15 @@
 		AF506F499104E9B91B22B381 /* BloodworkTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8923F2DB05F5C59FD9585D1B /* BloodworkTimelineTests.swift */; };
 		B023CEBDB1E2AA1C0E05AB98 /* WorkoutSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65271F5C45AD16635185FCC6 /* WorkoutSummary.swift */; };
 		B0EE1678660BD8435E31B2F7 /* ZenithiumPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCB6BAD9D56F6891AF056E1 /* ZenithiumPalette.swift */; };
+		B10000012ADE1934C9E84ED5 /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012ADE1934C9E84ED5 /* EngineResult.swift */; };
+		B10000022ADE1934C9E84ED5 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000022ADE1934C9E84ED5 /* CalibrationState.swift */; };
+		B10000032ADE1934C9E84ED5 /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000032ADE1934C9E84ED5 /* DecisionTrace.swift */; };
+		B10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift */; };
+		B10000052ADE1934C9E84ED5 /* DataQualityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000052ADE1934C9E84ED5 /* DataQualityEngine.swift */; };
+		B10000062ADE1934C9E84ED5 /* DecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000062ADE1934C9E84ED5 /* DecisionEngine.swift */; };
+		B10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift */; };
+		B10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift */; };
+		B10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift */; };
 		B21963A8C41CBA66371CBD63 /* HybridEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1D672E4BE33F62155FA791 /* HybridEngine.swift */; };
 		B219DE1B101BA57A0FCDBEA9 /* LabInsightEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D415F1341DBD21C7F756830 /* LabInsightEngineTests.swift */; };
 		B26523CCDDE7710FA2651CB4 /* ZenithiumWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD960C4C22279AB61C09BD03 /* ZenithiumWidgetBundle.swift */; };
@@ -451,6 +460,7 @@
 		F44B37EBCD0FFA6BFCE854B2 /* StrainIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D0AB95A72C30FBBDB0EDB8 /* StrainIO.swift */; };
 		F4BB4793844A8B0BF619828D /* LiveSessionTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC004F514268E7F76587A4BE /* LiveSessionTrack.swift */; };
 		F5454D92431207FFD3062D24 /* BriefingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466BE11A49441D2E50E4B564 /* BriefingCard.swift */; };
+		DEC000010000000000000001 /* DecisionTraceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC000020000000000000001 /* DecisionTraceCard.swift */; };
 		F60DE3A0AB37A26BA82C2DB9 /* LiveSessionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639C1BB308E339D958E8365C /* LiveSessionEngineTests.swift */; };
 		F622971999CF4717E02E646E /* WatchJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD684ACDEFF21A11B427F4B /* WatchJournalView.swift */; };
 		F6314096C5C00A3422B97803 /* SafetyCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E974323B4BDF4F6FABF0264 /* SafetyCopy.swift */; };
@@ -468,15 +478,6 @@
 		FE32BD896F48FF33F1657A4F /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4C94688E03B1004097245A /* AppGroup.swift */; };
 		FE8088A99FBB7A89B841972F /* BloodworkViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E973571108A53CD5C24182 /* BloodworkViewModel.swift */; };
 		FEF522C7E864DFEBB254E9CD /* VitalSign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B718069A34281286698AA3D /* VitalSign.swift */; };
-		B10000012ADE1934C9E84ED5 /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012ADE1934C9E84ED5 /* EngineResult.swift */; };
-		B10000022ADE1934C9E84ED5 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000022ADE1934C9E84ED5 /* CalibrationState.swift */; };
-		B10000032ADE1934C9E84ED5 /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000032ADE1934C9E84ED5 /* DecisionTrace.swift */; };
-		B10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift */; };
-		B10000052ADE1934C9E84ED5 /* DataQualityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000052ADE1934C9E84ED5 /* DataQualityEngine.swift */; };
-		B10000062ADE1934C9E84ED5 /* DecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000062ADE1934C9E84ED5 /* DecisionEngine.swift */; };
-		B10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift */; };
-		B10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift */; };
-		B10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -486,13 +487,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 065328242ADE1934C9E84ED5;
 			remoteInfo = Zenithium;
-		};
-		234B0AB91D322DC566483DC6 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2A54EE85C8D365D32B9366D4 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D23EDE1D2B6EA23E79E9A92F;
-			remoteInfo = ZenithiumWatch;
 		};
 		4D7252029D354045FDB552EB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -518,15 +512,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A10000012ADE1934C9E84ED5 /* EngineResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineResult.swift; sourceTree = "<group>"; };
-		A10000022ADE1934C9E84ED5 /* CalibrationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationState.swift; sourceTree = "<group>"; };
-		A10000032ADE1934C9E84ED5 /* DecisionTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTrace.swift; sourceTree = "<group>"; };
-		A10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistry.swift; sourceTree = "<group>"; };
-		A10000052ADE1934C9E84ED5 /* DataQualityEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngine.swift; sourceTree = "<group>"; };
-		A10000062ADE1934C9E84ED5 /* DecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionEngine.swift; sourceTree = "<group>"; };
-		A10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngineTests.swift; sourceTree = "<group>"; };
-		A10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionEngineTests.swift; sourceTree = "<group>"; };
-		A10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistryTests.swift; sourceTree = "<group>"; };
 		00D1E88D6E1AE0EA486085A8 /* CorrelationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrelationEngine.swift; sourceTree = "<group>"; };
 		02900892A89079CE310B61F3 /* TrendChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendChart.swift; sourceTree = "<group>"; };
 		037BCCDC2BBA4F145B1D6661 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
@@ -612,6 +597,7 @@
 		462FA8F4455FDA2B9CE88136 /* LongevityEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LongevityEngineTests.swift; sourceTree = "<group>"; };
 		466906A18A42278DAB69EEDF /* ZenithiumSignpost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZenithiumSignpost.swift; sourceTree = "<group>"; };
 		466BE11A49441D2E50E4B564 /* BriefingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BriefingCard.swift; sourceTree = "<group>"; };
+		DEC000020000000000000001 /* DecisionTraceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTraceCard.swift; sourceTree = "<group>"; };
 		482DB3E1420DF67CB957C2B1 /* SupplementCourse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementCourse.swift; sourceTree = "<group>"; };
 		4914C9F42BC23FFEAFF85DDB /* SleepStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepStage.swift; sourceTree = "<group>"; };
 		4AC19D3C0D402DCDDFFCF8A2 /* SleepScoreEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepScoreEngine.swift; sourceTree = "<group>"; };
@@ -721,6 +707,15 @@
 		9F327AA123A4E4CCCE145A10 /* PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanEngine.swift; sourceTree = "<group>"; };
 		9FA12CA33A698A9903C527D1 /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
 		9FA22CEEF05B2406EBB8B6F3 /* SchemaV3.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaV3.swift; sourceTree = "<group>"; };
+		A10000012ADE1934C9E84ED5 /* EngineResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineResult.swift; sourceTree = "<group>"; };
+		A10000022ADE1934C9E84ED5 /* CalibrationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationState.swift; sourceTree = "<group>"; };
+		A10000032ADE1934C9E84ED5 /* DecisionTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTrace.swift; sourceTree = "<group>"; };
+		A10000042ADE1934C9E84ED5 /* ScientificBoundaryRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistry.swift; sourceTree = "<group>"; };
+		A10000052ADE1934C9E84ED5 /* DataQualityEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngine.swift; sourceTree = "<group>"; };
+		A10000062ADE1934C9E84ED5 /* DecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionEngine.swift; sourceTree = "<group>"; };
+		A10000072ADE1934C9E84ED5 /* DataQualityEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngineTests.swift; sourceTree = "<group>"; };
+		A10000082ADE1934C9E84ED5 /* DecisionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionEngineTests.swift; sourceTree = "<group>"; };
+		A10000092ADE1934C9E84ED5 /* ScientificBoundaryRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistryTests.swift; sourceTree = "<group>"; };
 		A1B7231E3F4E2E37C388BF5F /* MuscleFatigueSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleFatigueSnapshot.swift; sourceTree = "<group>"; };
 		A27AAC1832C6320C538279E9 /* BloodMarkerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodMarkerDetailView.swift; sourceTree = "<group>"; };
 		A337099E561CA2CCCD14B5A2 /* StoreSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreSnapshots.swift; sourceTree = "<group>"; };
@@ -979,6 +974,7 @@
 			isa = PBXGroup;
 			children = (
 				466BE11A49441D2E50E4B564 /* BriefingCard.swift */,
+				DEC000020000000000000001 /* DecisionTraceCard.swift */,
 				5763B70CD8885CE5E7B7D122 /* DriverBreakdownView.swift */,
 				3D45F5441672884185F194AA /* PrescriptionCard.swift */,
 				DC958F3A6775F8C5C1CDF638 /* TodayView.swift */,
@@ -2022,6 +2018,7 @@
 				DF687C99AE61ADD716135CE0 /* ZoneBarsView.swift in Sources */,
 				9839465B8E62EEF23D8B519E /* StrengthView.swift in Sources */,
 				F5454D92431207FFD3062D24 /* BriefingCard.swift in Sources */,
+				DEC000010000000000000001 /* DecisionTraceCard.swift in Sources */,
 				3E92B957DEE1D665CF77A7CC /* DriverBreakdownView.swift in Sources */,
 				BD7CFA18DB0D2381F87D3F7D /* PrescriptionCard.swift in Sources */,
 				0187458D2285D11BC3835670 /* TodayView.swift in Sources */,
@@ -2280,11 +2277,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		40A34906F5C60B66AEEE1F0F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D23EDE1D2B6EA23E79E9A92F /* ZenithiumWatch */;
-			targetProxy = 234B0AB91D322DC566483DC6 /* PBXContainerItemProxy */;
-		};
 		4D716EB3784CC84DF87F530C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = DCF7F2BC9C653630ABDA74AC /* ZenithiumWidgets */;
@@ -2303,8 +2295,10 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZenithiumWidgets/ZenithiumWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;
 				MARKETING_VERSION = 0.1;
@@ -2321,8 +2315,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = ZenithiumWatch/ZenithiumWatch.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
 				MARKETING_VERSION = 0.1;
@@ -2363,8 +2359,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = ZenithiumWatch/ZenithiumWatch.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
 				MARKETING_VERSION = 0.1;
@@ -2384,8 +2382,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Zenithium/Zenithium.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
 				MARKETING_VERSION = 0.1;
@@ -2402,6 +2402,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.tests;
 				PRODUCT_NAME = ZenithiumTests;
@@ -2415,8 +2416,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Zenithium/Zenithium.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
 				MARKETING_VERSION = 0.1;
@@ -2433,6 +2436,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenithium.app.tests;
 				PRODUCT_NAME = ZenithiumTests;
@@ -2466,8 +2470,10 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ZenithiumWidgets/ZenithiumWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;
 				MARKETING_VERSION = 0.1;

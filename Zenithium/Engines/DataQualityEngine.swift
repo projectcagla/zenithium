@@ -86,7 +86,7 @@ enum DataQualityEngine {
         }
 
         if nocturnalHours < minimumNocturnalHours {
-            issues.append("Yetersiz gece saati takma süresi (\(String(format: "%.1f", nocturnalHours)) sa < 2.0 sa).")
+            issues.append("Yetersiz gece saati takma süresi (\(formatDecimal(nocturnalHours)) sa < 2,0 sa).")
         }
 
         // Compute wear time during the day
@@ -133,5 +133,10 @@ enum DataQualityEngine {
             missingSensors: missing,
             qualityIssues: issues
         )
+    }
+
+    private static func formatDecimal(_ value: Double, places: Int = 1) -> String {
+        let str = String(format: "%.\(places)f", value)
+        return str.replacingOccurrences(of: ".", with: ",")
     }
 }

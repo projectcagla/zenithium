@@ -48,6 +48,10 @@ struct TodayView: View {
                 BriefingCard(briefing: briefing)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            if let decision = viewModel.athleticDecision {
+                DecisionTraceCard(result: decision)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             if let prescription = viewModel.prescription {
                 PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -62,6 +66,7 @@ struct TodayView: View {
         }
         .padding(.top, ZenithiumSpacing.s)
         .animation(.easeOut(duration: 0.25), value: viewModel.briefing)
+        .animation(.easeOut(duration: 0.25), value: viewModel.athleticDecision)
         .animation(.easeOut(duration: 0.25), value: viewModel.prescription)
     }
 

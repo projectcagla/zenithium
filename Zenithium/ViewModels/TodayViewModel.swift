@@ -43,6 +43,9 @@ final class TodayViewModel {
     private(set) var prescription: Prescription?
     private(set) var planPosition: PlanPosition?
 
+    /// Epistemic decision trace synthesized by DecisionEngine (Epistemic Layer).
+    private(set) var athleticDecision: EngineResult<AthleticDecision>?
+
     private let coordinator: any RecalculationDriving
     private let health: any HealthAuthorizing
     private let nowProvider: @Sendable () -> Date
@@ -219,10 +222,76 @@ final class TodayViewModel {
 
             let plan = await self.nextPlanPosition(for: result)
             let suggestion = await self.suggestion(for: result, context: context)
+            let decision = await self.synthesizeDecision(for: result, context: context)
             guard !Task.isCancelled else { return }
             self.planPosition = plan
             self.prescription = suggestion
+            self.athleticDecision = decision
         }
+    }
+
+    /// Synthesizes the deterministic athletic decision trace.
+    private func synthesizeDecision(
+        for result: RecalculationResult,
+        context: BriefingContext
+    ) async -> EngineResult<AthleticDecision>? {
+        var load: TrainingLoadOutput?
+        var daysCount = 14
+        if let records {
+            let window = context.date.addingTimeInterval(-120 * 86_400)
+            if let days = try? await records.dayRecords(from: window, through: context.date) {
+                daysCount = days.count
+                load = TrainingLoadEngine.analyse(
+                    TrainingLoadInput(
+                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
+                        referenceDay: context.date
+                    )
+                )
+            }
+        }
+
+        let calibration = CalibrationState(recordedDaysCount: max(1, daysCount))
+        let overnight = OvernightData(
+            night: DateInterval(start: result.record.dayStart.addingTimeInterval(-8 * 3600), duration: 8 * 3600),
+            heartRateVariability: result.record.heartRateVariability,
+            restingHeartRate: result.record.restingHeartRate,
+            wristTemperature: result.record.wristTemperatureDelta,
+            respiratoryRate: result.record.respiratoryRate
+        )
+
+        let sleepStart = result.record.sleepStart ?? result.record.dayStart.addingTimeInterval(-8 * 3600)
+        var sleepSegments: [SleepSegment] = []
+        if result.record.deepSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart, duration: result.record.deepSeconds), stage: .asleepDeep, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+        if result.record.remSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds), duration: result.record.remSeconds), stage: .asleepREM, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+        if result.record.coreSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds + result.record.remSeconds), duration: result.record.coreSeconds), stage: .asleepCore, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+
+        let dataQuality = DataQualityEngine.assess(
+            overnight: overnight,
+            sleepSegments: sleepSegments,
+            daySamples: [],
+            calibration: calibration
+        )
+
+        let input = DecisionInput(
+            recoveryScore: result.recovery.score,
+            recoveryBand: result.recovery.band,
+            sleepScore: result.record.sleepScore,
+            acuteLoad: load?.acuteLoad,
+            chronicLoad: load?.chronicLoad,
+            acwr: load?.ratio,
+            muscleReadiness: result.muscle,
+            dataQuality: dataQuality,
+            calibration: calibration,
+            lens: result.profile.trainingLens
+        )
+
+        return DecisionEngine.decide(input: input)
     }
 
     /// Today's prescription.
