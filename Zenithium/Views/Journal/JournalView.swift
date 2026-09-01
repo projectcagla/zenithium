@@ -230,14 +230,14 @@ struct JournalView: View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
             Text(
                 content.needsMoreDays > 0
-                    ? "\(content.needsMoreDays) gün daha kayıt tutunca örüntüleri göstermeye başlayabilirim."
-                    : "Bir davranış için hem yaptığın hem yapmadığın yeterli gece birikmedi."
+                    ? "Korelasyon analizleri için \(content.needsMoreDays) günlük ek kayıt gerekiyor."
+                    : "Anlamlı bir karşılaştırma için yeterli veri çifti henüz oluşmadı."
             )
             .font(ZenithiumFont.callout)
             .foregroundStyle(ZenithiumColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
 
-            Text("Her davranış için en az \(CorrelationEngine.minimumSamplesPerGroup) gece \"yaptım\" ve \(CorrelationEngine.minimumSamplesPerGroup) gece \"yapmadım\" gerekiyor. Daha azıyla söylenecek dürüst bir şey yok.")
+            Text("Güvenilir bir korelasyon için her alışkanlıkta en az \(CorrelationEngine.minimumSamplesPerGroup) gün uygulanan ve \(CorrelationEngine.minimumSamplesPerGroup) gün uygulanmayan veri çifti gereklidir.")
                 .font(ZenithiumFont.caption)
                 .foregroundStyle(ZenithiumColor.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)

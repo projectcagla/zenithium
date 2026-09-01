@@ -58,7 +58,7 @@ struct StrainView: View {
     /// useful to someone who did: a stressful Tuesday and an easy run score alike, and only
     /// the split tells them apart.
     private func stressSection(_ stress: StressDay) -> some View {
-        SectionCard(title: "Yükün kaynağı") {
+        SectionCard(title: "Fizyolojik Yük Dağılımı") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 Text(stress.summary)
                     .font(ZenithiumFont.callout)
@@ -86,21 +86,21 @@ struct StrainView: View {
                             accessibilityLabelText: "Antrenmandan gelen yük"
                         )
                         MetricTile(
-                            label: "Günün geri kalanı",
+                            label: "Gün İçi Yaşam Yükü",
                             value: ZenithiumFormat.metric(stress.nonTrainingLoad, digits: 1),
                             caption: "TRIMP",
-                            accessibilityLabelText: "Antrenman dışından gelen yük"
+                            accessibilityLabelText: "Antrenman dışından gelen yaşam yükü"
                         )
                     }
                 }
 
                 if let longest = stress.recoveryWindows.first {
-                    Text("Günün en sakin bloğu \(longest.start.formatted(date: .omitted, time: .shortened)) civarında, \(Int((longest.duration / 60).rounded())) dakika.")
+                    Text("Günün en sakin toparlanma periyodu saat \(longest.start.formatted(date: .omitted, time: .shortened)) civarında gerçekleşti (\(Int((longest.duration / 60).rounded())) dakika).")
                         .font(ZenithiumFont.footnote)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text("Bugün nabzın dinlenik seviyeye uzun süre inmedi.")
+                    Text("Bugün kalp atış hızı taban dinlenme seviyesine uzun süreli bir iniş sergilemedi.")
                         .font(ZenithiumFont.footnote)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                 }
@@ -116,7 +116,7 @@ struct StrainView: View {
 
             if content.strain.hasExceededCeiling {
                 // Past the target is not a failure and must not read like one (§12).
-                Label("Bugünün hedefi geçildi", systemImage: "flag.checkered")
+                Label("Günlük Hedef Kapasiteye Ulaşıldı", systemImage: "flag.checkered")
                     .font(ZenithiumFont.label)
                     .foregroundStyle(ZenithiumColor.yellow)
                     .accessibilityLabel("Bugünün hedef zorlanması geçildi")

@@ -64,9 +64,9 @@ enum SafetyCopy {
     /// Training-directive headline for a recovery band. Never a health statement (§12).
     static func recoveryHeadline(for band: RecoveryBand) -> String {
         switch band {
-        case .green: return "Zorlamak için alanın var"
-        case .yellow: return "Orta şiddetli bir gün"
-        case .red: return "Vücudun yük altında"
+        case .green: return "Yüksek Adaptasyon Kapasitesi"
+        case .yellow: return "Dengeli Antrenman Günü"
+        case .red: return "Fizyolojik Toparlanma Önceliği"
         }
     }
 
@@ -74,11 +74,11 @@ enum SafetyCopy {
     static func recoveryGuidance(for band: RecoveryBand) -> String {
         switch band {
         case .green:
-            return "Değerlerin taban çizginde ya da üstünde. Bugün sert bir seans rahatlıkla mümkün."
+            return "Biyometrik değerlerin bireysel taban çizginin üzerinde. Yüksek yoğunluklu bir antrenman için otonom sinir sistemin hazır."
         case .yellow:
-            return "Değerlerin taban çizgine yakın. Orta şiddetli bir seans hedefle ve biraz yedek bırak."
+            return "Biyometrik değerlerin taban çizginle uyumlu. Planlı orta şiddette antrenmanını sürdürebilirsin."
         case .red:
-            return "Değerlerin taban çizginin altında. Hafif bir gün düşün — kolay hareket, teknik çalışma ya da dinlenme."
+            return "Biyometrik değerlerin taban çizginin altında. Aktif toparlanma, mobilite veya dinlenme önerilir."
         }
     }
 
@@ -86,13 +86,13 @@ enum SafetyCopy {
     static func driverSentence(positive: String?, negative: String?) -> String {
         switch (positive, negative) {
         case (let positive?, let negative?):
-            return "Çoğunlukla \(negative); buna karşılık \(positive)."
+            return "Ana belirleyici: \(negative); dengeleyici unsur: \(positive)."
         case (let positive?, nil):
-            return "Çoğunlukla \(positive)."
+            return "Öne çıkan olumlu etken: \(positive)."
         case (nil, let negative?):
-            return "Çoğunlukla \(negative)."
+            return "Öne çıkan baskılayıcı: \(negative)."
         case (nil, nil):
-            return "Bugün tek bir belirleyici bulamadım."
+            return "Biyometrik sinyaller dengeli bir dağılım gösteriyor."
         }
     }
 
@@ -100,16 +100,16 @@ enum SafetyCopy {
 
     static func strainGuidance(strain: Double, ceiling: Double?) -> String {
         guard let ceiling, ceiling > 0 else {
-            return "Bugünün hedefini koyabilmem için bir toparlanma puanı gerekiyor."
+            return "Hedef yükü belirlemek için toparlanma skoru gereklidir."
         }
         if strain > ceiling {
-            return "Bugünün hedefini geçtin. Bundan sonrası fazladan yük — onun yerine toparlanmayı biriktir."
+            return "Günlük hedef yük sınırına ulaşıldı. Fazladan zorlanma yerine toparlanmaya odaklanın."
         }
         let remaining = ceiling - strain
         if remaining < 1 {
-            return "Tam bugünün hedefindesin."
+            return "Günlük antrenman hedefindesiniz."
         }
-        return "Bugünün hedefine varmadan önce biraz daha yük için alanın var."
+        return "Hedef yük kapasitesine ulaşmak için alanınız bulunuyor."
     }
 
     // MARK: - Muscle map guidance
@@ -117,11 +117,11 @@ enum SafetyCopy {
     static func muscleGuidance(for readiness: MuscleReadiness) -> String {
         switch readiness.band {
         case .green:
-            return "\(readiness.muscle.displayName) tam bir seansa hazır."
+            return "\(readiness.muscle.displayName) tam kapasiteyle antrenmana hazır."
         case .yellow:
-            return "\(readiness.muscle.displayName) kısmen toparlanmış. Daha hafif hacim ya da farklı bir hareket kalıbı burada iyi gider."
+            return "\(readiness.muscle.displayName) kısmen toparlandı. Orta şiddette yük veya alternatif hareket kalıpları önerilir."
         case .red:
-            return "\(readiness.muscle.displayName) hâlâ yük taşıyor. Bugün başka bir şey çalış."
+            return "\(readiness.muscle.displayName) belirgin yorgunluk taşıyor. Bu kas grubunu dinlendirmeniz önerilir."
         }
     }
 
@@ -150,7 +150,7 @@ enum SafetyCopy {
     /// is not. It says where the numbers came from, that nothing in the document is
     /// interpreted, and that the ranges shown are the ones the user's own laboratory printed.
     static let reportDisclaimer = """
-    Bu belge Zenithium tarafından, kullanıcının Apple Watch verilerinden ve kendi girdiği     laboratuvar sonuçlarından oluşturulmuştur. Zenithium tıbbi cihaz değildir; bu belgede     hiçbir değer yorumlanmamış, işaretlenmemiş veya bir sonuca bağlanmamıştır. Gösterilen     referans aralıkları kullanıcının kendi raporundan ya da yaygın laboratuvar aralıklarından     alınmıştır. Tüm veriler cihaz üzerinde hesaplanmıştır.
+    Bu belge Zenithium tarafından, kullanıcının Apple Watch verilerinden ve kendi girdiği laboratuvar sonuçlarından oluşturulmuştur. Zenithium tıbbi cihaz değildir; bu belgede hiçbir değer yorumlanmamış, işaretlenmemiş veya bir sonuca bağlanmamıştır. Gösterilen referans aralıkları kullanıcının kendi raporundan ya da yaygın laboratuvar aralıklarından alınmıştır. Tüm veriler cihaz üzerinde hesaplanmıştır.
     """
 
     // MARK: - Empty and calibrating states
@@ -160,16 +160,15 @@ enum SafetyCopy {
     static func calibratingBody(daysCollected: Int, daysRequired: Int) -> String {
         let remaining = max(0, daysRequired - daysCollected)
         if remaining == 1 {
-            return "Bir gecelik veri daha, sonra kendi taban çizgine göre puan verebilirim."
+            return "Kişisel taban çizgisinin tamamlanması için son 1 gecelik veri bekleniyor."
         }
-        return "\(remaining) gecelik veri daha, sonra kendi taban çizgine göre puan verebilirim."
+        return "Kişisel taban çizgisinin tamamlanması için \(remaining) gecelik veri bekleniyor."
     }
 
-    static let noOvernightDataTitle = "Gece verisi yok"
+    static let noOvernightDataTitle = "Gece Biyometrisi Bulunamadı"
 
     static let noOvernightDataBody = """
-    Dün geceye ait kalp verisi bulamadım. Saatini Uyku açıkken takarak yat, yarın sabah \
-    bir puan olacak.
+    Dün geceye ait biyometrik kayıt bulunamadı. Saatinizi uyku modunda takarak uyuduğunuzda toparlanma analiziniz oluşturulacaktır.
     """
 
     // MARK: - Authorization

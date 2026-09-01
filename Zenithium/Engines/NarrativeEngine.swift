@@ -74,17 +74,17 @@ enum NarrativeEngine {
         var sentences: [String] = []
 
         if let dominant = dominantDriver(in: context.recovery) {
-            sentences.append("Bunu en çok \(phrase(for: dominant)) belirledi — toplam sapmanın \(ZenithiumFormat.percentTR(dominant.share))'i oradan geliyor.")
+            sentences.append("Toparlanmayı en çok etkileyen faktör: \(phrase(for: dominant)) (Toplam değişimin \(ZenithiumFormat.percentTR(dominant.share))'i).")
         } else if context.recovery.drivers.isEmpty {
-            sentences.append("Bugün tek bir belirleyici yok; değerler taban çizgine yakın.")
+            sentences.append("Biyometrik değerler bireysel taban çizginizle tam uyumlu seyrediyor.")
         } else {
-            sentences.append("Tek bir belirleyici yok — birkaç sinyal birlikte küçük miktarlarda çekti.")
+            sentences.append("Belirgin tek bir sapma yok; parametreler hafif ve dengeli varyasyonlar sergiliyor.")
         }
 
         if let sleep = context.sleep, let sleepScore = sleep.score {
             let hours = ZenithiumFormat.metric(sleep.asleepHours, digits: 1)
             let need = ZenithiumFormat.metric(sleep.needHours, digits: 1)
-            sentences.append("Uyku \(ZenithiumFormat.score(sleepScore)): \(hours) saat uyudun, ihtiyacın \(need) saatti.")
+            sentences.append("Uyku Skoru \(ZenithiumFormat.score(sleepScore)): \(hours) saat uyku süresi (Hedef ihtiyaç: \(need) saat).")
         }
 
         if context.lens.showsStrainCeiling, let ceiling = context.recovery.targetStrainCeiling {
@@ -98,13 +98,13 @@ enum NarrativeEngine {
     private static func ceilingSentence(ceiling: Double, context: BriefingContext) -> String {
         let ceilingText = ZenithiumFormat.strain(ceiling)
         guard let current = context.currentStrain, current > 0.5 else {
-            return "Bugünün zorlanma tavanı \(ceilingText)."
+            return "Önerilen günlük zorlanma hedefi: \(ceilingText)."
         }
         let remaining = ceiling - current
         if remaining <= 0 {
-            return "Bugünün tavanı \(ceilingText) ve şu an \(ZenithiumFormat.strain(current))'desin — tavana ulaştın."
+            return "Günlük hedef \(ceilingText); şu anki zorlanma \(ZenithiumFormat.strain(current)) — hedef seviyeye ulaşıldı."
         }
-        return "Bugünün tavanı \(ceilingText); şu an \(ZenithiumFormat.strain(current))'desin."
+        return "Günlük hedef \(ceilingText); şu anki zorlanma \(ZenithiumFormat.strain(current))."
     }
 
     // MARK: - Points
@@ -148,7 +148,7 @@ enum NarrativeEngine {
         if context.lens != .health, let weakest = context.muscles.min(by: { $0.readiness < $1.readiness }), weakest.readiness < 70 {
             candidates.append(
                 SupportingPoint(
-                    text: "\(weakest.muscle.displayName) \(ZenithiumFormat.percentTR(weakest.readiness / 100)) hazır — vücudundaki en yorgun grup.",
+                    text: "\(weakest.muscle.displayName) %\(Int(weakest.readiness)) hazır — en yüksek yorgunluk seviyesindeki kas grubu.",
                     requiresClinician: false,
                     priority: 80
                 )
@@ -164,7 +164,7 @@ enum NarrativeEngine {
         if let sleep = context.sleep, sleep.appliedDebtHours >= 1 {
             candidates.append(
                 SupportingPoint(
-                    text: "Biriken uyku borcun \(ZenithiumFormat.metric(sleep.appliedDebtHours, digits: 1)) saat; bu gecenin ihtiyacına eklendi.",
+                    text: "Biriken uyku borcu: \(ZenithiumFormat.metric(sleep.appliedDebtHours, digits: 1)) saat (Bu gecenin ihtiyacına eklendi).",
                     requiresClinician: false,
                     priority: 60
                 )
@@ -174,7 +174,7 @@ enum NarrativeEngine {
         if let previous = context.previousStrain, previous > 0 {
             candidates.append(
                 SupportingPoint(
-                    text: "Dün \(ZenithiumFormat.strain(previous)) zorlanma yaptın.",
+                    text: "Dünkü toplam antrenman zorlanması: \(ZenithiumFormat.strain(previous)).",
                     requiresClinician: false,
                     priority: 40
                 )

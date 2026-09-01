@@ -69,17 +69,17 @@ struct SleepView: View {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 MetricTileGrid {
                     MetricTile(
-                        label: "İhtiyacın",
+                        label: "Hedef İhtiyaç",
                         value: ZenithiumFormat.metric(content.sleep.needHours, digits: 1),
-                        unit: "h",
+                        unit: "sa",
                         caption: needCaption(content),
-                        accessibilityLabelText: "Gereken uyku",
+                        accessibilityLabelText: "Gereken uyku süresi",
                         accessibilityValueText: "\(ZenithiumFormat.metric(content.sleep.needHours, digits: 1)) saat"
                     )
                     MetricTile(
-                        label: "Uyudun",
+                        label: "Toplam Uyku",
                         value: ZenithiumFormat.metric(content.sleep.asleepHours, digits: 1),
-                        unit: "h",
+                        unit: "sa",
                         tint: content.shortfallHours > 0.5 ? ZenithiumColor.yellow : ZenithiumColor.green,
                         accessibilityLabelText: "Uykuda geçen süre",
                         accessibilityValueText: ZenithiumFormat.spokenDuration(seconds: content.record.sleepDurationSeconds)
@@ -87,7 +87,7 @@ struct SleepView: View {
                 }
 
                 if content.shortfallHours > 0.1 {
-                    Text("Dün gecenin istediğinden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) sa eksik. Zenithium bunun bir kısmını yarının ihtiyacına taşıyor.")
+                    Text("Hedeflenen süreden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat eksik uyundu. Açık kalan süre uyku borcu modeliyle sonraki günlerin ihtiyacına aktarılır.")
                         .font(ZenithiumFont.caption)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)

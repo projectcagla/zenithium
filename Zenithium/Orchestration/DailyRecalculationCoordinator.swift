@@ -111,6 +111,50 @@ actor DailyRecalculationCoordinator {
         }
     }
 
+    /// Deep historical backfill: Discovers missing historical days from HealthKit (up to `windowDays`)
+    /// and calculates them in chronological order (oldest -> newest).
+    ///
+    /// This immediately populates ACWR (acute/chronic load), HRV baselines, sleep consistency,
+    /// sleep debt, and muscle fatigue models on first launch or sparse store states.
+    func backfillHistoricalDays(now: Date, windowDays: Int = 90) async throws {
+        let calendar = calendarProvider()
+        let profile = try await store.profile()
+        let resolver = DayWindowResolver(calendar: calendar, boundary: profile.dayBoundary)
+
+        let today = calendar.startOfDay(for: now)
+        let startDate = resolver.day(byAdding: -windowDays, to: today)
+
+        let existingRecords = try await store.dayRecords(from: startDate, through: today)
+        let existingDays = Set(existingRecords.map(\.dayStart))
+
+        var missingDays: [Date] = []
+        for offset in (1...windowDays).reversed() {
+            let day = resolver.day(byAdding: -offset, to: today)
+            if !existingDays.contains(day) {
+                missingDays.append(day)
+            }
+        }
+
+        guard !missingDays.isEmpty else { return }
+
+        ZenithiumLog.orchestration.notice(
+            "Starting deep historical backfill for \(missingDays.count, privacy: .public) missing days"
+        )
+
+        for wakeDay in missingDays {
+            try Task.checkCancellation()
+            // Set now to near the end of that day so strain and sleep compute against that day's window
+            let dayNow = resolver.day(byAdding: 1, to: wakeDay).addingTimeInterval(-60)
+            _ = try? await recalculateDay(wakeDay: wakeDay, now: dayNow)
+        }
+
+        // Recompute today now that the entire history is committed to the local store
+        let finalResult = try await recalculateDay(wakeDay: today, now: now)
+        publish(finalResult)
+        await refreshWidgetTrend(now: now, result: finalResult)
+        ZenithiumLog.orchestration.notice("Deep historical backfill completed successfully.")
+    }
+
     /// A stream of completed passes. Each consumer gets its own.
     func results() -> AsyncStream<RecalculationResult> {
         let id = UUID()
@@ -144,6 +188,13 @@ actor DailyRecalculationCoordinator {
         // The widget snapshot is written from the committed records, so its three-day trend
         // is real history rather than the single day this pass happened to compute.
         await refreshWidgetTrend(now: now, result: result)
+
+        // Run deep historical backfill in the background if history is missing or sparse
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self else { return }
+            try? await self.backfillHistoricalDays(now: now, windowDays: 90)
+        }
+
         return result
     }
 

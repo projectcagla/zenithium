@@ -113,7 +113,7 @@ struct VitalsView: View {
                     Image(systemName: "waveform.path.ecg.rectangle")
                         .foregroundStyle(ZenithiumColor.yellow)
                         .accessibilityHidden(true)
-                    Text("Bu sabah alışıldık değil")
+                    Text("Biyometrik Sapma Tespiti")
                         .font(ZenithiumFont.sectionTitle)
                         .foregroundStyle(ZenithiumColor.textPrimary)
                     Spacer(minLength: 0)
@@ -156,7 +156,7 @@ struct VitalsView: View {
     /// is exactly the kind of thing users start trusting without knowing what it contains,
     /// so the components, their weights and their contributions are on the same card.
     private func longevityCard(_ score: LongevityScore) -> some View {
-        SectionCard(title: "Zenithium skoru", subtitle: "Kendi geçmişine göre, uzun vadeli yön") {
+        SectionCard(title: "Zenithium İndeksi", subtitle: "Bireysel geçmişe dayalı uzun vadeli eğilim") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
                 HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.m) {
                     Text(ZenithiumFormat.score(score.score))
@@ -183,7 +183,7 @@ struct VitalsView: View {
                     }
                 }
 
-                Text("Bu bir sağlık değerlendirmesi veya biyolojik yaş değildir. Kendi geçmişindeki eğilimlerin ağırlıklı ortalamasıdır.")
+                Text("Bu değer tıbbi bir teşhis değildir; kardiyovasküler ve toparlanma eğilimlerinizin ağırlıklı bileşik indeksidir.")
                     .font(ZenithiumFont.caption)
                     .foregroundStyle(ZenithiumColor.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
