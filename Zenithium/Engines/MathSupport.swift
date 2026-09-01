@@ -36,6 +36,17 @@ enum MathSupport {
         return result.isFinite ? result : fallback
     }
 
+    /// Formats a decimal number with comma for deterministic Turkish text without C runtime float issues.
+    static func decimal(_ value: Double, digits: Int = 1) -> String {
+        guard value.isFinite else { return "—" }
+        let factor = pow(10.0, Double(max(0, digits)))
+        let rounded = (value * factor).rounded() / factor
+        let intPart = Int(rounded)
+        let fracPart = Int(((rounded - Double(intPart)) * factor).rounded())
+        if digits == 0 { return "\(intPart)" }
+        return "\(intPart),\(abs(fracPart))"
+    }
+
     /// The logistic curve used by the recovery score (§5.1):
     /// `100 / (1 + e^(−slope · z))`.
     ///

@@ -42,26 +42,20 @@ struct TodayView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: TodayViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            ringSection(content)
-            if let briefing = viewModel.briefing {
-                BriefingCard(briefing: briefing)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-            if let decision = viewModel.athleticDecision {
-                DecisionTraceCard(result: decision)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-            if let prescription = viewModel.prescription {
-                PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-            guidanceSection(content)
-            driverSection(content)
-            overnightSection(content)
+        VStack(spacing: ZenithiumSpacing.xl) {
+            // KATMAN 1 — KARAR: Bugün ne yapmalıyım?
+            decisionHero(content)
+
+            // KATMAN 2 — KANITI: Neden? & Ne kadar eminsin?
+            evidenceLayer(content)
+
+            // KATMAN 3 — DÜN GECE: Ham ölçümler ve sınırlar
+            overnightLayer(content)
+
             if let circadian = content.circadian {
                 circadianSection(circadian)
             }
+
             disclaimerFooter
         }
         .padding(.top, ZenithiumSpacing.s)
@@ -70,51 +64,114 @@ struct TodayView: View {
         .animation(.easeOut(duration: 0.25), value: viewModel.prescription)
     }
 
-    // MARK: - Sections
+    // MARK: - KATMAN 1 — KARAR (Günün Hükmü - Kart Değil, Ekranın Başı)
 
-    private func ringSection(_ content: TodayViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            RecoveryArc(
-                score: content.score,
-                band: content.band,
-                confidence: content.recovery.confidence
-            )
-            .padding(.top, ZenithiumSpacing.s)
+    private func decisionHero(_ content: TodayViewModel.Content) -> some View {
+        let decision = viewModel.athleticDecision?.value
+        let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
+        let action = decision?.action ?? defaultAction(for: content.score, ceiling: content.ceiling)
 
-            BandChip(band: content.band)
+        return VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            // Üst Başlık & Güven Rozeti
+            HStack(alignment: .center) {
+                Text("BUGÜNÜN HÜKMÜ")
+                    .zenithiumEyebrow()
 
-            if content.recovery.confidence < 1 {
-                // §4.2.4 — a blended score says so, rather than presenting a thin baseline
-                // with the same authority as a settled one.
-                Text("Taban çizgin kurulurken toplum ortalamalarıyla harmanlanıyor — \(ZenithiumFormat.percent(content.recovery.confidence)) kişisel.")
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(confidenceColor(confidence))
+                        .frame(width: 6, height: 6)
+                    Text("%\(Int(confidence * 100)) Güven")
+                        .font(ZenithiumFont.caption2)
+                        .foregroundStyle(ZenithiumColor.textSecondary)
+                }
+                .padding(.horizontal, ZenithiumSpacing.s)
+                .padding(.vertical, 3)
+                .background(ZenithiumColor.surfaceElevated)
+                .clipShape(Capsule())
             }
+
+            // Ana Eylem ve Hedef
+            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(actionTitle(action))
+                        .font(ZenithiumFont.verdict)
+                        .foregroundStyle(actionColor(action))
+
+                    Text(decision?.headline ?? content.headline)
+                        .font(ZenithiumFont.body)
+                        .foregroundStyle(ZenithiumColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 12)
+
+                // Skor / Tavan
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 2) {
+                        Text(ZenithiumFormat.score(content.score))
+                            .font(ZenithiumFont.displayValue)
+                            .foregroundStyle(ZenithiumColor.color(for: content.band))
+                        Text("%")
+                            .font(ZenithiumFont.unit)
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                    }
+                    .contentTransition(.numericText())
+
+                    BandChip(band: content.band)
+                }
+            }
+
+            // Düşük Güven / Kalibrasyon Bildirimi
+            if confidence < 0.70 {
+                HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(ZenithiumColor.yellow)
+                    Text("Taban çizgisi oturana kadar karar genişletilmiş toleransla hesaplanıyor (%34 kişisel taban).")
+                        .font(ZenithiumFont.caption)
+                        .foregroundStyle(ZenithiumColor.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 2)
+            }
+
+            Divider()
+                .overlay(ZenithiumColor.hairline)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, ZenithiumSpacing.xs)
     }
 
-    private func guidanceSection(_ content: TodayViewModel.Content) -> some View {
-        SectionCard {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
-                Text(content.headline)
-                    .font(ZenithiumFont.sectionTitle)
-                    .foregroundStyle(ZenithiumColor.textPrimary)
-                Text(content.guidance)
+    // MARK: - KATMAN 2 — KANITI (Gerekçe, Sürücüler & Epistemik İz)
+
+    private func evidenceLayer(_ content: TodayViewModel.Content) -> some View {
+        SectionCard(
+            title: "Neden Bu Karar?",
+            subtitle: "Fizyolojik gerekçe, belirleyiciler ve kanıt izi"
+        ) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+                // 1. Gerekçe Paragrafı
+                Text(viewModel.athleticDecision?.value.primaryRationale ?? content.guidance)
                     .font(ZenithiumFont.body)
                     .foregroundStyle(ZenithiumColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(content.driverSentence)
-                    .font(ZenithiumFont.callout)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
 
+                // 2. En Baskın Biyometrik Sürücüler
+                DriverBreakdownView(
+                    drivers: content.recovery.drivers,
+                    missing: content.recovery.missingDrivers,
+                    weightsWereRenormalized: content.recovery.weightsWereRenormalized,
+                    unitPreference: content.profile.unitPreference
+                )
+
+                // 3. Hedef Yük Tavanı
                 if let ceiling = content.ceiling {
-                    Divider().overlay(ZenithiumColor.hairline)
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
                     HStack(alignment: .firstTextBaseline) {
-                        Text("Bugünün hedef zorlanması")
+                        Text("Bugünün hedef fizyolojik yük tavanı")
                             .font(ZenithiumFont.label)
                             .foregroundStyle(ZenithiumColor.textSecondary)
                         Spacer(minLength: 8)
@@ -126,27 +183,29 @@ struct TodayView: View {
                     .accessibilityLabel("Bugünün hedef zorlanması")
                     .accessibilityValue("21 üzerinden \(ZenithiumFormat.strain(ceiling))")
                 }
+
+                // 4. Günün Egzersiz Reçetesi
+                if let prescription = viewModel.prescription {
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+                    PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
+                }
+
+                // 5. Deterministik Karar İzi
+                if let decision = viewModel.athleticDecision {
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+                    DecisionTraceCard(result: decision)
+                }
             }
         }
-        .accessibilityElement(children: .contain)
     }
 
-    private func driverSection(_ content: TodayViewModel.Content) -> some View {
+    // MARK: - KATMAN 3 — DÜN GECE (Ham Ölçümler)
+
+    private func overnightLayer(_ content: TodayViewModel.Content) -> some View {
         SectionCard(
-            title: "Bunu ne hareket ettirdi",
-            subtitle: "Her belirleyicinin bugünkü sapmadaki payı"
+            title: "Dün Gece",
+            subtitle: "Ham biyometrik ölçümler"
         ) {
-            DriverBreakdownView(
-                drivers: content.recovery.drivers,
-                missing: content.recovery.missingDrivers,
-                weightsWereRenormalized: content.recovery.weightsWereRenormalized,
-                unitPreference: content.profile.unitPreference
-            )
-        }
-    }
-
-    private func overnightSection(_ content: TodayViewModel.Content) -> some View {
-        SectionCard(title: "Dün gece") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
                 MetricTileGrid {
                     if let hrv = content.record.heartRateVariability {
@@ -232,5 +291,38 @@ struct TodayView: View {
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
             .padding(.top, ZenithiumSpacing.xs)
+    }
+
+    // MARK: - Helpers
+
+    private func defaultAction(for score: Double, ceiling: Double?) -> DecisionAction {
+        let target = ceiling ?? 12.0
+        if score >= 67 { return .push(targetStrain: target) }
+        if score >= 34 { return .maintain(targetStrain: target) }
+        return .recover
+    }
+
+    private func actionTitle(_ action: DecisionAction) -> String {
+        switch action {
+        case .push: return "Yüksek Adaptasyon Kapasitesi"
+        case .maintain: return "Dengeli Yüklenme"
+        case .recover: return "Toparlanma Önceliği"
+        case .calibrate: return "Kalibrasyon Süreci"
+        }
+    }
+
+    private func actionColor(_ action: DecisionAction) -> Color {
+        switch action {
+        case .push: return ZenithiumColor.green
+        case .maintain: return ZenithiumColor.yellow
+        case .recover: return ZenithiumColor.red
+        case .calibrate: return ZenithiumColor.spectrumViolet
+        }
+    }
+
+    private func confidenceColor(_ confidence: Double) -> Color {
+        if confidence >= 0.80 { return ZenithiumColor.green }
+        if confidence >= 0.50 { return ZenithiumColor.yellow }
+        return ZenithiumColor.red
     }
 }

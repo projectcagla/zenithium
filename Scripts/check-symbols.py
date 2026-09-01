@@ -113,6 +113,7 @@ FRAMEWORK_SYMBOLS = {
     "AppShortcut", "AppShortcutsProvider", "IntentResult", "IntentDialog", "AppEntity",
     "EntityQuery", "LiveActivityIntent", "WCSession", "WCSessionDelegate",
     "WCSessionActivationState", "ProvidesAppEntity", "OpenIntent", "IntentParameter",
+    "ActivityUIDismissalPolicy",
     # Vision / PDFKit / CoreGraphics / OSLog / BackgroundTasks / UIKit
     "VNRecognizeTextRequest", "VNImageRequestHandler", "VNRecognizedTextObservation",
     "VNRequest", "PDFDocument", "PDFPage", "PDFDisplayBox", "Logger", "OSLog", "OSSignposter",
@@ -133,6 +134,7 @@ FRAMEWORK_SYMBOLS = {
     "ContainerBackground", "WidgetAccentedRenderingMode",
     # Swift Testing
     "Test", "Suite", "Issue", "Comment", "SourceLocation", "Tag", "ConfirmationError",
+    "CustomTestStringConvertible",
 }
 
 # Names that appear capitalised but are not type references.

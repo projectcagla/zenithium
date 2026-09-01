@@ -607,8 +607,8 @@ def main() -> int:
             "CODE_SIGN_ENTITLEMENTS": "Zenithium/Zenithium.entitlements",
             "TARGETED_DEVICE_FAMILY": '"1,2"',
             "GENERATE_INFOPLIST_FILE": "NO",
-            "CURRENT_PROJECT_VERSION": "1",
-            "MARKETING_VERSION": "0.1",
+            "CURRENT_PROJECT_VERSION": "3",
+            "MARKETING_VERSION": "1.0",
             "SWIFT_EMIT_LOC_STRINGS": "YES",
         },
         "ZenithiumWidgets": {
@@ -620,8 +620,8 @@ def main() -> int:
             "TARGETED_DEVICE_FAMILY": '"1,2"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "SKIP_INSTALL": "YES",
-            "CURRENT_PROJECT_VERSION": "1",
-            "MARKETING_VERSION": "0.1",
+            "CURRENT_PROJECT_VERSION": "3",
+            "MARKETING_VERSION": "1.0",
         },
         "ZenithiumWatch": {
             # A single-target watch app's bundle identifier must be the phone app's with a
@@ -642,8 +642,8 @@ def main() -> int:
             "SUPPORTED_PLATFORMS": '"watchos watchsimulator"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "SKIP_INSTALL": "YES",
-            "CURRENT_PROJECT_VERSION": "1",
-            "MARKETING_VERSION": "0.1",
+            "CURRENT_PROJECT_VERSION": "3",
+            "MARKETING_VERSION": "1.0",
         },
         "ZenithiumTests": {
             "PRODUCT_BUNDLE_IDENTIFIER": f"{BUNDLE_PREFIX}.app.tests",

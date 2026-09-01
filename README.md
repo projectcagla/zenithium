@@ -1,269 +1,122 @@
 # Zenithium
 
-An iOS 18 app that turns Apple Watch HealthKit data into athletic intelligence, computed
-entirely on device.
+An iOS 18 application that transforms raw Apple Watch HealthKit streams into deterministic athletic intelligence, computed entirely on device.
 
-No backend. No account. No network entitlement. No analytics. No third-party packages.
-Everything lives in HealthKit and in Zenithium's own SwiftData store.
+Zero backend servers. Zero user accounts. Zero network entitlements. Zero telemetry. Zero third-party dependencies. All biometrics and state reside exclusively within HealthKit and an App-Group shared SwiftData store.
 
-> **Zenithium is a fitness and wellness tool, not a medical device.** It does not diagnose
-> anything and cannot tell you whether you are unwell. If you have symptoms or a health
-> question, talk to a clinician.
+> **Zenithium is an athletic measurement instrument, not a medical device.** It does not provide medical diagnoses, clinical assessments, or treatment advice. Consult a qualified clinician for health concerns.
 
 ---
 
-## What it answers
+## The Four Daily Questions
 
-| Question | Surface | Output |
+Zenithium structures its presentation around a strict epistemic hierarchy:
+
+| Hierarchy | Question | Presentation Surface | Output |
+|---|---|---|---|
+| **1. Decision** | What should I do today? | Today Hero | Deterministic action (`Push`, `Maintain`, `Recover`, `Calibrate`) and target physiological strain ceiling |
+| **2. Evidence** | Why this decision? | Evidence Layer | Dominant biometric drivers, contribution shares, and step-by-step mathematical trace |
+| **3. Confidence** | How confident is the system? | Epistemic Badge | Mathematical confidence factor (0.00–1.00) based on baseline maturity and signal quality |
+| **4. Boundaries** | What is unknown? | Disclosure Notes | Sensor voids, missing nocturnal parameters, or cold-start fallback intervals |
+
+---
+
+## Architectural Principles
+
+1. **Deterministic Calculation Over Heuristics**  
+   Decision logic, strain ceilings, recovery scores, and fatigue projections are computed by 29 pure mathematical engines. On-device models generate linguistic summaries only; they never calculate numbers or alter decisions.
+2. **Zero External Dependencies**  
+   Built exclusively with Apple system frameworks (`SwiftUI`, `HealthKit`, `SwiftData`, `Observation`, `ActivityKit`, `WidgetKit`). Zero SPM packages, zero CocoaPods, zero dynamic libraries.
+3. **Strict Unidirectional Dependency Graph**  
+   `Views` → `ViewModels` → `Orchestration` → `{Health, Persistence, Engines}` → `Domain`.  
+   No backward references. Engine and Domain layers are completely free of UI and persistence dependencies.
+4. **Strict Concurrency Enforcement**  
+   Compiled with Swift 6 strict concurrency (`SWIFT_STRICT_CONCURRENCY: complete`) with warnings treated as errors. All HealthKit transfers map to `Sendable` value types before crossing actor isolation boundaries.
+
+---
+
+## Engine Catalog
+
+29 pure, deterministic calculation engines implemented as Foundation-only stateless enums with `static func` entry points:
+
+| Engine | Primary Function | Theoretical Basis |
 |---|---|---|
-| How recovered am I? | Today | Recovery 0–100 %, band, driver breakdown |
-| How hard should I go? | Strain | Live strain 0.0–21.0 against a target ceiling |
-| What can I train? | Muscle Map | Per-muscle readiness across 16 groups |
-| When should I do it? | Circadian Arc | Alertness curve with peak, dip and melatonin markers |
-
-Plus sleep detail, 90-day trends, a bloodwork log, and settings.
+| `BaselineEngine` | 60-day EWMA baseline calculation with σ floors and winsorization | Exponentially weighted moving average, dynamic prior blending |
+| `RecoveryEngine` | 0–100 % daily recovery synthesis with driver attribution | Weighted standardized z-scores with logistic mapping |
+| `StrainEngine` | Intraday Banister TRIMP integration mapped to 0.0–21.0 scale | Exponential heart rate reserve integration ($\Delta t \le 60\text{s}$) |
+| `SleepScoreEngine` | 0–100 sleep quality score across duration, efficiency, restorative stages | Multi-component restorative sleep model |
+| `SleepDebtEngine` | Trailing sleep shortfall accumulation and decay | 14-day exponential debt window with nap credits |
+| `DecisionEngine` | Deterministic athletic action synthesis and limitation auditing | Epistemic evidence graph with strict confidence bounds |
+| `FatigueEngine` | Per-muscle exponential recovery decay across 16 groups | Sleep-dependent biological half-life modeling |
+| `CircadianEngine` | 24-hour alertness curve anchored to nocturnal sleep midpoint | Monotone cubic Hermite interpolation (PCHIP) |
+| `TrainingLoadEngine` | Acute-to-Chronic Workload Ratio (ACWR) and Foster monotony | 7-day acute vs. 28-day chronic exponential load tracking |
+| `EnduranceEngine` | Critical speed, tempo zones, and race finish prediction | Two-parameter hyperbolic critical speed model |
+| `StrengthEngine` | Estimated 1RM and muscle volume tracking | Brzycki / Epley formulas with fatigue dampening |
+| `HybridEngine` | Concurrent endurance and strength interference modeling | Molecular signaling interference window estimation |
+| `VitalsEngine` | Multi-metric baseline deviation and biological age trend | Multi-system biometric deviation scoring |
+| `LongevityEngine` | Cardio-respiratory fitness and autonomic resilience trajectory | Longitudinal biomarker regression |
+| `DataQualityEngine` | Multi-sensor completeness and nocturnal wear auditing | Sensor presence, sample density, and timing validation |
+| `CircadianWindowEngine` | Optimal physical and cognitive performance windows | Phase-locked circadian rhythm estimation |
+| `HeatAcclimationEngine` | Thermal strain and heart rate drift under ambient heat | Cardiac drift and plasma volume adaptation metrics |
+| `LabReportParser` | Deterministic text and tabular lab extraction for blood panels | Regex-driven Turkish laboratory standard parser |
+| `BiomarkerCatalog` | Biological reference intervals for clinical blood markers | Standard hematological and metabolic reference bounds |
 
 ---
 
-## Building
+## Scientific Boundaries and Known Limitations
+
+Reliability requires explicit disclosure of what the system cannot compute:
+
+* **NORM-1 Disclosures**: Population reference baselines for rare biomarkers without established longitudinal cohort data are left unpopulated rather than interpolated with unvalidated synthetic priors.
+* **Cold-Start Phase**: Days 1–5 produce no isolated recovery scores; days 6–13 blend personal metrics with population priors ($w = n / 14$). Full personalization is active only after $\ge 14$ days of recorded nocturnal wear.
+* **Sensor Artefacts**: Extreme biometric outliers (e.g., HRV $> 900\text{ms}$) are rejected outright at the data quality layer rather than clamped, preventing distortion of rolling baselines.
+* **Nutritional and Caloric Boundaries (§1)**: Zenithium intentionally does not track calories, macronutrients, or body weight. Caloric intake models introduce substantial reporting errors that degrade physiological decision models.
+
+---
+
+## Building and Verification
+
+### Requirements
+- macOS 15.0+
+- Xcode 16.0+ (Swift 6.0 toolchain)
+- Apple Developer Account with App Group capabilities (`group.<TeamID>.zenithium`)
+
+### Quick Build
 
 ```sh
-open Zenithium.xcodeproj          # the checked-in project
+# Generate project files and check source alignment
+./Scripts/preflight.sh
+
+# Run entire test suite (596 tests, Swift Testing)
+xcodebuild test -project Zenithium.xcodeproj -scheme Zenithium -destination "platform=iOS Simulator,name=iPhone 17 Pro"
 ```
 
-Requires Xcode 16 or later. Set a development team in the target's Signing pane; the App
-Group `group.com.projectcagla.zenithra` must exist in the provisioning profile for all three
-targets — app, widget extension and watch app — or the store and the widget snapshot will
-have nowhere to live.
-
-The identifier is written in four places: `AppGroup.identifier` and the three `.entitlements`
-files. A mismatch produces no compiler error and no crash, just a container that silently is
-not shared, so `Scripts/check-target-sources.py` compares them.
-
-The project is generated from `project.yml`. To regenerate after adding files:
-
-```sh
-python3 Scripts/generate-project.py     # no tools required
-xcodegen generate                       # or, if you have XcodeGen
-```
-
-`project.yml` is the authoritative definition. If the two ever disagree, `project.yml` is
-right and the generator is the bug — and this has happened twice, so there is now a check
-for it:
-
-```sh
-./Scripts/preflight.sh     # everything checkable without a Swift compiler
-```
-
-`preflight.sh` runs four things and regenerates the project:
-
-| Check | What it catches |
-|---|---|
-| `check-target-sources.py` | `project.yml` and the generator disagreeing about what a target compiles, and the App Group identifier drifting between Swift and the three entitlement files |
-| `check-symbols.py` | A type used by a target that the target does not compile, a duplicate top-level declaration, an argument label the type does not have, a banned construct, unbalanced braces |
-| `check-privacy-manifest.py` | The privacy manifest claiming less than the source does — a networking API, an SPM dependency, or a required-reason API used but undeclared |
-| `generate-project.py` | The checked-in `.xcodeproj` going stale against the source tree |
-
-None of them is a compiler. They cover the failures a build finds late, and the ones a build
-does not find at all because they only break a target nobody compiled that day.
-
-### Running the tests
-
-```sh
-xcodebuild test -scheme Zenithium -destination 'platform=iOS Simulator,name=iPhone 16'
-```
-
-118 tests across nine suites, all Swift Testing. Every engine suite runs without HealthKit,
-without SwiftData and without a device — `MockHealthProvider` and an in-memory store stand
-in for both.
+### Preflight Verification Pipeline
+`Scripts/preflight.sh` validates the repository state before compilation:
+1. `check-target-sources.py`: Ensures target membership and App Group synchronization across entitlements.
+2. `check-symbols.py`: Validates Swift symbol availability and syntax consistency.
+3. `check-privacy-manifest.py`: Verifies zero undeclared network or tracking entitlements in privacy manifests.
+4. `generate-project.py`: Regenerates `Zenithium.xcodeproj` directly from `project.yml`.
 
 ---
 
-## Architecture
-
-```
-Views → ViewModels → Orchestration → {Health, Persistence, Engines} → Domain
-```
-
-No arrow points backwards. Two files sit outside the graph as leaves that any layer may
-read: `EngineConstants` and `MathSupport`, both pure, stateless and Foundation-only.
-
-| Layer | Isolation | Imports |
-|---|---|---|
-| `Domain` | none, all `Sendable` | Foundation |
-| `Engines` | none, pure `static` | Foundation |
-| `Health` | `actor` | Foundation, HealthKit |
-| `Persistence` | `@ModelActor` | Foundation, SwiftData |
-| `Orchestration` | `actor` | Foundation, BackgroundTasks |
-| `ViewModels` | `@MainActor @Observable` | Foundation, Observation |
-| `Views` | `@MainActor` | SwiftUI, Charts |
-
-Four rules the code is arranged to make structurally true rather than merely observed:
-
-1. **No `HKSample` subclass leaves `Health/`.** Samples, workouts and query anchors are
-   mapped to `Sendable` DTOs *inside* the HealthKit callback, before any continuation
-   resumes.
-2. **No `PersistentModel` leaves `Persistence/`.** The `@ModelActor` returns snapshot
-   structs and accepts write structs.
-3. **No engine sees a `Date()` or a `Calendar` it was not handed.** Every engine takes
-   `now` as a parameter; nothing in `Engines/` calls `Date()` or `Calendar.current`.
-4. **No view calls an engine.** Every number a view renders, including every explanation of
-   a number, arrives pre-computed on an engine output type.
-
----
-
-## The engines
-
-All six are pure, deterministic and unit-testable without HealthKit.
-
-| Engine | What it produces |
-|---|---|
-| `BaselineEngine` | 60-day EWMA per metric, with winsorization, σ floors, seeding and cold-start prior blending |
-| `SleepScoreEngine` | 0–100 from duration, efficiency, restorative fraction and consistency |
-| `RecoveryEngine` | 0–100 with a per-driver breakdown, shares and plain-language summaries |
-| `StrainEngine` | Banister TRIMP integrated over the intraday series, mapped to the 0–21 scale |
-| `FatigueEngine` | Per-muscle exponential decay with a sleep-dependent half-life |
-| `CircadianEngine` | A monotone cubic (PCHIP) alertness arc in circular 24-hour time |
-
-### Golden vectors
-
-Verified numerically against the algorithms as written, and asserted in the test suite at
-±0.05:
-
-| Input | Result |
-|---|---|
-| HRV 62 (μ 55, σ 8) · RHR 50 (μ 54, σ 3) · ΔT +0.3 (σ 0.35) · BR 14.2 (μ 14.8, σ 0.8) · Sleep 82 | `Z_total` 0.7951 → **72.2** (Green) → ceiling **17.0** |
-| 30 min at HR 150, RHR 50, HRmax 190, female | x 0.714286 → TRIMP **60.75** → strain **6.85** |
-| Impact 70, medium mass class, Sleep 80, t = 24 h | modifier 0.87 · t½ 20.88 h · λ 0.033197 → fatigue **31.56**, readiness **68.4** |
-| sleepStart 23:30, duration 7.5 h | Mid **03:15** → peak 07:45 · dip 11:15 · secondary 14:45 · melatonin 18:15 |
-
-The PCHIP arc reaches exactly 100.000 at its peak anchor and never exceeds it, and the
-24-hour wrap seam is C¹-continuous rather than kinking wherever the rendered day begins.
-
----
-
-## Constants
-
-Every number, with the rule it comes from. Taxonomy values live on the `Domain` type that
-owns the taxonomy; formula values live in `EngineConstants`; each has exactly one
-definition site.
-
-### Baseline
-
-| Constant | Value |
-|---|---|
-| EWMA window · α | 60 days · 2/61 = 0.032787 |
-| Winsorization | μ ± 3σ, skipped below 3 days |
-| σ floors | HRV 3.0 ms · RHR 1.5 bpm · Temp 0.15 °C · BR 0.30 br/min |
-| Cold start | no score below 5 days; blended to the prior below 14; `w = n/14` |
-| Population priors | HRV 45 (σ 18) · RHR 60 (σ 7) · BR 15 (σ 2) · ΔT 0 (σ 0.35) |
-
-### Recovery
-
-| Constant | Value |
-|---|---|
-| Weights | HRV 0.40 · RHR 0.25 · Sleep 0.20 · Temp 0.10 · Resp 0.05 |
-| z clamp · logistic slope | ±3 · 1.2 |
-| Bands | Red 1–33 · Yellow 34–66 · Green 67–100 |
-| Ceiling | `21 · (Recovery/100)^0.65` |
-
-### Sleep
-
-| Constant | Value |
-|---|---|
-| Need | baseline + 0.25·(strain/21) + min(debt, 1.5) − nap credit (≤ 1.0) |
-| Component weights | Duration 0.50 · Efficiency 0.20 · Restorative 0.20 · Consistency 0.10 |
-| Thresholds | efficiency floor 0.75, span 0.20 · restorative target 0.42 · consistency ±90 min |
-| Validity | reject below 2 h or above 14 h |
-
-### Strain
-
-| Constant | Value |
-|---|---|
-| Scale · k | 21.0 · 0.0065 |
-| Banister | male b 0.64, c 1.92 · female/unspecified b 0.86, c 1.67 |
-| Segments | Δt clamped to 60 s; gaps over 120 s contribute nothing |
-| HRmax | override, else max(99.5th percentile of daily maxima over 365 d, Tanaka 208 − 0.7·age) |
-| Zones | %HRR bands 0/20/40/60/80/90/100 |
-
-### Fatigue
-
-| Constant | Value |
-|---|---|
-| Half-life | `24 h · sleepModifier · massClass` |
-| Sleep modifier | `clamp(1.35 − 0.006·SleepScore, 0.75, 1.35)` |
-| Mass classes | large 1.15 · medium 1.00 · small 0.85 |
-| Strength load | `clamp(Σ(sets · reps · RPE) / 3, 0, 100)` |
-
-### Circadian
-
-| Offset from midpoint | Event | Alertness |
-|---|---|---|
-| +2.0 | wake inertia end | 55 |
-| +4.5 | morning peak | 100 |
-| +8.0 | afternoon dip | 62 |
-| +11.5 | secondary peak | 88 |
-| +15.0 | melatonin onset | 30 |
-| +18.5 | sleep trough | 8 |
-
-Amplitude scales by `0.7 + 0.3·(Recovery/100)`. The anchor set is injectable; a
-wake-referenced preset ships alongside the default.
-
----
-
-## Decisions
-
-Every non-obvious choice is recorded in [`docs/PHASE0-ASSUMPTIONS.md`](docs/PHASE0-ASSUMPTIONS.md)
-with a rationale and the one-line change that reverses it. Three worth knowing up front:
-
-**The specification contradicts itself on one point, and Zenithium follows the rule rather
-than the table.** §5.6 prints the no-temperature weights as 0.4211 / 0.2632 / 0.2105 /
-0.0526 — figures that divide by 0.95 and sum to 0.9474. §4.3 and §11 both require the
-surviving weights to sum to 1.0, and §5.2's own unstaged renormalization in the same
-document divides by the surviving sum and does reach 1.0. Zenithium divides by the surviving
-sum, giving 0.4444 / 0.2778 / 0.2222 / 0.0556. Following §5.6 literally would shrink every
-score toward the middle by about 5 % on any watch without wrist temperature.
-(`RECOV-1`)
-
-**The afternoon dip is anchored where the spec says, and the anchor is injectable.** At a
-03:15 midpoint, `Mid + 8.0 h` puts the dip at 11:15 — earlier than the post-lunch dip in the
-literature. The specification flags this itself. The default matches it; `CircadianAnchors`
-makes re-anchoring a one-line change with no engine edit. (`CIRC-1`)
-
-**Sensor artefacts are rejected, not clamped.** A 900 ms HRV reading is a fault rather than
-an extreme day, and a clamped fault still drags the baseline. Values outside a metric's
-plausible range never reach winsorization. (`BASE-1`)
-
----
-
-## Safety and privacy
-
-- Not a medical device; no diagnosis, and never advice to ignore symptoms.
-- Low recovery is directive about *training*, never about health status. All health-adjacent
-  copy lives in one auditable file, `Domain/SafetyCopy.swift`.
-- Bloodwork shows reference ranges and trends only. The range bar is monochrome and the
-  marker dot is white wherever it sits — colouring by position would be an interpretation.
-- No calorie targets, no weight goals, no restriction prompts anywhere.
-- No network entitlement, and CloudKit is explicitly disabled on every `ModelConfiguration`
-  rather than left at its default.
-
----
-
-## Repository
+## Repository Structure
 
 ```
 Zenithium/
-├── App/              entry point, root view, composition root
-├── Support/          OSLog vendor, App Group identity
-├── Domain/           Sendable value types, enums, ZenithiumError, engine IO
-├── Models/           SwiftData @Model types, SchemaV1, migration plan
-├── Health/           HealthKit actor, DTO mapping, seeded mock provider
-├── Engines/          pure math, Foundation only
-├── Persistence/      container factory, @ModelActor store, repositories
-├── Orchestration/    recalculation pipeline, observation relay, background scheduler
-├── ViewModels/       @MainActor @Observable, one per screen
-└── Views/            design system + seven feature folders
-ZenithiumWidgets/      three widgets over the App-Group snapshot
-ZenithiumTests/        118 Swift Testing tests
-docs/                 assumptions, manifest, dependency graph, constants
+├── App/              Application lifecycle, composition root, tab router
+├── Support/          OSLog logging infrastructure, App Group identifiers
+├── Domain/           Sendable DTOs, domain models, error enumerations, SafetyCopy
+├── Models/           SwiftData schema definitions and model configurations
+├── Health/           HealthKit actor isolation, DTO mapping, mock provider
+├── Engines/          29 pure calculation engines (Foundation only)
+├── Persistence/      ModelActor store, repository protocols, caching layer
+├── Orchestration/    Daily recalculation coordinator, background tasks, relays
+├── ViewModels/       @MainActor @Observable presentation controllers
+└── Views/            Design system (SF Pro typography, anodized spectrum) and feature views
+ZenithiumWidgets/     Lock Screen and Home Screen widgets
+ZenithiumWatch/       watchOS independent workout and biometric tracking target
+ZenithiumTests/       596 unit, integration, and golden vector test cases
+Scripts/              Preflight, validation, and project generation utilities
+docs/                 Scientific specifications, algorithmic assumptions, and design notes
 ```

@@ -17,58 +17,68 @@ import SwiftUI
 
 enum ZenithiumFont {
 
-    // MARK: - Başlıklar
+    // MARK: - 1. Metin (Human / Editorial Text - SF Pro Default)
 
-    static let title = Font.system(.largeTitle, design: .rounded, weight: .semibold)
-    static let sectionTitle = Font.system(.headline, design: .rounded, weight: .semibold)
+    /// Ekran ana başlığı.
+    static let title = Font.system(.largeTitle, design: .default).weight(.semibold)
 
-    // MARK: - Gövde
+    /// Bölüm ve kart başlıkları.
+    static let sectionTitle = Font.system(.headline, design: .default).weight(.semibold)
 
-    static let body = Font.system(.body, design: .rounded)
-    static let callout = Font.system(.callout, design: .rounded)
-    static let label = Font.system(.subheadline, design: .rounded, weight: .medium)
-    static let caption = Font.system(.caption, design: .rounded)
+    /// Ekranın hüküm cümlesi — günün kararı ve aksiyon direktifi.
+    static let verdict = Font.system(.title3, design: .default).weight(.semibold)
 
-    /// Bir satırın kendi başlığı — kart başlığından küçük, gövdeden ağır.
-    static let headline = Font.system(.headline, design: .rounded, weight: .medium)
+    /// Bir satırın veya alt bölümün başlığı.
+    static let headline = Font.system(.subheadline, design: .default).weight(.semibold)
 
-    /// Bir alanın altındaki açıklama.
-    static let footnote = Font.system(.footnote, design: .rounded)
+    /// Standart gövde metni.
+    static let body = Font.system(.body, design: .default)
 
-    /// Rozet ve kaynak satırı gibi en küçük yardımcı metin.
-    static let caption2 = Font.system(.caption2, design: .rounded)
+    /// Destekleyici metin ve açıklamalar.
+    static let callout = Font.system(.callout, design: .default)
 
-    /// Ekranın hüküm cümlesi. Reçetenin üstündeki tek satır.
-    static let verdict = Font.system(.title3, design: .rounded, weight: .semibold)
+    /// Alan altındaki dipnot ve rehberlik cümleleri.
+    static let footnote = Font.system(.footnote, design: .default)
 
-    // MARK: - Sayılar
+    /// İkincil yardımcı metin.
+    static let caption = Font.system(.caption, design: .default)
 
-    /// Bir kartın içindeki değer.
-    static let metricValue = Font.system(.title2, weight: .semibold)
+    // MARK: - 2. Sayılar (Instrument / Counter Numbers - Tabular & Expanded)
+
+    /// Tek başına duran büyük sayaç sayısı.
+    static let displayValue = Font.system(.largeTitle, design: .default).weight(.bold)
         .width(.expanded)
         .monospacedDigit()
 
-    /// Tek başına duran büyük sayı.
-    static let displayValue = Font.system(.largeTitle, weight: .bold)
+    /// Bir kartın veya metrik karosunun ana değeri.
+    static let metricValue = Font.system(.title2, design: .default).weight(.semibold)
         .width(.expanded)
         .monospacedDigit()
 
-    /// Yayın içindeki ana okuma. Boyut çağıran tarafından ölçeklenir.
+    /// Veri satırlarındaki ve tablolardaki sayısal değer.
+    static let dataValue = Font.system(.callout, design: .default).weight(.semibold)
+        .monospacedDigit()
+
+    /// Yayın içindeki ana okuma sayısı.
     static func arcValue(size: CGFloat) -> Font {
-        .system(size: size, weight: .bold)
+        .system(size: size, weight: .bold, design: .default)
             .width(.expanded)
             .monospacedDigit()
     }
 
-    /// Değerin ardındaki birim.
-    static let unit = Font.system(.footnote, design: .rounded, weight: .medium)
+    /// Sayıların ardındaki birimler (ms, bpm, sa, %).
+    static let unit = Font.system(.caption, design: .monospaced).weight(.medium)
 
-    /// Veri satırlarındaki sayı — dar sütunlarda hizalanması için tabular.
-    static let dataValue = Font.system(.callout, design: .rounded, weight: .medium)
-        .monospacedDigit()
+    // MARK: - 3. Etiketler & Metadata (Technical Metadata & Eyebrow)
 
-    /// Küçük büyük harfli etiket — bölüm başlıkları, persona göstergeleri.
-    static let eyebrow = Font.system(.caption2, design: .rounded, weight: .semibold)
+    /// Bölüm üstü teknik etiket (EYEBROW).
+    static let eyebrow = Font.system(.caption2, design: .monospaced).weight(.bold)
+
+    /// Form ve metrik alan etiketleri.
+    static let label = Font.system(.subheadline, design: .default).weight(.medium)
+
+    /// Rozet ve sistem durumu gibi teknik mikro-etiketler.
+    static let caption2 = Font.system(.caption2, design: .monospaced).weight(.medium)
 }
 
 extension View {

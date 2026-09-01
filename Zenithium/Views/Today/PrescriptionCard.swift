@@ -15,6 +15,7 @@ struct PrescriptionCard: View {
 
     let prescription: Prescription
     var plan: PlanPosition?
+    var wrappedInCard: Bool = false
 
     @State private var showsRationale = false
     @State private var selected: PrescribedSession?
@@ -24,12 +25,21 @@ struct PrescriptionCard: View {
     }
 
     var body: some View {
-        SectionCard {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
-                if let plan {
-                    planRow(plan)
-                    Divider().overlay(ZenithiumColor.hairlineSoft)
-                }
+        if wrappedInCard {
+            SectionCard {
+                prescriptionContent
+            }
+        } else {
+            prescriptionContent
+        }
+    }
+
+    private var prescriptionContent: some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+            if let plan {
+                planRow(plan)
+                Divider().overlay(ZenithiumColor.hairlineSoft)
+            }
 
                 sessionRow(current)
 
@@ -66,7 +76,6 @@ struct PrescriptionCard: View {
                                     .foregroundStyle(ZenithiumColor.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                        }
                     }
                 }
             }

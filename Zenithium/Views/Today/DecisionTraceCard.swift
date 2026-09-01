@@ -11,108 +11,96 @@ import SwiftUI
 struct DecisionTraceCard: View {
 
     let result: EngineResult<AthleticDecision>
+    var wrappedInCard: Bool = false
     @State private var isTraceExpanded = false
 
     var body: some View {
-        SectionCard {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                // Header: Action Chip + Confidence Badge
-                HStack(alignment: .center) {
-                    actionChip(result.value.action)
+        if wrappedInCard {
+            SectionCard {
+                traceContent
+            }
+        } else {
+            traceContent
+        }
+    }
+
+    private var traceContent: some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            // Suggested Activities
+            if !result.value.suggestedActivities.isEmpty {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
+                    Text("Önerilen Egzersizler")
+                        .font(ZenithiumFont.caption)
+                        .foregroundStyle(ZenithiumColor.textTertiary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: ZenithiumSpacing.xs) {
+                            ForEach(result.value.suggestedActivities, id: \.self) { activity in
+                                HStack(spacing: 4) {
+                                    Image(systemName: activity.symbolName)
+                                        .font(.system(size: 11, weight: .semibold))
+                                    Text(activity.displayName)
+                                        .font(ZenithiumFont.caption)
+                                }
+                                .padding(.horizontal, ZenithiumSpacing.s)
+                                .padding(.vertical, 4)
+                                .background(ZenithiumColor.surfaceElevated)
+                                .clipShape(Capsule())
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                            }
+                        }
+                    }
+                }
+                .padding(.top, 2)
+            }
+
+            // Epistemic Decision Trace Toggle
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isTraceExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(ZenithiumColor.spectrumViolet)
+                    Text("Deterministik Karar İzi (Decision Trace)")
+                        .font(ZenithiumFont.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(ZenithiumColor.textPrimary)
                     Spacer()
-                    confidenceBadge(result.confidence)
+                    Image(systemName: isTraceExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ZenithiumColor.textTertiary)
                 }
+            }
+            .buttonStyle(.plain)
 
-                // Headline
-                Text(result.value.headline)
-                    .font(ZenithiumFont.sectionTitle)
-                    .foregroundStyle(ZenithiumColor.textPrimary)
+            // Expanded Trace Details
+            if isTraceExpanded {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                    ForEach(result.value.traceSteps) { step in
+                        traceStepRow(step)
+                    }
 
-                // Rationale
-                Text(result.value.primaryRationale)
-                    .font(ZenithiumFont.body)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                // Suggested Activities
-                if !result.value.suggestedActivities.isEmpty {
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                        Text("Önerilen Egzersizler")
-                            .font(ZenithiumFont.caption)
-                            .foregroundStyle(ZenithiumColor.textTertiary)
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: ZenithiumSpacing.xs) {
-                                ForEach(result.value.suggestedActivities, id: \.self) { activity in
-                                    HStack(spacing: 4) {
-                                        Image(systemName: activity.symbolName)
-                                            .font(.system(size: 11, weight: .semibold))
-                                        Text(activity.displayName)
-                                            .font(ZenithiumFont.caption)
-                                    }
-                                    .padding(.horizontal, ZenithiumSpacing.s)
-                                    .padding(.vertical, 4)
-                                    .background(ZenithiumColor.surfaceElevated)
-                                    .clipShape(Capsule())
-                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                    if !result.limitations.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(result.limitations) { limitation in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Image(systemName: limitation.isBlocking ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(limitation.isBlocking ? ZenithiumColor.red : ZenithiumColor.yellow)
+                                    Text("[\(limitation.code)] \(limitation.explanation)")
+                                        .font(ZenithiumFont.caption)
+                                        .foregroundStyle(ZenithiumColor.textSecondary)
                                 }
                             }
                         }
-                    }
-                    .padding(.top, 2)
-                }
-
-                Divider()
-                    .background(ZenithiumColor.hairline)
-
-                // Epistemic Decision Trace Toggle
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isTraceExpanded.toggle()
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "point.3.connected.trianglepath.dotted")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(ZenithiumColor.spectrumViolet)
-                        Text("Deterministik Karar İzi (Decision Trace)")
-                            .font(ZenithiumFont.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(ZenithiumColor.textPrimary)
-                        Spacer()
-                        Image(systemName: isTraceExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(ZenithiumColor.textTertiary)
+                        .padding(.top, 4)
                     }
                 }
-                .buttonStyle(.plain)
-
-                // Expanded Trace Details
-                if isTraceExpanded {
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
-                        ForEach(result.value.traceSteps) { step in
-                            traceStepRow(step)
-                        }
-
-                        if !result.limitations.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                ForEach(result.limitations) { limitation in
-                                    HStack(alignment: .top, spacing: 6) {
-                                        Image(systemName: limitation.isBlocking ? "exclamationmark.triangle.fill" : "info.circle.fill")
-                                            .font(.system(size: 11))
-                                            .foregroundStyle(limitation.isBlocking ? ZenithiumColor.red : ZenithiumColor.yellow)
-                                        Text("[\(limitation.code)] \(limitation.explanation)")
-                                            .font(ZenithiumFont.caption)
-                                            .foregroundStyle(ZenithiumColor.textSecondary)
-                                    }
-                                }
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-                    .padding(.leading, ZenithiumSpacing.xs)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                .padding(.leading, ZenithiumSpacing.xs)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
