@@ -45,8 +45,45 @@ struct SleepView: View {
             componentSection(content)
             stageSection(content)
             timingSection(content)
+            historySection(content)
         }
         .padding(.top, ZenithiumSpacing.s)
+    }
+
+    @ViewBuilder
+    private func historySection(_ content: SleepViewModel.Content) -> some View {
+        if !content.history.isEmpty {
+            let recent = Array(content.history.sorted(by: { $0.dayStart > $1.dayStart }).prefix(7))
+            SectionCard(title: "Son Günlerin Uyku Seyri", subtitle: "Önceki gecelerin skor ve süre dökümü") {
+                VStack(spacing: ZenithiumSpacing.m) {
+                    ForEach(recent, id: \.dayStart) { (record: BiometricDaySnapshot) in
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(record.dayStart, format: .dateTime.day().month(.abbreviated).weekday(.short))
+                                    .font(ZenithiumFont.body)
+                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                                Text("\(ZenithiumFormat.duration(seconds: record.sleepDurationSeconds)) uykuda")
+                                    .font(ZenithiumFont.caption)
+                                    .foregroundStyle(ZenithiumColor.textSecondary)
+                            }
+                            Spacer()
+                            if let score = record.sleepScore {
+                                Text(ZenithiumFormat.score(score))
+                                    .font(ZenithiumFont.metricValue)
+                                    .foregroundStyle(score >= 70 ? ZenithiumColor.green : (score >= 50 ? ZenithiumColor.yellow : ZenithiumColor.red))
+                            } else {
+                                Text("—")
+                                    .font(ZenithiumFont.metricValue)
+                                    .foregroundStyle(ZenithiumColor.textTertiary)
+                            }
+                        }
+                        if record.dayStart != recent.last?.dayStart {
+                            Divider().overlay(ZenithiumColor.hairlineSoft)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private func headline(_ content: SleepViewModel.Content) -> some View {
@@ -98,12 +135,12 @@ struct SleepView: View {
 
     /// §5.2 — the need is built from four terms, so the tile says which ones moved it.
     private func needCaption(_ content: SleepViewModel.Content) -> String {
-        var parts: [String] = ["\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 1))h baseline"]
+        var parts: [String] = ["\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 1)) sa taban"]
         if content.sleep.appliedDebtHours > 0.05 {
-            parts.append("+\(ZenithiumFormat.metric(content.sleep.appliedDebtHours, digits: 1))h debt")
+            parts.append("+\(ZenithiumFormat.metric(content.sleep.appliedDebtHours, digits: 1)) sa borç")
         }
         if content.sleep.appliedNapCreditHours > 0.05 {
-            parts.append("−\(ZenithiumFormat.metric(content.sleep.appliedNapCreditHours, digits: 1))h naps")
+            parts.append("−\(ZenithiumFormat.metric(content.sleep.appliedNapCreditHours, digits: 1)) sa şekerleme")
         }
         return parts.joined(separator: ", ")
     }

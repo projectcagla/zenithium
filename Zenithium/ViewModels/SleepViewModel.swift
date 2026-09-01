@@ -17,6 +17,7 @@ final class SleepViewModel {
         let record: BiometricDaySnapshot
         let stages: [StageSlice]
         let profile: UserProfileSnapshot
+        let history: [BiometricDaySnapshot]
 
         var score: Double { sleep.score ?? 0 }
 
@@ -42,16 +43,19 @@ final class SleepViewModel {
 
     private let coordinator: any RecalculationDriving
     private let health: any HealthAuthorizing
+    private let records: (any BiometricDayRepository)?
     private let nowProvider: @Sendable () -> Date
     private var observationTask: Task<Void, Never>?
 
     init(
         coordinator: any RecalculationDriving,
         health: any HealthAuthorizing,
+        records: (any BiometricDayRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.coordinator = coordinator
         self.health = health
+        self.records = records
         self.nowProvider = nowProvider
     }
 
@@ -86,7 +90,8 @@ final class SleepViewModel {
             return
         }
         do {
-            apply(try await coordinator.recalculate(now: nowProvider()))
+            let result = try await coordinator.recalculate(now: nowProvider())
+            await apply(result)
         } catch {
             if let mapped = ViewState<Content>.from(error) {
                 state = mapped
@@ -101,12 +106,18 @@ final class SleepViewModel {
             let stream = await self.coordinator.results()
             for await result in stream {
                 guard !Task.isCancelled else { return }
-                self.apply(result)
+                await self.apply(result)
             }
         }
     }
 
-    private func apply(_ result: RecalculationResult) {
+    private func apply(_ result: RecalculationResult) async {
+        let now = nowProvider()
+        let calendar = Calendar.autoupdatingCurrent
+        let today = calendar.startOfDay(for: now)
+        let start = calendar.date(byAdding: .day, value: -14, to: today) ?? today
+        let history = (try? await records?.dayRecords(from: start, through: today)) ?? []
+
         switch result.sleep.validity {
         case .noData:
             state = .noData(reason: .noOvernightData)
@@ -118,7 +129,8 @@ final class SleepViewModel {
                     sleep: result.sleep,
                     record: result.record,
                     stages: Self.stageSlices(from: result.record),
-                    profile: result.profile
+                    profile: result.profile,
+                    history: history
                 )
             )
         }

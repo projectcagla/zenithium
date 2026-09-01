@@ -47,9 +47,40 @@ struct StrainView: View {
             }
             zoneSection(content)
             detailSection(content)
+            historySection(content)
             disclaimerFooter
         }
         .padding(.top, ZenithiumSpacing.s)
+    }
+
+    @ViewBuilder
+    private func historySection(_ content: StrainViewModel.Content) -> some View {
+        if !content.history.isEmpty {
+            let recent = Array(content.history.sorted(by: { $0.dayStart > $1.dayStart }).prefix(7))
+            SectionCard(title: "Son Günlerin Antrenman ve Yük Seyri", subtitle: "Önceki günlerin zorlanma ve antrenman yükü dökümü") {
+                VStack(spacing: ZenithiumSpacing.m) {
+                    ForEach(recent, id: \.dayStart) { (record: BiometricDaySnapshot) in
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(record.dayStart, format: .dateTime.day().month(.abbreviated).weekday(.short))
+                                    .font(ZenithiumFont.body)
+                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                                Text("TRIMP Yükü: \(ZenithiumFormat.metric(record.trimp, digits: 0))")
+                                    .font(ZenithiumFont.caption)
+                                    .foregroundStyle(ZenithiumColor.textSecondary)
+                            }
+                            Spacer()
+                            Text(ZenithiumFormat.strain(record.dayStrain))
+                                .font(ZenithiumFont.metricValue)
+                                .foregroundStyle(ZenithiumColor.accent)
+                        }
+                        if record.dayStart != recent.last?.dayStart {
+                            Divider().overlay(ZenithiumColor.hairlineSoft)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Faz 13 — where the day's load came from.

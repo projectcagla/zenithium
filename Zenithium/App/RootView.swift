@@ -74,10 +74,19 @@ struct RootView: View {
             )
         )
         _strainViewModel = State(
-            initialValue: StrainViewModel(coordinator: coordinator, health: authorizing, stressSource: health)
+            initialValue: StrainViewModel(
+                coordinator: coordinator,
+                health: authorizing,
+                records: records,
+                stressSource: health
+            )
         )
         _sleepViewModel = State(
-            initialValue: SleepViewModel(coordinator: coordinator, health: authorizing)
+            initialValue: SleepViewModel(
+                coordinator: coordinator,
+                health: authorizing,
+                records: records
+            )
         )
         _muscleViewModel = State(
             initialValue: MuscleMapViewModel(

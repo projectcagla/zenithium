@@ -18,6 +18,7 @@ final class StrainViewModel {
         let zoneBars: [ZoneBar]
         let guidance: String
         let dayStart: Date
+        let history: [BiometricDaySnapshot]
 
         /// The day split into training and everything else (Faz 13). `nil` until the split
         /// has been computed, or when there was no intraday series to split.
@@ -49,6 +50,7 @@ final class StrainViewModel {
     private(set) var isRefreshing = false
 
     private let coordinator: any RecalculationDriving
+    private let records: (any BiometricDayRepository)?
 
     /// Re-reads the intraday series for the training / rest-of-life split (Faz 13).
     private let stressSource: (any HealthDataProviding)?
@@ -64,11 +66,13 @@ final class StrainViewModel {
     init(
         coordinator: any RecalculationDriving,
         health: any HealthAuthorizing,
+        records: (any BiometricDayRepository)? = nil,
         stressSource: (any HealthDataProviding)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.coordinator = coordinator
         self.health = health
+        self.records = records
         self.stressSource = stressSource
         self.nowProvider = nowProvider
     }
@@ -107,7 +111,7 @@ final class StrainViewModel {
         }
         do {
             let result = try await coordinator.recalculate(now: nowProvider())
-            apply(result)
+            await apply(result)
         } catch {
             if let mapped = ViewState<Content>.from(error) {
                 state = mapped
@@ -122,18 +126,25 @@ final class StrainViewModel {
             let stream = await self.coordinator.results()
             for await result in stream {
                 guard !Task.isCancelled else { return }
-                self.apply(result)
+                await self.apply(result)
             }
         }
     }
 
-    private func apply(_ result: RecalculationResult) {
+    private func apply(_ result: RecalculationResult) async {
         guard let strain = result.strain else {
             // No intraday heart rate yet. Normal first thing in the morning, and honest to
             // say so rather than rendering a zero as though it were a measurement.
             state = .noData(reason: .noHeartRateYet)
             return
         }
+
+        let now = nowProvider()
+        let calendar = Calendar.autoupdatingCurrent
+        let today = calendar.startOfDay(for: now)
+        let start = calendar.date(byAdding: .day, value: -14, to: today) ?? today
+        let history = (try? await records?.dayRecords(from: start, through: today)) ?? []
+
         state = .loaded(
             Content(
                 strain: strain,
@@ -144,6 +155,7 @@ final class StrainViewModel {
                     ceiling: strain.targetCeiling
                 ),
                 dayStart: result.dayStart,
+                history: history,
                 stress: nil
             )
         )

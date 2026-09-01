@@ -2297,7 +2297,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;
@@ -2317,7 +2317,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
@@ -2361,7 +2361,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWatch/Info.plist;
@@ -2384,7 +2384,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
@@ -2418,7 +2418,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Zenithium/Info.plist;
@@ -2472,7 +2472,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 9PF6U63MV3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ZenithiumWidgets/Info.plist;

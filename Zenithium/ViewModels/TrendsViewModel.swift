@@ -216,5 +216,5 @@ final class TrendsViewModel {
         }
     }
 
-    private static let minimumPointsForTrend = 3
+    private static let minimumPointsForTrend = 1
 }
