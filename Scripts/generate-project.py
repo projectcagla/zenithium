@@ -607,7 +607,7 @@ def main() -> int:
             "CODE_SIGN_ENTITLEMENTS": "Zenithium/Zenithium.entitlements",
             "TARGETED_DEVICE_FAMILY": '"1,2"',
             "GENERATE_INFOPLIST_FILE": "NO",
-            "CURRENT_PROJECT_VERSION": "3",
+            "CURRENT_PROJECT_VERSION": "4",
             "MARKETING_VERSION": "1.0",
             "SWIFT_EMIT_LOC_STRINGS": "YES",
         },
@@ -620,7 +620,7 @@ def main() -> int:
             "TARGETED_DEVICE_FAMILY": '"1,2"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "SKIP_INSTALL": "YES",
-            "CURRENT_PROJECT_VERSION": "3",
+            "CURRENT_PROJECT_VERSION": "4",
             "MARKETING_VERSION": "1.0",
         },
         "ZenithiumWatch": {
@@ -642,7 +642,7 @@ def main() -> int:
             "SUPPORTED_PLATFORMS": '"watchos watchsimulator"',
             "GENERATE_INFOPLIST_FILE": "NO",
             "SKIP_INSTALL": "YES",
-            "CURRENT_PROJECT_VERSION": "3",
+            "CURRENT_PROJECT_VERSION": "4",
             "MARKETING_VERSION": "1.0",
         },
         "ZenithiumTests": {

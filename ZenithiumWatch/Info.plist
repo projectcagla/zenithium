@@ -22,10 +22,6 @@
 	<string>com.zenithium.app</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<false/>
-	<key>UIRequiredDeviceCapabilities</key>
-	<array>
-		<string>watch-companion</string>
-	</array>
 	<!-- Yol haritası v4, C1 — the live session screen. `workout-processing` is what keeps
 	     the session collecting while the wrist is down, which is most of a run. -->
 	<key>WKBackgroundModes</key>
