@@ -1,0 +1,89 @@
+<h2 id="ch3"><span class="kicker">Bölüm üç</span><span class="num">03</span>Veri katmanı</h2>
+
+<p class="lead">Verinin tek bir yönü vardır: HealthKit'ten okunur, motorlarda işlenir, SwiftData'ya günlük özet olarak yazılır. Uygulama HealthKit'e asla yazmaz ve ham örnekleri kalıcı olarak saklamaz — yalnızca günlük türetilmiş değerleri.</p>
+
+<h3 id="s31"><span class="num">3.1</span>SwiftData modelleri</h3>
+
+<table class="wide">
+<caption>12 kalıcı model</caption>
+<thead><tr><th style="width:44mm">Model</th><th>Ne saklar</th></tr></thead>
+<tbody>
+<tr><td>BiometricDayRecord</td><td>Bir günün tüm türetilmiş değerleri: HRV, RHR, bilek sıcaklığı, solunum hızı, uyku skoru, toparlanma, zorlanma, motor sürümü. Uygulamanın merkezî tablosu.</td></tr>
+<tr><td>BaselineState</td><td>Metrik başına EWMA taban çizgisi, standart sapması ve örnek sayısı. Her sabah güncellenir.</td></tr>
+<tr><td>UserProfile</td><td>Yaş, cinsiyet, boy, mercek seçimi, hedefler, görünüm tercihi. Tek kayıt.</td></tr>
+<tr><td>JournalDayLog</td><td>Günlük öznel girişler: enerji, ruh hali, alkol, kafein, stres, notlar. Korelasyon motorunun girdisi.</td></tr>
+<tr><td>StrengthSessionLog</td><td>Kuvvet seansı: hareket, set, tekrar, ağırlık, RPE. Tonaj ve 1RM tahmininin kaynağı.</td></tr>
+<tr><td>HybridSessionLog</td><td>Hyrox/CrossFit seansı: bölümler, süreler, iş türü.</td></tr>
+<tr><td>MuscleFatigueSnapshot</td><td>Kas grubu başına gün sonu yorgunluk değeri; kas haritasının beslediği tablo.</td></tr>
+<tr><td>PainEntryLog</td><td>Bölge, şiddet, tip, tarih. Ağrı haritası ve erken uyarı için.</td></tr>
+<tr><td>BloodMarker</td><td>Laboratuvar sonucu: biyobelirteç, değer, birim, tarih, referans aralığı, kaynak belge.</td></tr>
+<tr><td>HealthDocumentLog</td><td>Belge kasası girdisi. PDF <code>@Attribute(.externalStorage)</code> ile dosya sisteminde tutulur, çıkarılan metin aranabilir.</td></tr>
+<tr><td>GoalEventLog</td><td>Yarış/hedef olayı: tarih, mesafe, tip. Planlama ve tepe noktası hesabı.</td></tr>
+<tr><td>SupplementCourseLog</td><td>Takviye kürü: başlangıç, bitiş, doz. Öncesi/sonrası karşılaştırma için.</td></tr>
+</tbody>
+</table>
+
+<p>Tarih anahtarlı modellerde <code>@Attribute(.unique)</code> kullanılır, böylece aynı gün iki kez hesaplanırsa kayıt çoğalmaz, güncellenir.</p>
+
+<h3 id="s32"><span class="num">3.2</span>Şema sürümleme</h3>
+
+<p>Şema <code>VersionedSchema</code> ile üç sürüme ayrıldı ve <code>ZenithiumMigrationPlan</code> iki hafif göç aşaması tanımlar:</p>
+
+<table class="compact">
+<thead><tr><th style="width:22mm">Geçiş</th><th style="width:26mm">Tip</th><th>Değişiklik</th></tr></thead>
+<tbody>
+<tr><td>V1 → V2</td><td>lightweight</td><td><code>SupplementCourseLog</code> eklendi; mevcut hiçbir alan değişmedi</td></tr>
+<tr><td>V2 → V3</td><td>lightweight</td><td><code>UserProfile.appearanceRawValue</code> eklendi, varsayılanlı</td></tr>
+</tbody>
+</table>
+
+<p>Her ikisi de yalnızca <em>ekleme</em> olduğu için SwiftData dönüşüm kodu olmadan göç edebiliyor. Dosyanın başında sonraki katkı sağlayıcı için dört adımlık bir yordam yazılı: V4 enum'unu kopyala, <code>schemas</code>'a ekle, aşamayı ekle, ve hesaplanan değerler değiştiyse <code>engineVersion</code>'ı yükselt.</p>
+
+<div class="note">
+  <span class="tag">Motor sürümü mekanizması</span>
+  <p><code>BiometricDayRecord</code> hangi motor sürümüyle hesaplandığını saklar. Bir motorun matematiği değişirse <code>EngineConstants.Orchestration.engineVersion</code> artırılır; eski sürümle yazılmış kayıtlar bayat sayılır ve arka planda yeniden hesaplanır. Böylece kullanıcı bir güncellemeden sonra tutarsız bir geçmiş görmez.</p>
+</div>
+
+<h3 id="s33"><span class="num">3.3</span>HealthKit okuma hattı</h3>
+
+<p>Uygulama sekiz HealthKit veri türüne <em>yalnızca okuma</em> izni ister: <code>heartRate</code>, <code>heartRateVariability</code>, <code>restingHeartRate</code>, <code>respiratoryRate</code>, <code>oxygenSaturation</code>, <code>wristTemperature</code>, <code>sleepAnalysis</code>, <code>workout</code>. Sağlık merceği ayrıca 18 hayati işaret metriğini okur (yürüme hızı, adım uzunluğu, merdiven çıkış hızı, gün ışığı süresi, kulaklık ses maruziyeti dâhil).</p>
+
+<table class="compact">
+<thead><tr><th style="width:52mm">Sorgu türü</th><th>Kullanım</th></tr></thead>
+<tbody>
+<tr><td>HKStatisticsCollectionQuery</td><td>Günlük özetler — gün başına ortalama/toplam. Taban çizgisi beslemesi.</td></tr>
+<tr><td>HKAnchoredObjectQuery</td><td>Artımlı senkronizasyon — son çapadan beri eklenen/silinen örnekler.</td></tr>
+<tr><td>HKWorkoutSession + HKLiveWorkoutBuilder</td><td>Watch'ta canlı seans; kalp hızı ve enerji akışı.</td></tr>
+<tr><td>HKMetadataKeyWeather…</td><td>Antrenman meta verisinden sıcaklık ve nem — ısı adaptasyonu motorunun girdisi.</td></tr>
+</tbody>
+</table>
+
+<h4>Geriye doldurma</h4>
+
+<p>İlk kurulumda 60 günlük geçmiş doldurulur, ama tek seferde değil: her geçişte en fazla 7 gün işlenir ve aradaki adımlarda ana iş parçacığı serbest bırakılır. Böylece kurulum ekranı donmaz ve HealthKit hız sınırına takılmaz.</p>
+
+<h3 id="s34"><span class="num">3.4</span>Depo soyutlaması ve önbellek</h3>
+
+<p>Motorlar SwiftData'yı hiç görmez. Aralarındaki sözleşme bir protokoldür — <code>BiometricDayRepository</code> — ve gerçek uygulaması bir <code>@ModelActor</code>'dır. Testlerde aynı protokolün bellek-içi sahtesi kullanılır; bu, 588 testin hiçbirinin bir veritabanına ihtiyaç duymamasının sebebidir.</p>
+
+<p>Bu soyutlamanın üzerine yol haritası v4'te bir önbellek katmanı eklendi. Sorun ölçülmüştü: bir sabah yeniden hesaplamasında sekiz farklı motor, <em>aynı</em> 60 günlük pencereyi ayrı ayrı istiyordu.</p>
+
+<pre><span class="k">private static let</span> minimumHistoryDays: <span class="k">Double</span> = <span class="s">150</span>
+<span class="k">private static let</span> forwardSlackDays: <span class="k">Double</span> = <span class="s">1</span>
+
+<span class="k">func</span> dayRecords(from start: Date, through end: Date) <span class="k">async throws</span> -> [BiometricDaySnapshot] {
+    requestCount += <span class="s">1</span>
+    <span class="k">if let</span> window, window.start &lt;= start, window.end &gt;= end {
+        <span class="k">return</span> slice(window.days, from: start, through: end)   <span class="c">// disk yok</span>
+    }
+    <span class="c">// Pencereyi genişlet: hem geriye 150 güne, hem ileriye 1 gün paya.</span>
+    <span class="k">let</span> widenedEnd = max(end, window?.end ?? end).addingTimeInterval(forwardSlackDays * <span class="s">86_400</span>)
+    <span class="k">let</span> floor = widenedEnd.addingTimeInterval(-minimumHistoryDays * <span class="s">86_400</span>)
+    <span class="k">let</span> widenedStart = min(start, window?.start ?? start, floor)
+    <span class="k">let</span> days = <span class="k">try await</span> upstream.dayRecords(from: widenedStart, through: widenedEnd)
+    upstreamReadCount += <span class="s">1</span>
+    window = (widenedStart, widenedEnd, days)
+    <span class="k">return</span> slice(days, from: start, through: end)
+}</pre>
+
+<p><code>DayRecordCache</code> bir <code>actor</code>'dır ve aynı protokole uyar; yani çağıran taraf için görünmezdir. Genişletme stratejisi kasıtlıdır: 150 günlük taban, en uzun geçmiş isteyen motorun (ACWR + mevsimsel karşılaştırma) ihtiyacını tek okumada karşılar. <code>requestCount</code> ve <code>upstreamReadCount</code> sayaçları yalnızca test içindir — <code>DayRecordCacheTests</code> sekiz isteğin bir okumaya indiğini doğrular.</p>

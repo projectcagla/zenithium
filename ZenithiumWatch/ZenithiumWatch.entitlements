@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The watch app reads the snapshot the phone writes and appends journal taps to the
+	     shared outbox. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.projectcagla.zenithra</string>
+	</array>
+	<!-- Yol haritası v4, C1 — this target used to hold no HealthKit entitlement, on the
+	     grounds that the phone owned that relationship and the watch was a reader. The live
+	     session screen reverses that deliberately: a workout session has to be started on
+	     the device the heart rate comes from, and running one from the phone would mean the
+	     watch was the sensor for a session it did not own. What the watch reads is still
+	     narrow — heart rate during a session it started — and the only thing it writes is
+	     the workout itself. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
+</dict>
+</plist>

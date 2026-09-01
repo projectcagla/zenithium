@@ -1,0 +1,105 @@
+<h2 id="ch7"><span class="kicker">Bölüm yedi</span><span class="num">07</span>Zekâ katmanı</h2>
+
+<p class="lead">Uygulamada "yapay zekâ" iki farklı anlama gelir ve ikisini karıştırmamak önemlidir. Kararı veren şey deterministik motorlardır; dil modeli yalnızca o kararı yeniden ifade eder ve asla değiştiremez.</p>
+
+<h3 id="s71"><span class="num">7.1</span>Üç katmanlı anlatım</h3>
+
+<pre>1. <span class="k">NarrativeEngine</span>       Hangi olgu bugün önemli? → deterministik cümle
+                          Her cihazda çalışır · test edilebilir · pil harcamaz
+                                 ↓
+2. <span class="k">FoundationModelNarrator</span>  Aynı cümleyi daha doğal ifade et (cihaz içi model)
+                          Yalnızca modeli olan cihazlarda · #if canImport(FoundationModels)
+                                 ↓
+3. <span class="k">SafetyFilter</span>           Çıktı §1 ve §12'yi çiğniyor mu? Çiğniyorsa <span class="k">reddet</span>
+                          Reddedilirse 1. adımın cümlesi gösterilir</pre>
+
+<p>Bu sıralamanın sonucu şudur: <strong>dil modeli başarısız olabilir, garanti olamaz.</strong> Model yoksa, yavaşsa, saçmalarsa veya filtreye takılırsa kullanıcı yine doğru bir cümle görür — eksik bir şey olmaz. Çoğu cihazda 2. adım hiç çalışmaz ve bu, kullanıcı için fark edilmez.</p>
+
+<h3 id="s72"><span class="num">7.2</span>Güvenlik filtresi</h3>
+
+<p>Üretilen her cümlenin geçtiği son nokta. Uyguladığı üç çizgi doğrudan şartnameden gelir:</p>
+
+<ul>
+<li><strong>§12</strong> — teşhis yok, bir duruma isim verme yok, tedavi yok, doz yok.</li>
+<li><strong>§1</strong> — kalori hedefi yok, kilo hedefi yok, kısıtlama teşviki yok.</li>
+<li><strong>§12</strong> — kullanıcıya asla bir belirtiyi görmezden gelmesi söylenmez.</li>
+</ul>
+
+<p>Eşleştirme <em>normalize edilmiş token'lar üzerinde önek kökleriyle</em> yapılır, çünkü Türkçe eklemelidir: "ilaç", "ilacı" ve "ilaçları" tek bir fikir ve üç token'dır. Dört karakter ve üzeri bir kök önekle eşleşir; daha kısası birebir eşleşmek zorundadır — bu, "doz" kökünün sadece o harflerle başlayan bir kelimede tetiklenmesini önler.</p>
+
+<div class="note">
+  <span class="tag">Kelime değil iddia yasaktır</span>
+  <p>Liste, uygulamanın kendi dürüst metninde geçen kelimeler konusunda kasıtlı olarak muhafazakârdır. "Hastalık" kullanıcının kendi kaydettiği bir günlük davranışıdır, dolayısıyla bir cümle onu meşru biçimde adlandırabilir. Yasak olan <em>iddiadır</em> — "hastasın", "hastalığın var" — kelimenin kendisi değil.</p>
+  <p>Yanlış pozitifler burada zaten ucuzdur: geri düşüş deterministik metindir ve o metin her hâlükârda doğru olacaktı.</p>
+</div>
+
+<h3 id="s73"><span class="num">7.3</span>Laboratuvar OCR hattı</h3>
+
+<p>Kullanıcı bir kan tahlili PDF'i eklediğinde hat şöyle işler:</p>
+
+<table class="compact">
+<thead><tr><th style="width:14mm">Adım</th><th style="width:34mm">Çatı</th><th>İş</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>PDFKit</td><td>Gömülü metin katmanı varsa doğrudan çıkarılır</td></tr>
+<tr><td>2</td><td>Vision</td><td>Metin katmanı yoksa (taranmış PDF) OCR çalıştırılır</td></tr>
+<tr><td>3</td><td>LabDocumentReader</td><td>Satırlara ayırma, sayı ve birim ayrıştırma</td></tr>
+<tr><td>4</td><td>BiomarkerDefinition</td><td>Satırdaki adı katalogla eşleştirme</td></tr>
+<tr><td>5</td><td>SwiftData</td><td><code>BloodMarker</code> kaydı; PDF <code>.externalStorage</code> ile saklanır</td></tr>
+</tbody>
+</table>
+
+<h4>Biyobelirteç kataloğu</h4>
+
+<div class="strip">
+  <div><span class="v">51</span><span class="l">Biyobelirteç</span></div>
+  <div><span class="v">202</span><span class="l">Eş ad</span></div>
+  <div><span class="v">9</span><span class="l">Panel</span></div>
+  <div><span class="v">1.353</span><span class="l">Satır</span></div>
+</div>
+
+<p>Paneller: hematoloji, lipid, metabolik, tiroid, hormon, iltihap, demir, mikrobesin, organ. Her belirteç <code>SexSpecificRange</code> taşır — transaminazlar gibi referans bandı cinsiyete göre değişen belirteçlerde herkese tek bir bant göstermek yanlış olurdu.</p>
+
+<h4>Eşleştirme performansı</h4>
+
+<p>İlk uygulama her satır için 202 eş adın hepsini deniyordu ve her deneme yeni bir dize kopyası üretiyordu. v4'te bu, <strong>token indeksli</strong> bir yapıya çevrildi:</p>
+
+<pre><span class="k">struct</span> SynonymNeedle { <span class="c">/* eş ad, token'ları, hedef belirteç */</span> }
+
+<span class="k">static let</span> needles: [SynonymNeedle]                   <span class="c">// 202 eş ad</span>
+<span class="k">static let</span> needleIndex: [<span class="k">String</span>: [SynonymNeedle]]     <span class="c">// ilk token → adaylar</span>
+                                                     <span class="c">// uzundan kısaya sıralı</span>
+
+<span class="c">// Sekiz token'lı bir satır artık 202 değil, bir avuç aday değerlendirir.</span>
+<span class="k">guard let</span> candidates = needleIndex[tokenTexts[position]] <span class="k">else</span> { <span class="k">continue</span> }</pre>
+
+<p>Eşleştirme <em>kopyalamadan</em> yapılır — <code>matches(_:in:at:)</code> token dizisi üzerinde konum karşılaştırır, alt dize üretmez. Uzundan kısaya sıralama, "ldl kolesterol"ün "ldl"den önce denenmesini garanti eder. <code>candidatesExamined(inLine:)</code> yalnızca testler içindir ve <code>BiomarkerCatalogTests</code> aday sayısındaki düşüşü doğrular.</p>
+
+<h2 id="ch8"><span class="kicker">Bölüm sekiz</span><span class="num">08</span>Veri taşınabilirliği</h2>
+
+<p class="lead">Sunucusu olmayan bir uygulamada veri kullanıcının cihazında hapis olmamalıdır. Zenithium dört çıkış yolu sunar ve hepsi kullanıcının başlattığı, kullanıcının hedefini seçtiği işlemlerdir.</p>
+
+<h3 id="s81"><span class="num">8.1</span>Tam arşiv</h3>
+
+<p><code>ZenithiumArchive</code> her SwiftData modelini tek bir <code>Codable</code> yapıya toplar; <code>ArchiveService</code> onu bir dosyaya yazar ve geri okur. Kullanıcı arayüzü <code>DataTransferView</code>'dur.</p>
+
+<div class="note warn">
+  <span class="tag">İki kez tekrarlanan hata — kayda geçirildi</span>
+  <p>Swift'in sentezlediği <code>Decodable</code>, <strong>eksik bir anahtarda özellik varsayılanına düşmez — hata fırlatır.</strong> Bu iki kez vurdu: önce <code>supplementCourses</code> alanında (<code>Optional</code> yapılarak çözüldü), sonra çekirdek bir tip olan <code>UserProfileSnapshot.appearance</code>'da. İkincisi için tüm <code>Codable</code> uyumu elle yazıldı ve sonradan eklenen her alan <code>decodeIfPresent</code> ile okunuyor.</p>
+  <p>Her ikisi de elle yazılmış bir fikstür testiyle yakalandı: eski sürümde üretilmiş bir arşiv JSON'u, yeni kodla okunabilmelidir. Bu test olmasaydı, kullanıcılar eski yedeklerini geri yükleyemeyecekti ve bu ancak sahada fark edilirdi.</p>
+</div>
+
+<h3 id="s82"><span class="num">8.2</span>Hekim raporu</h3>
+
+<p><code>ReportDocumentRenderer</code> son 90 günün özetini bir PDF'e çizer: taban çizgileri, eğilimler, kan belirteçleri, ağrı kayıtları. Rapor §12'ye uyar — bulgu bildirmez, <em>veri</em> sunar ve yorumu hekime bırakır.</p>
+
+<p>Bu, depodaki <strong>tek <code>UIKit</code> import'udur</strong>. Gerekçe dosyada yazılıdır: <code>UIGraphicsPDFRenderer</code>'ın SwiftUI karşılığı yoktur ve saf Core Graphics ile aynı işi yapmak metin yerleşimini elle çözmeyi gerektirirdi.</p>
+
+<h3 id="s83"><span class="num">8.3</span>GPX ve yarış planı</h3>
+
+<p><code>GPXReader</code> bir parkur dosyasından mesafe ve yükseklik profili çıkarır; <code>CourseProfile</code> bunu <code>RacePlanEngine</code>'in okuyabileceği bölümlere çevirir. Üretilen plan <code>RacePlanIO</code> ile dışa aktarılabilir. Ayrıştırıcı <code>XMLParser</code> tabanlıdır ve bozuk/eksik yükseklik verisine karşı testlidir.</p>
+
+<h3 id="s84"><span class="num">8.4</span>Belge kasası</h3>
+
+<p><code>HealthDocumentLog</code> kullanıcının eklediği sağlık belgelerini saklar. PDF'in kendisi <code>@Attribute(.externalStorage)</code> ile veritabanı dosyasının dışında tutulur — aksi hâlde birkaç megabaytlık taramalar SwiftData deposunu şişirirdi.</p>
+
+<p>Arama, çıkarılmış metin üzerinde çalışır. v4'ten önce her tuş vuruşunda ~2 MB metin yeniden katlanıyordu; şimdi <code>DocumentsViewModel.Content</code> yükleme anında bir <code>searchText: [UUID: String]</code> indeksi ve <code>byYear</code> gruplamasını <em>bir kez</em> kurar ve filtreleme yalnızca indekse bakar.</p>

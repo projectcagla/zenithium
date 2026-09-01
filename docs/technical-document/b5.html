@@ -1,0 +1,147 @@
+<h2 id="ch5"><span class="kicker">Bölüm beş</span><span class="num">05</span>Arayüz ve tasarım sistemi</h2>
+
+<p class="lead">Arayüzün tamamı SwiftUI'dır: tek bir storyboard, tek bir <code>UIViewRepresentable</code> yoktur. Grafikler üçüncü parti bir kütüphaneden değil, Swift Charts'tan ve elle yazılmış <code>Canvas</code> çizimlerinden gelir.</p>
+
+<h3 id="s51"><span class="num">5.1</span>Gezinme</h3>
+
+<p>Kök gezinme iOS 18'in değer tabanlı <code>Tab(value:)</code> API'siyle kurulmuştur. Beş sekme vardır ve ikincisi <strong>merceğe göre değişir</strong>:</p>
+
+<table class="compact">
+<thead><tr><th style="width:26mm">Sekme</th><th style="width:34mm">Simge</th><th>İçerik</th></tr></thead>
+<tbody>
+<tr><td>Bugün</td><td><code>heart.fill</code></td><td>Toparlanma, reçete, günün özeti</td></tr>
+<tr><td>Yük / Kaslar / Sağlık</td><td>merceğe göre</td><td>Dayanıklılık+hibrit → Yük · Kuvvet → Kaslar · Sağlık → Sağlık</td></tr>
+<tr><td>Uyku</td><td><code>moon.zzz.fill</code></td><td>Uyku skoru, borç defteri, sosyal jetlag</td></tr>
+<tr><td>Günlük</td><td><code>square.and.pencil</code></td><td>Öznel giriş, korelasyon bulguları</td></tr>
+<tr><td>Daha fazla</td><td><code>square.grid.2x2.fill</code></td><td>15 hedefli merkez (hub)</td></tr>
+</tbody>
+</table>
+
+<p>Merkez ekranı 15 hedef sunar: <span class="mono">strain · load · endurance · racePlan · strength · muscles · plan · vitals · hybrid · trends · bloodwork · report · documents · dataTransfer · settings</span>. Hepsi <code>HubDestination</code> enum'unda tanımlıdır ve <code>CaseIterable</code>'dır — yeni bir ekran eklemek, listeye bir <code>case</code> eklemektir.</p>
+
+<h3 id="s52"><span class="num">5.2</span>Ekran envanteri</h3>
+
+<p>55 görünüm dosyası 19 aileye ayrılmıştır: <span class="mono">Today · Sleep · Journal · Load · Strain · Muscle · Strength · Hybrid · Endurance · Vitals · Trends · Bloodwork · Documents · Report · Plan · Circadian · Onboarding · Settings · DesignSystem</span>.</p>
+
+<h3 id="s53"><span class="num">5.3</span>Renk altyapısı</h3>
+
+<p>Yol haritası v4'ün en fazla ölçüm gerektiren kararı buydu. Renkler <code>ZenithiumColor</code> üzerinden çağrılıyordu ve <strong>712 çağrı yeri</strong> vardı. Karanlık/aydınlık tema desteği eklemek için iki seçenek vardı:</p>
+
+<table class="compact">
+<thead><tr><th style="width:44mm">Seçenek</th><th>Sonucu</th></tr></thead>
+<tbody>
+<tr><td>Ortam (environment) enjeksiyonu</td><td>712 çağrı yerinin hepsi değişirdi; ayrıca 6 tanesi ortamı okuyamayan statik bağlamlarda (<code>WidgetStyle</code>, <code>ChartChrome</code>, <code>ZenithiumFont</code>) — bunlar hiç çalışmazdı</td></tr>
+<tr><td><strong>Varlık kataloğu</strong> <span class="chip">seçilen</span></td><td>Renk çizim anında çözülür; <strong>hiçbir çağrı yeri değişmedi</strong>; statik bağlamlar da doğru çalışır</td></tr>
+</tbody>
+</table>
+
+<p>Uygulanan yapı üç katmanlıdır:</p>
+
+<pre><span class="c">// 1. Tek doğruluk kaynağı: bir Python tablosu</span>
+<span class="c">//    Scripts/generate-colors.py</span>
+PALETTE: dict[str, tuple[str, str, str]]   <span class="c"># ad → (koyu, açık, açıklama)</span>
+         ↓ üretir
+<span class="c">// 2. 19 .colorset klasörü + Swift enum</span>
+Resources/Zenithium.xcassets/Colors/*.colorset/Contents.json
+Views/DesignSystem/ZenithiumColorAsset.swift        <span class="c">// GENERATED</span>
+         ↓
+<span class="c">// 3. Değişmeyen cephe</span>
+<span class="k">enum</span> ZenithiumColor {
+    <span class="k">private static func</span> asset(_ a: ZenithiumColorAsset) -> Color { a.color }
+    <span class="k">static var</span> accent: Color { asset(.accent) }        <span class="c">// 712 çağrı yeri aynı kaldı</span>
+}</pre>
+
+<p>Üretecin tek tabloda toplanması, dize anahtarlarını yazım hatasına kapalı hâle getirir: bir renk adı yalnızca bir yerde yazılır ve hem katalog hem enum ondan üretilir. <code>ZenithiumPalette</code> ayrıca <code>.dark</code> ve <code>.light</code> paletlerini gözden geçirilebilir değerler olarak tutar.</p>
+
+<h3 id="s54"><span class="num">5.4</span>Tasarım sistemi bileşenleri</h3>
+
+<table class="wide">
+<thead><tr><th style="width:42mm">Bileşen</th><th>Görevi</th></tr></thead>
+<tbody>
+<tr><td>ZenithiumFont</td><td>Tipografi ölçeği. Hepsi <code>Font.system(.style)</code> tabanlı — yani <strong>Dynamic Type'ı ücretsiz alır</strong>. Sabit punto yok.</td></tr>
+<tr><td>ZenithiumMetrics</td><td><code>ZenithiumSpacing</code> ve <code>ZenithiumRadius</code>. v4'te eklendi; dosyalara serpilmiş boşluk sabitlerinin yerini aldı.</td></tr>
+<tr><td>ChartChrome</td><td><code>.zenithiumChartChrome(dateAxis:desiredXCount:)</code> — her grafiğin eksen, ızgara ve etiket davranışını tek yerden verir.</td></tr>
+<tr><td>SkeletonView</td><td>Yükleme iskeletleri (scored / cards / chart düzenleri). Parıltı yalnızca bloklara maskelenir ve <strong>Reduce Motion açıkken durur</strong>.</td></tr>
+<tr><td>SeriesChartDescriptor</td><td>Yeniden kullanılabilir <code>AXChartDescriptorRepresentable</code> — grafikleri sesli grafik (audio graph) olarak erişilebilir yapar.</td></tr>
+<tr><td>ArcGauge · Sparkline · SpectralField</td><td><code>Canvas</code> ve <code>Path</code> ile çizilen özel görselleştirmeler. <code>Animatable</code> uyumlarıyla değer geçişleri yumuşatılır.</td></tr>
+<tr><td>LensMark</td><td>Dört mercek için çizilmiş işaretler. v4'te SF Symbol yerine <code>Shape</code> geometrisi seçildi: yanlış kılavuzlu bir sembol gürültülü biçimde başarısız olmaz, sessizce kayık çizer — ve bu ortamda bunu doğrulayacak hiçbir şey yok.</td></tr>
+<tr><td>BandChip · MetricTile · SectionCard · StateViews</td><td>Tekrar eden yerleşim öğeleri; boş/hata/yükleme durumları dâhil.</td></tr>
+</tbody>
+</table>
+
+<h3 id="s55"><span class="num">5.5</span>Erişilebilirlik</h3>
+
+<table class="compact">
+<thead><tr><th style="width:44mm">Özellik</th><th>Uygulanışı</th></tr></thead>
+<tbody>
+<tr><td>Dynamic Type</td><td>Tüm tipografi <code>Font.system(.style)</code>; özel ölçekli boyutlarda <code>@ScaledMetric</code></td></tr>
+<tr><td>Sesli grafik</td><td><code>.accessibilityChartDescriptor</code> — v4'te 4 grafiğin 3'ünde eksikti, tamamlandı</td></tr>
+<tr><td>VoiceOver rotor</td><td>Kas haritasında bölge bölge gezinme</td></tr>
+<tr><td>Reduce Motion</td><td>İskelet parıltısı ve geçiş animasyonları devre dışı</td></tr>
+<tr><td>Dokunsal geri bildirim</td><td><code>.sensoryFeedback</code> — bant değişimi, kayıt tamamlama</td></tr>
+<tr><td>Sayısal geçiş</td><td><code>.contentTransition(.numericText())</code> — değişen skor okunabilir biçimde döner</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+  <span class="tag">Bir denetim hatasının düzeltilmesi</span>
+  <p>v4 yol haritası "11 görünüm dosyasında erişilebilirlik yok" diyordu. Bu, dar bir <span class="kbd">grep</span>'ten geliyordu ve <strong>yanlıştı</strong>: erişilebilirlik ifadesi bulunmayan yalnızca 6 dosya var ve hiçbiri görünüm değil; kas haritası rotoru zaten mevcuttu. Gerçek boşluk sesli grafiklerdi ve düzeltilen o oldu.</p>
+</div>
+
+<h3 id="s56"><span class="num">5.6</span>Tema</h3>
+
+<p><code>AppearancePreference</code> üç değer alır: sistem, aydınlık, karanlık. Tip <code>Foundation</code>-only bir <code>Domain</code> dosyasındadır; SwiftUI köprüsü (<code>colorScheme</code> dönüşümü) ayrı bir dosyada durur. Bu bölünme keyfi değil — <code>Domain</code>'in SwiftUI'a bağımlı olması watch ve widget hedeflerini kırardı (bkz. §2.1).</p>
+
+<h2 id="ch6"><span class="kicker">Bölüm altı</span><span class="num">06</span>Sistem entegrasyonu</h2>
+
+<p class="lead">Uygulama telefonun içinde kalmaz: saatte canlı seans yürütür, kilit ekranında yaşayan bir kart gösterir, Kontrol Merkezi'ne bir düğme koyar ve Siri'ye cevap verir. Hepsi tek bir veri modelini paylaşır.</p>
+
+<h3 id="s61"><span class="num">6.1</span>Apple Watch</h3>
+
+<p>watchOS uygulaması 7 dosyadır ve tek bir işi vardır: seansı yürütmek. <code>HKWorkoutSession</code> ve <code>HKLiveWorkoutBuilder</code> ile kalp hızı ve enerji akışını okur, <code>LiveSessionEngine</code> ile anlık zorlanmayı hesaplar ve durumu telefona yayınlar.</p>
+
+<div class="note">
+  <span class="tag">Neden doyum tuzağı önemliydi</span>
+  <p>Canlı zorlanma hesabı naif yapıldığında yanlış çıkıyor. Zorlanma ölçeği doyuma giden bir üstel eğridir; seansın parçalarını ayrı ayrı zorlanmaya çevirip toplamak, tek integralden farklı bir sayı verir. Ölçülen fark: naif toplama 13,4 verirken doğru integral 11,6 veriyordu. Motor TRIMP'i biriktirir ve <em>ölçeğe yalnızca en sonda</em> çevirir.</p>
+</div>
+
+<h4 lang="en">WatchConnectivity</h4>
+
+<p>Telefon–saat köprüsü <code>WCSession.updateApplicationContext</code> kullanır — mesaj kuyruğu değil. Bu bilinçli: uygulama bağlamı <strong>son-durum-kazanır</strong> semantiğine sahiptir, yani saat üç saniye boyunca bağlantısız kalırsa üç ara güncelleme birikmez, yalnızca en sonuncusu teslim edilir. Canlı bir seans için doğru davranış budur; sıraya alınmış eski durumlar kullanıcıya geçmişi gösterirdi.</p>
+
+<h3 id="s62"><span class="num">6.2</span>Widget'lar</h3>
+
+<table class="compact">
+<caption><span lang="en">ZenithiumWidgetBundle</span> — 7 widget + Live Activity</caption>
+<thead><tr><th style="width:46mm">Widget</th><th style="width:30mm">Aile</th><th>Gösterdiği</th></tr></thead>
+<tbody>
+<tr><td>RecoveryStrainWidget</td><td>Ana ekran</td><td>Toparlanma + zorlanma çifti</td></tr>
+<tr><td>ThreeDayTrendWidget</td><td>Ana ekran</td><td>Üç günlük eğilim</td></tr>
+<tr><td>JournalWidget</td><td>Ana ekran</td><td>Günlük girişi kısayolu</td></tr>
+<tr><td>RecoveryCircularWidget</td><td>Kilit — dairesel</td><td>Toparlanma halkası</td></tr>
+<tr><td>RecoveryRectangularWidget</td><td>Kilit — dikdörtgen</td><td>Skor + tek satır gerekçe</td></tr>
+<tr><td>RecoveryInlineWidget</td><td>Kilit — satır içi</td><td>Tek satır metin</td></tr>
+<tr><td>RecoveryControlWidget</td><td>Kontrol Merkezi</td><td>Eylem düğmesi kısayolu</td></tr>
+<tr><td>LiveSessionActivity</td><td>Live Activity</td><td>Saatte koşan seans — kilit ekranı + Dynamic Island</td></tr>
+</tbody>
+</table>
+
+<div class="note warn">
+  <span class="tag">v4'te bulunan sessiz hata</span>
+  <p><code>JournalWidget</code> ve <code>RecoveryControlWidget</code> Faz 22'de yazılmış ama <strong><code>WidgetBundle</code>'a hiç eklenmemişti.</strong> Kodu ne kadar doğru olursa olsun, pakette olmayan bir widget cihazda var değildir — ikisi de aylardır ölüydü. v4'te kayıt edildiler.</p>
+</div>
+
+<h3 id="s63"><span class="num">6.3</span>Live Activity</h3>
+
+<p><code>ActivityKit</code> ile saatte koşan seans kilit ekranında ve Dynamic Island'da canlı görünür. <code>ActivityAttributes</code> sabit bilgiyi (seans tipi, başlangıç), <code>ContentState</code> değişen bilgiyi (süre, kalp hızı, zorlanma) taşır. Güncellemeler <code>ActivityContent(staleDate:)</code> ile yayımlanır — böylece saat bağlantısını kaybederse kart "bayat" işaretlenir ve kullanıcıya donmuş bir sayı gösterilmez.</p>
+
+<h3 id="s64"><span class="num">6.4</span>App Intents ve arka plan</h3>
+
+<table class="compact">
+<thead><tr><th style="width:44mm">Yüzey</th><th>Davranış</th></tr></thead>
+<tbody>
+<tr><td>AppIntents</td><td>Siri ve Kısayollar: toparlanmayı sor, günlük girişi aç, seans başlat</td></tr>
+<tr><td>BackgroundTasks</td><td><code>BGAppRefreshTask</code> ile sabah yeniden hesaplaması; <code>DispatchQueue</code> yasağı nedeniyle kayıt <code>Task</code> ile yapılır</td></tr>
+<tr><td>OSSignposter</td><td>v4'te eklendi — <code>orchestration</code>, <code>labs</code>, <code>ui</code> kategorileri; Instruments'ta ölçülebilir aralıklar</td></tr>
+</tbody>
+</table>

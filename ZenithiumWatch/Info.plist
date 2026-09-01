@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Zenithium</string>
+	<key>CFBundleName</key>
+	<string>Zenithium</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.zenithium.app</string>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<false/>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>watch-companion</string>
+	</array>
+	<!-- Yol haritası v4, C1 — the live session screen. `workout-processing` is what keeps
+	     the session collecting while the wrist is down, which is most of a run. -->
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Zenithium antrenman sırasında nabzını okuyup günün zorlanmasını canlı hesaplar. Veri cihazından çıkmaz.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Zenithium başlattığın antrenmanı Sağlık uygulamasına kaydeder.</string>
+</dict>
+</plist>

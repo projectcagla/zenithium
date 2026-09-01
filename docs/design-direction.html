@@ -1,0 +1,539 @@
+<title>Zenithium Design Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* ───────────────────────────────────────────────────────────────
+   Zenithium — tek bir görsel dünyaya bağlı, koyu enstrüman paneli.
+   Uygulamanın kendisi OLED siyahı olduğu için sayfa da tek temalı.
+   Her renk açıkça boyanıyor; hiçbiri host temasından miras alınmıyor.
+   ─────────────────────────────────────────────────────────────── */
+:root{
+  --ink:#07090E;          /* mavi eğilimli near-black — seçilmiş, miras değil */
+  --surface:#0D111A;
+  --surface-2:#131A26;
+  --hairline:#1F2836;
+  --hairline-soft:#151C28;
+
+  --text:#E9EDF5;
+  --text-dim:#8C96AB;
+  --text-faint:#59627A;
+
+  /* Anodize titanyum spektrumu — ismin kendisinden türetildi */
+  --s1:#2E2A7A;   /* derin indigo */
+  --s2:#6E3B9E;   /* menekşe */
+  --s3:#BE3F79;   /* magenta */
+  --s4:#E27B3C;   /* kehribar */
+  --s5:#2FB8A6;   /* teal — etkileşim vurgusu */
+
+  --accent:#3ED0BE;
+
+  /* Semantik okuma renkleri — yalnızca küçük ve kesin göstergelerde */
+  --ready:#3FCF8E;
+  --moderate:#F0B23F;
+  --recovering:#EF5560;
+
+  --font-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+  --measure:66ch;
+  --r:14px;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:16.5px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Zemin: çok yavaş nefes alan spektral alan. Dekorasyon değil —
+   uygulamanın ambiyans katmanının birebir örneği. */
+.field{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(58% 44% at 18% 8%,  color-mix(in oklab,var(--s2) 34%,transparent) 0%, transparent 62%),
+    radial-gradient(52% 40% at 84% 4%,  color-mix(in oklab,var(--s1) 42%,transparent) 0%, transparent 60%),
+    radial-gradient(46% 34% at 62% 30%, color-mix(in oklab,var(--s3) 16%,transparent) 0%, transparent 66%);
+  filter:blur(4px);
+  animation:drift 34s ease-in-out infinite alternate;
+}
+@keyframes drift{ from{transform:translate3d(0,0,0) scale(1);} to{transform:translate3d(0,-2.5%,0) scale(1.06);} }
+@media (prefers-reduced-motion:reduce){ .field{animation:none;} }
+
+.wrap{position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:0 28px 120px;}
+
+/* ── Tipografi ─────────────────────────────────────────── */
+h1,h2,h3{ font-family:var(--font-display); text-wrap:balance; margin:0; }
+h1{
+  font-size:clamp(2.7rem,6.4vw,4.5rem);
+  font-variation-settings:"wdth" 112,"wght" 700;
+  line-height:1.02; letter-spacing:-0.022em;
+}
+h2{
+  font-size:clamp(1.5rem,2.9vw,2.05rem);
+  font-variation-settings:"wdth" 108,"wght" 650;
+  line-height:1.15; letter-spacing:-0.014em;
+}
+h3{
+  font-size:1.05rem;
+  font-variation-settings:"wdth" 104,"wght" 600;
+  letter-spacing:-0.006em;
+}
+p{margin:0; max-width:var(--measure);}
+strong{color:var(--text); font-weight:600;}
+
+.eyebrow{
+  font-family:var(--font-mono); font-size:0.7rem; font-weight:500;
+  letter-spacing:0.19em; text-transform:uppercase; color:var(--accent);
+}
+.dim{color:var(--text-dim);}
+.faint{color:var(--text-faint);}
+
+/* ── Bölüm yapısı ──────────────────────────────────────── */
+section{padding-top:88px;}
+.section-head{display:flex; flex-direction:column; gap:12px; margin-bottom:30px;}
+.rule{height:1px; background:linear-gradient(90deg,var(--hairline) 0%,transparent 78%); margin-top:6px;}
+
+/* ── Hero ──────────────────────────────────────────────── */
+.hero{padding:104px 0 8px; display:flex; flex-direction:column; gap:26px;}
+.hero-lede{font-size:1.18rem; color:var(--text-dim); max-width:56ch;}
+.wordmark{
+  font-family:var(--font-display);
+  font-variation-settings:"wdth" 125,"wght" 800;
+  font-size:clamp(3.4rem,11vw,7.4rem);
+  line-height:0.9; letter-spacing:-0.035em;
+  background:linear-gradient(96deg,var(--s5) 0%,var(--text) 26%,var(--s2) 66%,var(--s3) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+/* ── Kart ──────────────────────────────────────────────── */
+.card{
+  background:linear-gradient(180deg,var(--surface-2) 0%,var(--surface) 100%);
+  border:1px solid var(--hairline);
+  border-radius:var(--r);
+  padding:24px;
+}
+.grid{display:grid; gap:18px;}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));}
+
+/* ── Palet ─────────────────────────────────────────────── */
+.spectrum{
+  height:88px; border-radius:var(--r); border:1px solid var(--hairline);
+  background:linear-gradient(90deg,var(--s1),var(--s2),var(--s3),var(--s4),var(--s5));
+}
+.swatches{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:10px; margin-top:14px;}
+.sw{border:1px solid var(--hairline); border-radius:10px; overflow:hidden; background:var(--surface);}
+.sw .chip{height:52px;}
+.sw .meta{padding:9px 11px; display:flex; flex-direction:column; gap:1px;}
+.sw .name{font-size:0.78rem; color:var(--text-dim);}
+.sw .hex{font-family:var(--font-mono); font-size:0.74rem; color:var(--text-faint);}
+
+/* ── Tip örneği ────────────────────────────────────────── */
+.type-row{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; padding:15px 0; border-bottom:1px solid var(--hairline-soft);}
+.type-row:last-child{border-bottom:0;}
+.type-label{font-family:var(--font-mono); font-size:0.7rem; color:var(--text-faint); letter-spacing:0.1em; text-transform:uppercase; min-width:132px;}
+.numeral{
+  font-family:var(--font-display); font-variation-settings:"wdth" 125,"wght" 700;
+  font-size:3.5rem; line-height:1; letter-spacing:-0.03em;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ── Yay (imza bileşen) ────────────────────────────────── */
+.arcs{display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:18px;}
+.arc-cell{display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;}
+.arc-cell svg{width:100%; max-width:230px; height:auto; display:block;}
+.arc-val{
+  font-family:var(--font-display); font-variation-settings:"wdth" 125,"wght" 700;
+  font-size:2.55rem; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-0.025em;
+}
+.arc-cap{font-size:0.82rem; color:var(--text-dim);}
+
+/* Semantik rozet — renk + şekil + yazı, üçü birden */
+.badge{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--font-mono); font-size:0.71rem; letter-spacing:0.07em; text-transform:uppercase;
+  padding:4px 9px; border-radius:100px; border:1px solid currentColor;
+}
+.badge::before{content:""; width:6px; height:6px; border-radius:2px; background:currentColor;}
+.b-ready{color:var(--ready);} .b-mod{color:var(--moderate);} .b-rec{color:var(--recovering);}
+
+/* ── Telefon maketi ────────────────────────────────────── */
+.phones{display:grid; grid-template-columns:repeat(auto-fit,minmax(258px,1fr)); gap:20px;}
+.phone{
+  background:var(--ink); border:1px solid var(--hairline); border-radius:26px;
+  padding:20px 17px; display:flex; flex-direction:column; gap:14px; position:relative; overflow:hidden;
+}
+.phone::before{
+  content:""; position:absolute; inset:-42% -30% auto -30%; height:74%;
+  background:radial-gradient(58% 100% at 50% 0%,var(--glow) 0%,transparent 70%);
+  opacity:.5; pointer-events:none;
+}
+.phone > *{position:relative;}
+.phone-top{display:flex; justify-content:space-between; align-items:baseline;}
+.persona{font-family:var(--font-mono); font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-faint);}
+.phone-hero{display:flex; flex-direction:column; align-items:center; gap:7px; padding:2px 0 4px;}
+.phone-metric{
+  font-family:var(--font-display); font-variation-settings:"wdth" 125,"wght" 700;
+  font-size:3.1rem; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-0.03em;
+}
+.verdict{font-size:0.9rem; color:var(--text); text-align:center; line-height:1.45; font-weight:500;}
+.rx{
+  border:1px solid var(--hairline); border-left:2px solid var(--accent);
+  border-radius:8px; padding:10px 12px; background:rgba(62,208,190,0.045);
+  font-size:0.83rem; line-height:1.5; color:var(--text-dim);
+}
+.rx b{color:var(--text); font-weight:600;}
+.rows{display:flex; flex-direction:column; gap:0;}
+.row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--hairline-soft); font-size:0.83rem;}
+.row:last-child{border-bottom:0;}
+.row .k{color:var(--text-dim);}
+.row .v{font-family:var(--font-mono); font-size:0.83rem; color:var(--text); font-variant-numeric:tabular-nums;}
+
+/* ── Tablo ─────────────────────────────────────────────── */
+.tablewrap{overflow-x:auto; border:1px solid var(--hairline); border-radius:var(--r);}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:0.88rem;}
+th,td{text-align:left; padding:11px 15px; border-bottom:1px solid var(--hairline-soft); vertical-align:top;}
+th{
+  font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--text-faint); font-weight:500; background:var(--surface);
+}
+tr:last-child td{border-bottom:0;}
+td.was{color:var(--text-faint); text-decoration:line-through; text-decoration-color:var(--text-faint);}
+td.now{color:var(--text); font-weight:500;}
+code{font-family:var(--font-mono); font-size:0.86em; color:var(--accent); background:rgba(62,208,190,0.09); padding:1px 5px; border-radius:4px;}
+
+.stack{display:flex; flex-direction:column; gap:14px;}
+.stack-lg{display:flex; flex-direction:column; gap:22px;}
+footer{margin-top:96px; padding-top:24px; border-top:1px solid var(--hairline); color:var(--text-faint); font-size:0.84rem;}
+</style>
+
+<div class="field"></div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Tasarım yönü · v1</div>
+    <div class="wordmark">Zenithium</div>
+    <h1>Enstrüman, uygulama değil.</h1>
+    <p class="hero-lede">
+      İsim iki şey söylüyor ve ikisi de tasarımı belirliyor. <strong>Zenith</strong> — bir yayın
+      en yüksek noktası. <strong>-ium</strong> — titanyum, iridyum gibi bir element eki. Bu bir
+      wellness uygulaması değil; gövdesi işlenmiş, okuması kesin bir alet.
+    </p>
+  </header>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">01 · Kimlik</div>
+      <h2>İsimden gelen iki karar</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="grid g2">
+      <div class="card stack">
+        <h3>Yay, halka değil</h3>
+        <p class="dim">
+          Kapalı halka herkesin: Apple Activity, Whoop, Garmin. Zenithium'un ölçtüğü her şey
+          zaten bir <strong>yay</strong> — sirkadiyen eğri yükselip alçalır, zorlanma gün
+          boyunca tırmanır, uyku bir gecelik kavistir. İsim de tam olarak o yayın tepesi.
+          İmza bileşen bu: <strong>açık yay ve işaretli zirve.</strong>
+        </p>
+      </div>
+      <div class="card stack">
+        <h3>Anodize titanyum</h3>
+        <p class="dim">
+          Titanyum anodize edildiğinde tek renk vermez — açıya göre indigodan menekşeye,
+          magentadan kehribara kayar. Palet buradan geliyor. Sonuç, "siyah zemin + tek neon
+          vurgu" klişesinden uzak, ismin kendisinden türemiş bir renk dünyası.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">02 · Palet</div>
+      <h2>Spektrum ambiyans için, semantik okuma için</h2>
+      <div class="rule"></div>
+    </div>
+    <p class="dim" style="margin-bottom:20px;">
+      Ayrım kasıtlı. Büyük yüzeyler spektrumu kullanır ve durumu <em>hissettirir</em>; küçük
+      göstergeler semantik renkleri kullanır ve durumu <em>söyler</em>. İyi bir aletin ekranı
+      güzeldir, göstergesi kesindir.
+    </p>
+    <div class="spectrum"></div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#2E2A7A"></div><div class="meta"><span class="name">İndigo</span><span class="hex">#2E2A7A</span></div></div>
+      <div class="sw"><div class="chip" style="background:#6E3B9E"></div><div class="meta"><span class="name">Menekşe</span><span class="hex">#6E3B9E</span></div></div>
+      <div class="sw"><div class="chip" style="background:#BE3F79"></div><div class="meta"><span class="name">Magenta</span><span class="hex">#BE3F79</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E27B3C"></div><div class="meta"><span class="name">Kehribar</span><span class="hex">#E27B3C</span></div></div>
+      <div class="sw"><div class="chip" style="background:#3ED0BE"></div><div class="meta"><span class="name">Teal · vurgu</span><span class="hex">#3ED0BE</span></div></div>
+      <div class="sw"><div class="chip" style="background:#07090E"></div><div class="meta"><span class="name">Zemin</span><span class="hex">#07090E</span></div></div>
+    </div>
+    <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <span class="badge b-ready">Hazır</span>
+      <span class="badge b-mod">Orta</span>
+      <span class="badge b-rec">Toparlanıyor</span>
+      <span class="faint" style="font-size:0.84rem;">— renk + şekil + yazı, üçü birden. Hiçbir durum yalnız renkle anlatılmaz.</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">03 · Tipografi</div>
+      <h2>Yuvarlaktan genişe</h2>
+      <div class="rule"></div>
+    </div>
+    <p class="dim" style="margin-bottom:22px;">
+      Mevcut kod SF Pro <strong>Rounded</strong> kullanıyor — sıcak, tüketici ürünü, Whoop'a
+      yakın. Enstrüman karakteri <strong>genişletilmiş</strong> genişlikten geliyor: aynı
+      aile, farklı eksen. iOS'ta tek satır: <code>.system(size:weight:).width(.expanded)</code>
+    </p>
+    <div class="card">
+      <div class="type-row">
+        <span class="type-label">Ana okuma</span>
+        <span class="numeral" style="font-variation-settings:'wdth' 125,'wght' 700;">72</span>
+        <span class="dim" style="font-size:0.86rem;">Archivo genişletilmiş · iOS'ta SF Pro Expanded</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Karşılaştırma</span>
+        <span class="numeral" style="font-variation-settings:'wdth' 62,'wght' 700; color:var(--text-faint);">72</span>
+        <span class="faint" style="font-size:0.86rem;">Dar — aynı sayı, çok daha az otorite</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Gövde</span>
+        <span style="font-family:var(--font-body); font-size:1rem;">IBM Plex Sans — mühendislik kökenli, nötr, yorulmadan okunur.</span>
+      </div>
+      <div class="type-row">
+        <span class="type-label">Veri</span>
+        <span style="font-family:var(--font-mono); font-size:0.95rem;">IBM Plex Mono · 62 ms · 5:40/km · 12.4</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">04 · İmza bileşen</div>
+      <h2>Yay</h2>
+      <div class="rule"></div>
+    </div>
+    <p class="dim" style="margin-bottom:24px;">
+      Tek bir geometri, dört farklı görev. Zirve işareti her zaman yayın en yüksek noktasında
+      durur; değişen, yayın ne kadar yükseldiği ve nerede olduğunuz.
+    </p>
+    <div class="card arcs">
+
+      <div class="arc-cell">
+        <svg viewBox="0 0 220 132" role="img" aria-label="Toparlanma yayı, 72 yüzde, hazır">
+          <defs>
+            <linearGradient id="ga" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stop-color="#2E2A7A"/><stop offset="55%" stop-color="#6E3B9E"/><stop offset="100%" stop-color="#3ED0BE"/>
+            </linearGradient>
+          </defs>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="#1F2836" stroke-width="9" stroke-linecap="round"/>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="url(#ga)" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="289" stroke-dashoffset="81"/>
+          <circle cx="151" cy="43" r="6" fill="#07090E" stroke="#3ED0BE" stroke-width="2.5"/>
+        </svg>
+        <div><div class="arc-val">72</div><div class="arc-cap">Toparlanma</div></div>
+        <span class="badge b-ready">Hazır</span>
+      </div>
+
+      <div class="arc-cell">
+        <svg viewBox="0 0 220 132" role="img" aria-label="Zorlanma yayı, 12.4 / tavan 17.0">
+          <defs>
+            <linearGradient id="gb" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stop-color="#2E2A7A"/><stop offset="100%" stop-color="#3ED0BE"/>
+            </linearGradient>
+          </defs>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="#1F2836" stroke-width="9" stroke-linecap="round"/>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="url(#gb)" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="289" stroke-dashoffset="122"/>
+          <!-- tavan işareti: yayın üzerinde kesik çizgi -->
+          <line x1="186" y1="72" x2="204" y2="61" stroke="#F0B23F" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <div><div class="arc-val">12.4</div><div class="arc-cap">Zorlanma · tavan 17.0</div></div>
+        <span class="badge b-mod">Alan var</span>
+      </div>
+
+      <div class="arc-cell">
+        <svg viewBox="0 0 220 132" role="img" aria-label="Sirkadiyen yay, zirve 07:45">
+          <defs>
+            <linearGradient id="gc" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#2E2A7A"/><stop offset="38%" stop-color="#3ED0BE"/>
+              <stop offset="72%" stop-color="#E27B3C"/><stop offset="100%" stop-color="#6E3B9E"/>
+            </linearGradient>
+          </defs>
+          <path d="M14 116 C 52 116, 58 30, 92 30 S 128 88, 150 74 S 186 40, 206 108"
+                fill="none" stroke="url(#gc)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="92" cy="30" r="5.5" fill="#07090E" stroke="#3ED0BE" stroke-width="2.5"/>
+          <circle cx="150" cy="74" r="4" fill="#07090E" stroke="#59627A" stroke-width="2"/>
+        </svg>
+        <div><div class="arc-val">07:45</div><div class="arc-cap">Zirve · düşüş 11:15</div></div>
+        <span class="badge b-ready">Sirkadiyen</span>
+      </div>
+
+      <div class="arc-cell">
+        <svg viewBox="0 0 220 132" role="img" aria-label="Uyku yayı, 7 saat 24 dakika">
+          <defs>
+            <linearGradient id="gd" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stop-color="#2E2A7A"/><stop offset="60%" stop-color="#6E3B9E"/><stop offset="100%" stop-color="#BE3F79"/>
+            </linearGradient>
+          </defs>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="#1F2836" stroke-width="9" stroke-linecap="round"/>
+          <path d="M18 118 A 92 92 0 0 1 202 118" fill="none" stroke="url(#gd)" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="289" stroke-dashoffset="55"/>
+          <circle cx="176" cy="66" r="6" fill="#07090E" stroke="#BE3F79" stroke-width="2.5"/>
+        </svg>
+        <div><div class="arc-val">7:24</div><div class="arc-cap">Uyku · ihtiyaç 8:32</div></div>
+        <span class="badge b-mod">Eksik</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">05 · Üç persona</div>
+      <h2>Aynı motor, üç farklı cümle</h2>
+      <div class="rule"></div>
+    </div>
+    <p class="dim" style="margin-bottom:24px;">
+      Ana ekranın iskeleti üçünde de aynı: yay, hüküm cümlesi, reçete, veri satırları.
+      Değişen yalnızca hangi verinin öne çıktığı ve uygulamanın hangi dili konuştuğu.
+    </p>
+    <div class="phones">
+
+      <div class="phone" style="--glow:#6E3B9E">
+        <div class="phone-top"><span class="persona">Dayanıklılık</span><span class="persona">Sal 07:12</span></div>
+        <div class="phone-hero">
+          <svg viewBox="0 0 220 122" style="width:100%;max-width:186px" role="img" aria-label="Toparlanma 72">
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#1F2836" stroke-width="8" stroke-linecap="round"/>
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#3ED0BE" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="81"/>
+            <circle cx="151" cy="37" r="5.5" fill="#07090E" stroke="#3ED0BE" stroke-width="2.5"/>
+          </svg>
+          <div class="phone-metric">72</div>
+          <span class="badge b-ready">Hazır</span>
+        </div>
+        <div class="verdict">Zorlanmaya alanın var.</div>
+        <div class="rx"><b>55 dk kolay · 5:40–6:00/km</b><br>≈ 12.4 zorlanma, tavanın 17.0. Bacaklar %71 — dünkü intervalden.</div>
+        <div class="rows">
+          <div class="row"><span class="k">HRV</span><span class="v">62 ms · +7</span></div>
+          <div class="row"><span class="k">Dinlenme nabzı</span><span class="v">50 bpm · −4</span></div>
+          <div class="row"><span class="k">Akut : kronik</span><span class="v">1.08</span></div>
+          <div class="row"><span class="k">En iyi saat</span><span class="v">17:30</span></div>
+        </div>
+      </div>
+
+      <div class="phone" style="--glow:#BE3F79">
+        <div class="phone-top"><span class="persona">Hibrit · Hyrox</span><span class="persona">Per 06:48</span></div>
+        <div class="phone-hero">
+          <svg viewBox="0 0 220 122" style="width:100%;max-width:186px" role="img" aria-label="Toparlanma 58">
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#1F2836" stroke-width="8" stroke-linecap="round"/>
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#F0B23F" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="121"/>
+            <circle cx="126" cy="26" r="5.5" fill="#07090E" stroke="#F0B23F" stroke-width="2.5"/>
+          </svg>
+          <div class="phone-metric">58</div>
+          <span class="badge b-mod">Orta</span>
+        </div>
+        <div class="verdict">İstasyon günü değil.</div>
+        <div class="rx"><b>4×800 m kompanse koşu</b><br>Aralarda 40 sn farmer's carry. Sled sonrası tempon tazeye göre %8 düşüyor — zayıf halkan burası.</div>
+        <div class="rows">
+          <div class="row"><span class="k">Kompanse koşu</span><span class="v">−8.2 %</span></div>
+          <div class="row"><span class="k">Roxzone ort.</span><span class="v">0:38</span></div>
+          <div class="row"><span class="k">Posterior zincir</span><span class="v">%54</span></div>
+          <div class="row"><span class="k">Kavrama</span><span class="v">%61</span></div>
+        </div>
+      </div>
+
+      <div class="phone" style="--glow:#2E2A7A">
+        <div class="phone-top"><span class="persona">Sağlık</span><span class="persona">Paz 09:30</span></div>
+        <div class="phone-hero">
+          <svg viewBox="0 0 220 122" style="width:100%;max-width:186px" role="img" aria-label="Toparlanma 81">
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#1F2836" stroke-width="8" stroke-linecap="round"/>
+            <path d="M18 112 A 92 92 0 0 1 202 112" fill="none" stroke="#3FCF8E" stroke-width="8" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="55"/>
+            <circle cx="176" cy="60" r="5.5" fill="#07090E" stroke="#3FCF8E" stroke-width="2.5"/>
+          </svg>
+          <div class="phone-metric">81</div>
+          <span class="badge b-ready">Üç haftanın en iyisi</span>
+        </div>
+        <div class="verdict">Vücudun iyi durumda.</div>
+        <div class="rx"><b>Bir örüntü fark ettik</b><br>Alkol kaydettiğin 7 gecede HRV ortalama 9 ms düşüktü. 14 gözlem — gözlem, sebep değil.</div>
+        <div class="rows">
+          <div class="row"><span class="k">Uyku tutarlılığı</span><span class="v">±22 dk</span></div>
+          <div class="row"><span class="k">Gün ışığı</span><span class="v">1 sa 40 dk</span></div>
+          <div class="row"><span class="k">Yürüme hızı</span><span class="v">1.42 m/s</span></div>
+          <div class="row"><span class="k">VO₂max</span><span class="v">44.1 · üst %25</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">06 · Hareket</div>
+      <h2>Üç an, üçü de anlamlı</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="grid g3">
+      <div class="card stack">
+        <h3>Yay çizilir</h3>
+        <p class="dim" style="font-size:0.92rem;">Ekran açıldığında yay soldan sağa çizilir ve zirve işareti yerine yaylanarak oturur. Süre 600 ms. Günde bir kez — her veri yenilemesinde değil.</p>
+      </div>
+      <div class="card stack">
+        <h3>Alan nefes alır</h3>
+        <p class="dim" style="font-size:0.92rem;">Arkadaki spektral alan 30 saniyelik bir döngüde çok yavaş kayar. Fark edilmemeli, yokluğu hissedilmeli. <code>prefers-reduced-motion</code> ile tamamen durur.</p>
+      </div>
+      <div class="card stack">
+        <h3>Bant geçişi titrer</h3>
+        <p class="dim" style="font-size:0.92rem;">Haptik yalnızca bant değiştiğinde — sarıdan yeşile. Her sayı güncellemesinde değil. Zaten kodda böyle; tasarım bunu korur.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div class="eyebrow">07 · Uygulama</div>
+      <h2>Kodda ne değişiyor</h2>
+      <div class="rule"></div>
+    </div>
+    <p class="dim" style="margin-bottom:20px;">
+      Tasarım yönü mimariyi değiştirmiyor. Değişen dosyaların neredeyse tamamı
+      <code>Views/DesignSystem/</code> altında.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Dosya</th><th>Şimdi</th><th>Olacak</th></tr></thead>
+        <tbody>
+          <tr><td><code>ZenithiumColor</code></td><td class="was">tek vurgu cyan</td><td class="now">5 renkli anodize spektrum + ayrılmış semantik set</td></tr>
+          <tr><td><code>ZenithiumFont</code></td><td class="was">SF Pro Rounded</td><td class="now">SF Pro <code>.width(.expanded)</code> sayılarda</td></tr>
+          <tr><td><code>RingGauge</code></td><td class="was">kapalı halka</td><td class="now">açık yay + zirve işareti — <code>ArcGauge</code></td></tr>
+          <tr><td>yeni: <code>SpectralField</code></td><td class="was">—</td><td class="now">iOS 18 <code>MeshGradient</code> ambiyans katmanı</td></tr>
+          <tr><td><code>SectionCard</code></td><td class="was">düz yüzey</td><td class="now">iki duraklı dikey gradyan, aynı hairline</td></tr>
+          <tr><td><code>TodayView</code></td><td class="was">halka + kartlar</td><td class="now">yay + hüküm cümlesi + reçete kartı</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dim" style="margin-top:18px; font-size:0.92rem;">
+      <strong>Erişilebilirlik değişmiyor:</strong> yay da halka gibi tek bir erişilebilirlik
+      öğesi, etiketi ve değeri var. Semantik rozetler renk + şekil + yazı taşımaya devam ediyor.
+      Kontrast oranları yeni palette yeniden ölçülecek — spektrum yalnızca büyük yüzeylerde
+      kullanıldığı için metin kontrastını etkilemiyor.
+    </p>
+  </section>
+
+  <footer>
+    Zenithium · tasarım yönü v1 · uygulama kararları <code>docs/ROADMAP.md</code> ve
+    <code>docs/PHASE0-ASSUMPTIONS.md</code> ile birlikte okunmalı.
+  </footer>
+
+</div>

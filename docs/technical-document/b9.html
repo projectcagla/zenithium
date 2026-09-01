@@ -1,0 +1,157 @@
+<h2 id="ch9"><span class="kicker">Bölüm dokuz</span><span class="num">09</span>Teknoloji yığını</h2>
+
+<p class="lead">Yığında yalnızca Apple'ın birinci parti çatıları var. Swift Package Manager bağımlılık listesi boştur ve bu bir ideoloji değil, tedarik zinciri yüzeyini sıfıra indirme kararıdır.</p>
+
+<table class="wide">
+<caption>Kullanılan çatılar — <span class="kbd">import</span> sayımı</caption>
+<thead><tr><th style="width:44mm">Çatı</th><th class="n" style="width:14mm">Import</th><th>Nerede</th></tr></thead>
+<tbody>
+<tr><td>Foundation</td><td class="n">169</td><td>Her yerde; <code>Domain</code>'in tek bağımlılığı</td></tr>
+<tr><td>SwiftUI</td><td class="n">71</td><td>Tüm arayüz, tüm çizim</td></tr>
+<tr><td>Observation</td><td class="n">21</td><td><code>@Observable</code> ViewModel'ler</td></tr>
+<tr><td>SwiftData</td><td class="n">20</td><td>Kalıcılık, şema, göç</td></tr>
+<tr><td>WidgetKit</td><td class="n">9</td><td>7 widget + Control Widget</td></tr>
+<tr><td>Charts</td><td class="n">7</td><td>Eğilim ve dağılım grafikleri</td></tr>
+<tr><td>HealthKit</td><td class="n">5</td><td>Okuma hattı, canlı seans</td></tr>
+<tr><td>UniformTypeIdentifiers</td><td class="n">4</td><td>Dosya içe/dışa aktarım tipleri</td></tr>
+<tr><td>AppIntents</td><td class="n">3</td><td>Siri, Kısayollar, Eylem düğmesi</td></tr>
+<tr><td>ActivityKit</td><td class="n">3</td><td>Live Activity, Dynamic Island</td></tr>
+<tr><td>WatchConnectivity</td><td class="n">2</td><td>Telefon–saat köprüsü</td></tr>
+<tr><td>OSLog</td><td class="n">2</td><td>Günlükleme ve <code>OSSignposter</code></td></tr>
+<tr><td>Accessibility</td><td class="n">2</td><td><code>AXChartDescriptor</code> — sesli grafikler</td></tr>
+<tr><td>WatchKit</td><td class="n">1</td><td>watchOS yaşam döngüsü</td></tr>
+<tr><td>Vision</td><td class="n">1</td><td>Taranmış tahlil PDF'lerinde OCR</td></tr>
+<tr><td>PDFKit</td><td class="n">1</td><td>Gömülü PDF metni çıkarma</td></tr>
+<tr><td>FoundationModels</td><td class="n">1</td><td>Cihaz içi dil modeli (koşullu derleme)</td></tr>
+<tr><td>CoreGraphics</td><td class="n">1</td><td>Özel çizim yardımcıları</td></tr>
+<tr><td>BackgroundTasks</td><td class="n">1</td><td>Sabah yeniden hesaplaması</td></tr>
+<tr><td>UIKit</td><td class="n">2</td><td><em>İki istisna</em> — <code>ReportDocumentRenderer</code>'da PDF çizimi, <code>ProtectedDataGuard</code>'da veri koruma durumu. İkisinin de birinci parti karşılığı yok</td></tr>
+</tbody>
+</table>
+
+<h3 id="s91"><span class="num">9.1</span>Dil ve araçlar</h3>
+
+<table class="compact">
+<thead><tr><th style="width:44mm">Öğe</th><th>Sürüm / durum</th></tr></thead>
+<tbody>
+<tr><td>Swift dil kipi</td><td>6 — sıkı eşzamanlılık <em>complete</em></td></tr>
+<tr><td>Hedef platform</td><td>iOS 18 · watchOS 11</td></tr>
+<tr><td>Test çatısı</td><td>Swift Testing (<code>@Test</code>, <code>#expect</code>, <code>#require</code>)</td></tr>
+<tr><td>Proje üretimi</td><td>XcodeGen (<code>project.yml</code>) + <code>Scripts/generate-project.py</code></td></tr>
+<tr><td>Varlık üretimi</td><td><code>Scripts/generate-colors.py</code></td></tr>
+<tr><td>Bağımlılık yöneticisi</td><td>Yok — SPM listesi boş</td></tr>
+</tbody>
+</table>
+
+<h2 id="ch10"><span class="kicker">Bölüm on</span><span class="num">10</span>Kalite ve doğrulama</h2>
+
+<div class="strip">
+  <div><span class="v">588</span><span class="l">Test</span></div>
+  <div><span class="v">66</span><span class="l">Test paketi</span></div>
+  <div><span class="v">10.2K</span><span class="l">Test satırı</span></div>
+  <div><span class="v">106</span><span class="l">Kayıtlı varsayım</span></div>
+</div>
+
+<h3 id="s101"><span class="num">10.1</span>Test stratejisi</h3>
+
+<p>Motorlar saf olduğu için testler de saftır: cihaz yok, veritabanı yok, zaman yok. Dört tür test kullanılıyor.</p>
+
+<table class="wide">
+<thead><tr><th style="width:38mm">Tür</th><th>Ne yapar</th></tr></thead>
+<tbody>
+<tr><td>Altın değer (golden)</td><td>Bilinen bir girdi için bilinen bir çıktı. <code>StrainEngineTests</code> beş TRIMP çıpasını ±0,1 içinde doğrular; bu sayılar değişirse test kırılır.</td></tr>
+<tr><td>Değişmezlik (invariance)</td><td>Bir davranışın <em>değişmemesini</em> sabitler. Örnek: luteal fazın reçeteyi yumuşatmadığını doğrulayan test — gelecekteki bir katkı sağlayıcı bunu iyi niyetle geri getirirse test kırılır.</td></tr>
+<tr><td>Parametreli</td><td><code>@Test(arguments:)</code> ile bir mantığın tüm enum durumları üzerinde koşturulması</td></tr>
+<tr><td>Fikstür</td><td>Elle yazılmış bir JSON arşivi; geriye dönük uyumluluğu doğrular. İki <code>Decodable</code> hatasını yakalayan test budur.</td></tr>
+</tbody>
+</table>
+
+<h4>48 test dosyası</h4>
+
+<p class="mono" style="font-size:8.2pt;line-height:1.6;max-width:126mm">AccessibilityCopyTests · AppearanceTests · BaselineEngineTests · BiomarkerCatalogTests · BloodworkTimelineTests · BoundedConcurrencyTests · CircadianEngineTests · CorrelationEngineTests · CycleEngineTests · DayRecordCacheTests · EnduranceEngineTests · FatigueEngineTests · GPXReaderTests · HeatAcclimationEngineTests · HybridEngineTests · InvolvementMatrixTests · LabInsightEngineTests · LabReportParserTests · LabTableDetectionTests · LensMarkTests · LiveSessionEngineTests · LiveSessionOutboxTests · LiveSessionSnapshotTests · LiveSessionTrackTests · LongevityEngineTests · NumberFormattingTests · PainEngineTests · PendingJournalTests · PerformanceRegressionTests · PipelineIntegrationTests · PrescriptionEngineTests · ProtectedDataGuardTests · RacePlanEngineTests · RecoveryEngineTests · ReferenceNormsTests · SafetyFilterTests · ScientificBoundaryTests · SessionShapeEngineTests · SleepDebtEngineTests · SleepScoreEngineTests · StrainEngineTests · StrengthEngineTests · SupplementCorrelationTests · TrainingLoadEngineTests · VitalsEngineTests · WidgetRefreshTests · ZenithiumArchiveTests · ZenithiumErrorTests</p>
+
+<h3 id="s102"><span class="num">10.2</span>Derleme dışı doğrulama</h3>
+
+<p>Swift derleyicisi bulunmadığı için üç ikame yöntem kullanıldı ve her biri gerçek hata yakaladı.</p>
+
+<table class="wide">
+<thead><tr><th style="width:40mm">Yöntem</th><th>Yakaladığı</th></tr></thead>
+<tbody>
+<tr><td>Python'da yeniden hesap</td><td>Her yeni motorun matematiği bağımsız olarak Python'da kuruldu ve beklenen değerlerle karşılaştırıldı. <strong>Yakaladıkları:</strong> canlı seans doyum tuzağı (naif 13,4 vs doğru 11,6); hibrit mercek işareti yüksekliğinin 6,94 &lt; gereken 7,2 olması; yarı maraton bölüm sayısının 21 olması (22 değil); eğim tolerans hatası (365 vs 365,25 günlük yıl).</td></tr>
+<tr><td>Statik kaynak-kapanış taraması</td><td>Watch ve widget hedeflerinin derleyeceği dosya kümesi elle çıkarılıp her yığından sonra tarandı. <strong>Yakaladıkları:</strong> iki adet <code>Domain</code> → <code>Engines</code> sızıntısı (§2.1), her ikisi de iOS'ta görünmez olurdu.</td></tr>
+<tr><td>Dosya varlık kontrolü</td><td>Heredoc ile yazılan dosyalar için <code>ls</code> doğrulaması. <strong>Yakaladığı:</strong> <code>mkdir -p</code> öncesi yazılan üç dosyanın sessizce kaybolması.</td></tr>
+<tr><td>Sembol çözümleyici (<code>check-symbols.py</code>)</td><td>Dört hedefin her birinde, kaynakta geçen her tip adının o hedefin derleyeceği dosyalarda ya da bilinen bir çerçevede tanımlı olduğunu doğrular; ayrıca adlandırılmış argüman etiketlerini, yasaklı yapıları ve süslü parantez dengesini tarar. <strong>Yakaladıkları:</strong> <code>ReportView.swift</code>'in <code>UIActivityViewController</code> kullanıp <code>UIKit</code>'i içe aktarmaması — dosya yalnızca tesadüfen derleniyordu; iki ayrı dosyada aynı adı taşıyan iki <code>ShareLinkSheet</code>.</td></tr>
+</tbody>
+</table>
+
+<div class="note warn">
+  <span class="tag">Yine de derlenmedi</span>
+  <p>Bu yöntemler matematik hatalarını ve mimari ihlalleri yakalar. <strong>Sözdizimi hatalarını, tip uyuşmazlıklarını ve eşzamanlılık ihlallerini yakalamaz.</strong> İlk <code>xcodebuild</code>'de hata çıkması normaldir ve hatalar geri bildirildikçe düzeltilecektir.</p>
+</div>
+
+<h3 id="s103"><span class="num">10.3</span>Varsayım kayıt defteri</h3>
+
+<p>Belgelenmiş bir cevabı olmayan her karar bir <em>varsayım</em> olarak numaralandırıldı ve <code>docs/PHASE0-ASSUMPTIONS.md</code>'ye yazıldı. Kodda ilgili yerde numarasıyla anılır — böylece bir kararın neden öyle verildiği kaynak dosyanın kendisinden okunabilir.</p>
+
+<table class="compact">
+<caption>106 varsayım — en kalabalık kategoriler</caption>
+<thead><tr><th style="width:22mm">Önek</th><th class="n" style="width:14mm">Adet</th><th>Alan</th></tr></thead>
+<tbody>
+<tr><td>UI</td><td class="n">9</td><td>Arayüz davranışı, yerleşim kararları</td></tr>
+<tr><td>API</td><td class="n">9</td><td>Apple API'lerinin belgelenmemiş davranışı</td></tr>
+<tr><td>SLEEP</td><td class="n">6</td><td>Uyku evresi ve süre yorumu</td></tr>
+<tr><td>VM · STORE · LAB</td><td class="n">5 · 5 · 5</td><td>ViewModel, kalıcılık, laboratuvar</td></tr>
+<tr><td>MUSCLE · BUILD · BASE · AI</td><td class="n">4 · 4 · 4 · 4</td><td>Anatomi, proje kurulumu, taban çizgisi, model</td></tr>
+<tr><td>Diğer 30 önek</td><td class="n">45</td><td>WIDGET, WATCH, VAULT, CIRC, BG, VITAL, TEST, STRAIN, RX, REPORT, PAIN, LOAD, HRMAX, CYCLE, CONST, ARCH, ZONE, SAFE, RPE, RECOV, PLAN, ORCH, NAV, NAME, MOCK, LOG, LOC, INTENT, DESIGN, DAY</td></tr>
+</tbody>
+</table>
+
+<p>İki varsayım kontrol edildi ve <strong>ikisi de tutmadı</strong>. <strong>NORM-1</strong>: FRIEND tablosu kaynağa karşı kontrol edildi, kontrol edilebilen dört hücrenin ikisi yanlış çıktı; sayılar tahmin edilmek yerine silindi ve özellik doğrulanana kadar kapatıldı (bkz. §4.6). <strong>BUILD-1</strong>: <code>project.yml</code>'ın yetkili olduğu iddiası <em>dört</em> kez yanlış çıktı — önce watch hedefi eksikti, sonra widget hedefinde <code>PendingJournalStore.swift</code>, sonra <code>MARKETING_VERSION</code> hiç tanımlanmamıştı (saat uygulaması boş bir <code>CFBundleShortVersionString</code> ile paketleniyordu, ki App Store Connect bunu doğrudan reddeder), ve son olarak üreteç <code>developmentRegion = en</code> yazarken <code>project.yml</code> <code>tr</code> diyordu. Dördü de düzeltildi ve <code>Scripts/check-target-sources.py</code> her birinin tekrarını engelliyor.</p>
+
+<h3 id="s104"><span class="num">10.4</span>Yayın öncesi tarama — sürüm 0.1</h3>
+
+<p>Sürüm 0.1'e giden son geçiş, yeni özellik yazmadan yalnızca mevcut kodu tarayan dört adımdı. Bulunanların ortak bir şekli var: <strong>hiçbiri derlemeyi bozmuyordu</strong>. Her biri çalışan, testten geçen, sessizce yanlış davranan koddu — yayın öncesi taramanın var olma sebebi tam olarak bu sınıf.</p>
+
+<table class="wide">
+<caption>Yayın taramasının bulguları</caption>
+<thead><tr><th style="width:34mm">Bulgu</th><th>Sessizce ne yapıyordu</th></tr></thead>
+<tbody>
+<tr><td>Kirli veri sızıntısı<br><span class="kbd">3 çağrı yeri</span></td><td>Eş zamanlı okuyan üç yer &mdash; temel seri, gecelik ortalamalar, hayati işaretler ekranı &mdash; "bu hata tek bir ölçümü mü yoksa tüm cevabı mı düşürür" sorusuna kendi elle tutulan listeleriyle cevap veriyordu. <code>healthDataProtected</code> kilitli cihaz yolu eklendiğinde üçünün de dışında kaldı, dolayısıyla kilitli bir telefonda sabah hesabı şifreli kalan ölçümleri düşürüp <em>kalanlardan</em> bir toparlanma skoru üretiyordu. Şimdi tek bir <code>ZenithiumError.blocksPartialResults</code> var ve üç yer de ona bakıyor.</td></tr>
+<tr><td>Yutulan iptal</td><td><code>Task.checkCancellation()</code> <code>CancellationError</code> fırlatır, <code>ZenithiumError.cancelled</code> değil. Genel <code>catch</code> dalları bunu "okunamayan ölçüm" sayıyordu, yani terk edilmiş bir okuma yine de ekran çiziyordu.</td></tr>
+<tr><td>Gözlemci yarışı</td><td><code>HealthObservationRelay.start()</code> yuvayı iki <code>await</code>'ten <em>sonra</em> dolduruyordu. Bir aktör <code>await</code> boyunca yalıtımını bırakır; iki eş zamanlı çağrı ikisi de <code>nil</code> kontrolünden geçip iki akış açıyor, ikinci atama birincisini öksüz bırakıyordu &mdash; ve <code>stop()</code> öksüzü iptal edemiyordu.</td></tr>
+<tr><td>Sürüm dağınıklığı</td><td>Sürüm dört yerde yaşıyor ve kendisiyle çelişiyordu: iki Info.plist <code>1.0</code> sabitliyor, saat <code>$(MARKETING_VERSION)</code> okuyor, <code>project.yml</code> o değişkeni hiç tanımlamıyordu.</td></tr>
+<tr><td>Doğrulanmamış norm tablosu</td><td>FRIEND VO₂maks tablosu "yaygın olarak tablolandığı hâliyle" aktarılmıştı. Kontrol edilebilen dört hücrenin ikisi yanlıştı ve fark yuvarlama değildi (70&ndash;79 erkek ortancası: tabloda 28,1, yayında 24,4).</td></tr>
+<tr><td>Yorum kayması</td><td>Minetti eğrisinin yorumu dönüm noktasını &minus;%10 diye anlatıyordu; katsayılardan ölçülen değer &minus;%18,1. Yorum düzeltildi ve minimum <code>MinettiCurveTests</code> ile çivilendi.</td></tr>
+<tr><td>Denetlenmeyen eşleşmeler</td><td>Saatin eşlik ettiği paket kimliği, arka plan görev kimliği ve geliştirme dili &mdash; üçü de iki yerde yazılıp hiçbir yerde karşılaştırılmıyordu. Üçü de yanlışken çökme değil sessizlik üretir.</td></tr>
+<tr><td>Denetlenmeyen kaçış</td><td>Uygulamadaki tek <code>nonisolated(unsafe)</code>, derleyicinin doğrulayamadığı bir savla ("tek bir enum ataması yarışamayacak kadar küçük bir pencere") ayakta duruyordu. Kaçındığı aktör sıçraması bedavaydı; kaldırıldı.</td></tr>
+</tbody>
+</table>
+
+<h4>İkinci tur — arayüz dili, sayı yazımı, saat</h4>
+
+<p>İlk tur mimariye ve hata yönetimine bakmıştı. İkinci tur ekrana baktı ve daha fazlasını
+buldu, çünkü baktığı yer daha önce hiç bakılmamış olan yerdi.</p>
+
+<table class="wide">
+<caption>İkinci turun bulguları</caption>
+<thead><tr><th style="width:34mm">Bulgu</th><th>Sessizce ne yapıyordu</th></tr></thead>
+<tbody>
+<tr><td>Ondalık ayırıcı<br><span class="kbd">her sayı</span></td><td><code>String(format:)</code> C'nin biçimlendiricisidir ve cihazın bölgesi ne olursa olsun nokta yazar. Uygulamadaki <em>her</em> ondalık "12.3" olarak çiziliyordu — kendi metinlerinde "12,4" yazan ve laboratuvar ayrıştırıcısı tam da Türk raporları virgül bastığı için virgüllü biçimi kabul etmek üzere yazılmış bir arayüzde. Aynı hatanın aynadaki hâli yüzde işaretindeydi: <code>34%</code>, Türkçenin yazımı <code>%34</code>. Kuralı açıklayan not hemen yanındaki fonksiyonun başında duruyordu.</td></tr>
+<tr><td>Sesli metinler<br><span class="kbd">~40 dize</span></td><td><code>TrainingLens.accessibilityName</code> tablosunun tamamı ve uygulama, widget, saat genelinde otuza yakın etiket İngilizceydi. Hiçbir şey yakalamadı çünkü hiçbir şey erişilebilirlik metnine bakmıyor: ekranlar doğru okunuyordu ve bunu duyacak tek kişi Türkçe konuşan bir VoiceOver kullanıcısıydı.</td></tr>
+<tr><td>Görünen metinler<br><span class="kbd">9 cümle</span></td><td>Dokuz tam İngilizce cümle ekranda duruyordu. Hepsi koşullu: yalnızca toparlanmanın düşük olduğu bir günde, bir sensörün eksik kaldığı bir gecede, nabız verisinde boşluk olan bir günde çiziliyorlar. O günlerden birinde ekrana kimse bakmamıştı.</td></tr>
+<tr><td>Saatte duraklatma</td><td>Süre <code>Date().timeIntervalSince(startedAt)</code> ile ölçülüyordu — duvar saati, duraklamayı da koşuyormuş gibi sayar. Devam edince ekrandaki süre duraklama kadar sıçrıyor, her örneğin damgası aynı sıçramayı taşıyor, ve tavana varış projeksiyonu kişinin durduğu süreyle seyreltilmiş bir hız okuyordu. İmpuls integrali zaten güvendeydi: uzun bir boşluk hiçbir katkı yapmıyor. Bozuk olan etrafındaki saatti.</td></tr>
+<tr><td>Yedek aktarım<br><span class="kbd">193 KB</span></td><td>WatchConnectivity bir yükü 65.536 baytla sınırlar ve aşımı uygulamanın yazmadığı bir delegate geri çağrısıyla bildirir — yani sessizce. Kodlama örnek başına 53 bayt, 3.600'lük tavan 193 KB ediyordu: yirmi dakikadan uzun her kopukluk <em>hiçbir şey</em> teslim etmiyordu, ki kutu tam olarak o kopukluk için var.</td></tr>
+<tr><td>Sonlu olmayan sayılar</td><td><code>String(format:)</code> <code>nan</code> ve <code>inf</code> basar. İkisi de erişilebilirdi — boş bir pencere üzerinden bir oran bir bölme uzaklıkta — ve ikisi de ekrana o kelimelerle çıkardı.</td></tr>
+<tr><td>Üçe bölünmüş renk</td><td>Canlı seans bandının rengi üç yüzeyde çiziliyor ama iki yerde tanımlıydı. İkisi birbiriyle uyumluydu; saatle uyumlu kalmalarını sağlayan hiçbir şey yoktu.</td></tr>
+</tbody>
+</table>
+
+<div class="note warn">
+  <span class="tag">Denetleyicinin kendisi de yanlıştı</span>
+  <p>Arayüz dili denetimi ilk iki koşusunda "temiz" dedi ve yanılıyordu: paylaştığı yardımcı fonksiyon her dize sabitini boşaltıyordu, yani tarama <strong>içinde hiç metin olmayan bir kaynağa</strong> bakıyordu. İkinci hata, kelimeleri ASCII'ye göre ayırıp <code>bandı</code>'yı <code>band</code>'a bölmesi ve uygulamanın kendi Türkçesini İngilizce sanmasıydı. İkisi de negatif testle bulundu — bir denetim, kasıtlı olarak bozulmuş bir girdide düşmüyorsa denetim değildir.</p>
+</div>
+
+<div class="note warn">
+  <span class="tag">Ne bulunmadı</span>
+  <p>Bu tarama ad çözümlemesini, yapılandırma tutarlılığını ve mantık sızıntılarını kapsar. <strong>Tip çıkarımını, aşırı yükleme çözümlemesini, jenerik kısıtları ve Swift 6 yalıtım kurallarını kapsamaz</strong> &mdash; bunlar yalnızca derleyicinin görebileceği şeylerdir ve bu kod hâlâ derlenmedi.</p>
+</div>

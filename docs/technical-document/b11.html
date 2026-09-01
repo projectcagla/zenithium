@@ -1,0 +1,316 @@
+<h2 id="ch11"><span class="kicker">Bölüm on bir</span><span class="num">11</span>Yol haritası v4</h2>
+
+<p class="lead">Faz 32 tamamlandıktan sonra üç başlıkta bir dalga daha yapıldı: performans, tasarımın kusursuzlaştırılması ve yeni özellikler. Yol haritası genel tavsiyelerden değil, <strong>kod taramasından</strong> çıkarıldı — her madde bir dosyayı ve o dosyadaki somut durumu gösteriyordu.</p>
+
+<div class="strip">
+  <div><span class="v">21</span><span class="l">Commit</span></div>
+  <div><span class="v">171</span><span class="l">Dosya</span></div>
+  <div><span class="v">+12.979</span><span class="l">Eklenen satır</span></div>
+  <div><span class="v">−742</span><span class="l">Silinen satır</span></div>
+</div>
+
+<h3 id="s111"><span class="num">11.1</span>A — Performans</h3>
+
+<table class="wide">
+<thead><tr><th style="width:12mm">#</th><th style="width:34mm">Madde</th><th>Ölçülen sonuç</th></tr></thead>
+<tbody>
+<tr><td>A9</td><td>Ölçüm</td><td><code>ZenithiumSignpost</code> üç yolda; <code>PerformanceRegressionTests</code> iş sayısı üzerinden doğruluyor. <em>İlk yapılan madde bu oldu — ölçmeden optimize etmemek için.</em></td></tr>
+<tr><td>A1</td><td>Kas haritası</td><td>Boyut sabitken kare başına spline üretimi <strong>0</strong> (önce düzen başına 42). <code>BodyPathCache</code> yolları <code>(boyut, taraf)</code> başına belleğe alıyor.</td></tr>
+<tr><td>A2</td><td>Biyobelirteç</td><td>Satır başına normalizasyon <strong>0</strong> (önce 252); aday tarama 252 → <strong>2–9</strong></td></tr>
+<tr><td>A3</td><td>Hayati işaretler</td><td>18 ardışık okuma → 4 eşzamanlı görevli sınırlı grup</td></tr>
+<tr><td>A4</td><td>Gün kayıtları</td><td><code>DayRecordCache</code>; Bugün yenilemesi 4 okuma → <strong>1</strong></td></tr>
+<tr><td>A5</td><td>Paylaşılan pencere</td><td>Kuvvet ve yük ekranları aynı 120 günlük okumayı paylaşıyor</td></tr>
+<tr><td>A6</td><td>Belge araması</td><td>Tuş başına 2 MB katlama → yükleme başına bir kez</td></tr>
+<tr><td>A7</td><td>HealthKit</td><td>İki döngü içi bekleme → görev grubu</td></tr>
+<tr><td>A8</td><td>Taban çizgileri</td><td>Doldurma geçişinde 8 özdeş 60 günlük okuma → <strong>1</strong></td></tr>
+</tbody>
+</table>
+
+<h3 id="s112"><span class="num">11.2</span>B — Tasarım</h3>
+
+<table class="wide">
+<thead><tr><th style="width:12mm">#</th><th style="width:34mm">Madde</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td>B1</td><td>Boşluk ölçeği</td><td><code>ZenithiumMetrics</code>; 392 çağrı yeri belirtece taşındı</td></tr>
+<tr><td>B2</td><td>Grafik çerçevesi</td><td><code>.zenithiumChartChrome()</code>; dört kopya → bir tanım</td></tr>
+<tr><td>B3</td><td>Hareket</td><td>Yay girişte 0'dan yazılıyor; değişen her sayı <code>numericText</code></td></tr>
+<tr><td>B4</td><td>Dokunsal</td><td>2 → 6 yer, yalnızca durum değiştiren eylemlerde</td></tr>
+<tr><td>B5</td><td>Yükleme</td><td>Dönen çark → ekranın iskeleti</td></tr>
+<tr><td>B6</td><td>Palet katmanı</td><td>Aydınlık palet yazıldı; 19 renk tek üretilen dosyada; <strong>712 çağrı yerinin hiçbiri değişmedi</strong></td></tr>
+<tr><td>B7</td><td>Dynamic Type</td><td>Korumasız üç etiket düzeltildi</td></tr>
+<tr><td>B8</td><td>Erişilebilirlik</td><td>Dört zaman serisi grafiğinin dördü de artık çalınabilir</td></tr>
+<tr><td>B9</td><td>Simge dili</td><td><code>LensMark</code> — SF Symbol yerine <code>Shape</code> geometrisi, dört testle doğrulanıyor</td></tr>
+<tr><td>B10</td><td>Saat/widget boşluk</td><td>Ortak ölçeğe taşındı</td></tr>
+</tbody>
+</table>
+
+<h3 id="s113"><span class="num">11.3</span>C — Yeni özellikler</h3>
+
+<table class="wide">
+<thead><tr><th style="width:12mm">#</th><th style="width:34mm">Özellik</th><th>Sonuç</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td>Canlı seans</td><td>Saatte, <code>LiveSessionEngine</code> üzerinden</td></tr>
+<tr><td>C2</td><td>Yarış temposu</td><td>GPX → kilometre hedefleri, Minetti eğrisi tersine</td></tr>
+<tr><td>C3</td><td>Tahlil zaman çizelgesi</td><td>Panel gruplaması + yıllık değişim hızı</td></tr>
+<tr><td>C4</td><td>Uyku defteri</td><td>14 günlük yuvarlanan borç + sosyal jetlag; fazla uyku yarım geri ödüyor</td></tr>
+<tr><td>C5</td><td>Takviye korelasyonu</td><td>Kür = pencere; mevcut istatistiğe <code>CorrelationSubject</code> olarak giriyor</td></tr>
+<tr><td>C6</td><td>Faza duyarlı reçete</td><td>Faz <strong>seansı değiştirmiyor</strong>, okumayı açıklıyor — testle sabitlendi</td></tr>
+<tr><td>C7</td><td>Isı adaptasyonu</td><td>Seans hava verisinden; 7 gün %76, 14 gün %94, 3 hafta ara %13</td></tr>
+<tr><td>C8</td><td>Oturum tanıma</td><td>Tekrar eden seans şekilleri; istasyon tahmini <strong>bilerek yapılmadı</strong></td></tr>
+<tr><td>C9</td><td>Veri taşıma</td><td>Sürümlenmiş <code>.zenithium</code> arşivi, dışa + içe</td></tr>
+<tr><td>C10</td><td>Widget ailesi</td><td>Kilit ekranı üç aile + Live Activity; kayıtsız iki widget bulundu</td></tr>
+<tr><td>C11</td><td>Referans bantları</td><td>VO₂max, FRIEND kayıtları; yaş/cinsiyet yoksa karşılaştırma yok</td></tr>
+</tbody>
+</table>
+
+<h3 id="s114"><span class="num">11.4</span>Denetimin yanıldığı yedi yer</h3>
+
+<p>Yol haritasını ben yazdım ve uygulamaya geçince yedi noktada yanlış olduğu ortaya çıktı. Bunları kayda geçirmek, düzeltmek kadar önemli.</p>
+
+<table class="wide">
+<thead><tr><th style="width:16mm">Madde</th><th style="width:46mm">İddia</th><th>Gerçek</th></tr></thead>
+<tbody>
+<tr><td>B8</td><td>"11 görünüm dosyasında erişilebilirlik yok"</td><td>Dar bir <span class="kbd">grep</span>'ten geliyordu. Etiketsiz altı dosya var ve hiçbiri görünüm değil; kas haritası rotoru zaten mevcuttu. Gerçek boşluk sesli grafiklerdi.</td></tr>
+<tr><td>A8</td><td>"60 günlük doldurma = 60 okuma dalgası"</td><td>Doldurma zaten geçiş başına 7 günle sınırlıydı. Gerçek israf, bir geçişteki her günün <code>refreshBaselines</code>'ı aynı <code>now</code> ile çağırması — 8 özdeş okuma ve 8 özdeş yazma.</td></tr>
+<tr><td>A6</td><td>"SwiftData izdüşüm okuması yok"</td><td>Doğru ama önemsiz. Gerçek maliyet <code>matches(query:)</code>'ydi: her tuşta, hiç değişmeyen bir sonuç için 2 MB katlama.</td></tr>
+<tr><td>C10</td><td>"Kilit ekranı widget'ları eklenmeli"</td><td>Yarısı zaten vardı — dairesel aksesuar §10'dan beri duruyordu.</td></tr>
+<tr><td>—</td><td>(bulunan) İki widget</td><td><code>JournalWidget</code> ve <code>RecoveryControlWidget</code> <code>WidgetBundle</code>'a hiç eklenmemişti — Faz 22'den beri cihazda yoklardı.</td></tr>
+<tr><td>BUILD-1</td><td>"<code>project.yml</code> yetkilidir"</td><td>Yanlıştı: dosyada saat hedefi yoktu, Faz 21'den beri yalnızca üretici betikte duruyordu. Eklendi.</td></tr>
+<tr><td>C8</td><td>"HealthKit antrenmanlarını Hyrox istasyonlarına sınıflandır"</td><td>Veri bunu taşımaz. Kızak itme ile wall ball, ikisi de "fonksiyonel kuvvet antrenmanı, 42 dakika" olarak gelir. Sınıflandırma <strong>reddedildi</strong>, yerine tekrar tanıma yapıldı.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+  <span class="tag">Çıkarılan ders</span>
+  <p><strong>Bir <span class="kbd">grep</span> sayısı bir ölçüm değildir.</strong> A9'un imzalı aralıkları (<code>OSSignposter</code>) ve iş sayısını doğrulayan testler tam olarak bunun için var: bir sonraki denetim, sayfada iyi görünen bir tahmin yerine sayıya bakabilsin.</p>
+</div>
+
+
+<h3 id="s115"><span class="num">11.5</span>Sertleştirme turu — altı adım</h3>
+
+<p>v4 kapandıktan sonra altı başlıkta bir denetim turu daha yapıldı: eşzamanlılık, App Group, kilitli cihaz, saat dayanıklılığı, laboratuvar OCR'ı ve bilimsel sınırlar. Turun ürettiği şey yeni özellik değil, <strong>on bir gerçek hata</strong> — yedisi sessizce yanlış davranan, dördü hiç çalışmayan.</p>
+
+<table class="wide">
+<thead><tr><th style="width:14mm">Adım</th><th style="width:44mm">Bulgu</th><th>Neden görünmüyordu</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>DayRecordCache</code> eşzamanlı isteklerde deliniyordu</td><td>Aktör her <code>await</code>'te yürütücüyü bırakıyor; sıralı çağrıda 4→1, eşzamanlı çağrıda 4→4. Sayaç "1" diyordu çünkü çağıranlar yarıştan önce sayılıyordu.</td></tr>
+<tr><td>1</td><td><code>runQuery</code> iptalde kalıcı askıda kalıyordu</td><td>İptal, sürekliliğin kaydından önce gelirse resume edecek kimse kalmıyordu. Hızla hata vermesi gereken okuma süreç boyunca asılı kalıyordu.</td></tr>
+<tr><td>1</td><td>İki fan-out sınırsızdı</td><td>Yalnızca <code>MetricKind</code> bugün dört duruma sahip olduğu için 4'te kalıyorlardı.</td></tr>
+<tr><td>2</td><td>Widget yenileme hattı hiç yoktu</td><td>Anlık görüntü yazılıyordu ama WidgetKit'e haber verilmiyordu — widget önceki sabahın skorunu çiziyordu.</td></tr>
+<tr><td>2</td><td><code>project.yml</code>'de widget hedefi <code>PendingJournalStore</code>'suz</td><td>Yetkili dosyadan uzantı derlenmezdi; üreteç betiğinde vardı, ikisi karşılaştırılmıyordu.</td></tr>
+<tr><td>3</td><td>Kilitli sabahta gün kaybediliyordu</td><td>HealthKit deposu kilitliyken şifreli. Görev uyanıyor, hata alıyor, başarısızlık bildiriyor — ve sistem bunu öğrenip bir sonraki uyanmayı seyrekleştiriyor.</td></tr>
+<tr><td>3</td><td>Aynı <code>HKError</code> switch'inin üç kopyası</td><td>Yeni bir durumun ikisine eklenip üçüncüsünde unutulacağı şekil.</td></tr>
+<tr><td>4</td><td>Uzun seansta kare karmaşıklık</td><td>Dört saatlik seansta ~1,24 milyar eleman ziyareti — saatin var olma sebebi olan aktivitenin ortasında, pil ve ısı olarak.</td></tr>
+<tr><td>4</td><td>Telefon menzil dışındayken bitiş kayboluyordu</td><td>Gönderilemeyen yük loglanıp unutuluyordu; kare için doğru, sonuncusu için Live Activity'nin koşudan saatler sonra çalışması demek.</td></tr>
+<tr><td>5</td><td>Eğik taramada satırlar bölünüyordu</td><td>1,2° dönme beş satırı sekize çıkarıyor. Kopan değer kusursuz ayrıştırılıyor ve yalnızca yanlış sayı oluyor — aşağı akışta hiçbir şey bunu görmüyor.</td></tr>
+<tr><td>5</td><td>Büyük harfli aksanlı ünlüler katlanmıyordu</td><td>"Â" tabloyu ıskalayıp "â" olarak kalıyordu; küçük harfli ikizi "a" veriyordu. Raporlar adları büyük harfle basar.</td></tr>
+<tr><td>6</td><td><strong>NORM-1 tutmuyor</strong></td><td>Kontrol edilebilen dört hücrenin ikisi yanlış. Özellik doğrulanana kadar kapatıldı.</td></tr>
+<tr><td>6</td><td>Minetti yorumu 8 puan sapıyordu</td><td>İki yorum dönüm noktasını "yaklaşık −%10" diyordu; eğri −%18,1'de dönüyor.</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+  <span class="tag">Turun deseni</span>
+  <p>On üç bulgunun onu <strong>çalışan koda bakarak</strong> değil, <em>çalışmayan ama şikâyet etmeyen</em> koda bakarak çıktı. Aktör yeniden-girişi, kaydedilmemiş bir widget, kilitli bir cihaz, eğik bir tarama, doğrulanmamış bir tablo — hiçbiri çökmez, hiçbiri log basmaz, hepsi yanlış bir sayı üretir. Bu yüzden turun kalıcı ürünü düzeltmeler değil, <strong>onları bir daha sessiz kalmaktan alıkoyan üç şey</strong>: sayım testleri, <code>Scripts/check-target-sources.py</code>, ve belgelenmiş her sabitin artık bir teste bağlı olması.</p>
+</div>
+
+<h2 id="ch12"><span class="kicker">Bölüm on iki</span><span class="num">12</span>Geliştirme süreci</h2>
+
+<h3 id="s121"><span class="num">12.1</span>Depo düzeni</h3>
+
+<pre>zenithra/
+├── Zenithium/            <span class="c">// ana uygulama — 239 dosya</span>
+│   ├── App/ Domain/ Engines/ Models/ Persistence/
+│   ├── Health/ Orchestration/ Intelligence/ Labs/
+│   ├── Reports/ Intents/ Connectivity/ Endurance/ Live/ Support/
+│   ├── ViewModels/ Views/
+│   └── Resources/Zenithium.xcassets/     <span class="c">// üretilen renk setleri</span>
+├── ZenithiumWatch/       <span class="c">// watchOS — 7 dosya</span>
+├── ZenithiumWidgets/     <span class="c">// widget uzantısı — 9 dosya</span>
+├── ZenithiumTests/       <span class="c">// 48 dosya, 66 paket, 588 test</span>
+├── Scripts/
+│   ├── generate-project.py    <span class="c">// deterministik .pbxproj üreteci, 4 hedef</span>
+│   └── generate-colors.py     <span class="c">// palet tablosu → catalog + Swift enum</span>
+├── docs/                 <span class="c">// 7 belge</span>
+└── project.yml           <span class="c">// XcodeGen tanımı</span></pre>
+
+<h3 id="s122"><span class="num">12.2</span>Üreteç betikleri</h3>
+
+<p>İki şey elle yazılmıyor, üretiliyor. <strong>Xcode proje dosyası</strong> — <code>generate-project.py</code> deterministik bir <code>.pbxproj</code> üretir; birleştirme çakışması çıkmaz ve dört hedefin dosya listesi elle senkronize edilmez. <strong>Renk varlıkları</strong> — <code>generate-colors.py</code> tek bir Python sözlüğünden hem 19 <code>.colorset</code> JSON'unu hem <code>ZenithiumColorAsset</code> enum'unu üretir; bir Swift adı olmayan renk setine işaret etmek imkânsızdır.</p>
+
+<p><code>project.yml</code> XcodeGen tanımını taşır ve üreteçle birlikte tutulur. ASSUMPTION BUILD-1 bu dosyanın yetkili olduğunu söylüyordu; v4'te bunun bir kez yanlış olduğu bulundu ve düzeltildi (bkz. §11.4).</p>
+
+<h3 id="s123"><span class="num">12.3</span>Belgeler</h3>
+
+<table class="compact">
+<thead><tr><th style="width:56mm">Belge</th><th>İçerik</th></tr></thead>
+<tbody>
+<tr><td>ROADMAP.md</td><td>Faz 0–32 ürün yol haritası; her fazın kabul ölçütleri</td></tr>
+<tr><td>ROADMAP-V4.md</td><td>Performans/tasarım/özellik dalgası, uygulama durumu ve düzeltmeler</td></tr>
+<tr><td>PHASE0-ASSUMPTIONS.md</td><td>106 numaralı varsayım, gerekçeleriyle</td></tr>
+<tr><td>PHASE0-ENGINE-CONSTANTS.md</td><td>Her motor sabitinin kaynağı ve gerekçesi</td></tr>
+<tr><td>PHASE0-DEPENDENCY-GRAPH.md</td><td>Katmanlar arası bağımlılık haritası</td></tr>
+<tr><td>PHASE0-MANIFEST.md · PHASE0-README.md</td><td>Dosya manifesti ve giriş belgesi</td></tr>
+<tr><td>design-direction.html</td><td>Görsel yön referansı</td></tr>
+</tbody>
+</table>
+
+<h3 id="s124"><span class="num">12.4</span>Bilinen açıklar</h3>
+
+<table class="wide">
+<thead><tr><th style="width:44mm">Açık</th><th>Durum</th></tr></thead>
+<tbody>
+<tr><td>Hiç derlenmedi</td><td><strong>En büyük açık.</strong> İlk <code>xcodebuild</code> çalıştırması gerekiyor; hatalar geri bildirildikçe düzeltilecek.</td></tr>
+<tr><td>Hiçbir test koşturulmadı</td><td>588 test yazıldı, hiçbiri çalıştırılmadı. Matematik Python'da ayrıca doğrulandı ama bu test koşumu değildir.</td></tr>
+<tr><td>ASSUMPTION NORM-1</td><td>FRIEND VO₂max tablosu yayımlanmış kaynağa karşı doğrulanmalı.</td></tr>
+<tr><td>App Group sağlama profili</td><td>Kimlik <code>group.com.projectcagla.zenithra</code> olarak dört yere yazıldı ve bir betikle korunuyor. Kalan iş hesap tarafında: grubun geliştirici hesabında oluşturulması ve üç hedefin sağlama profiline eklenmesi.</td></tr>
+<tr><td>Paket kimliği ile grup kimliği farklı önek taşıyor</td><td>Paketler <code>com.zenithium.*</code>, grup <code>group.com.projectcagla.*</code>. Teknik olarak sorun değil — bir App Group herhangi bir önek taşıyabilir — ama App ID oluşturulmadan önce verilecek bir karar.</td></tr>
+<tr><td>Uygulama simgesi yer tutucu</td><td>Gönderilebilir ama nihai değil; tasarımcı çizimiyle değiştirilmeli.</td></tr>
+<tr><td>Cihazda görsel doğrulama yok</td><td>Hiçbir ekran gerçek bir cihazda veya simülatörde görülmedi; yerleşim ve tipografi kararları koddan okunabilir ama görülmedi.</td></tr>
+<tr><td>Uzaktan itme (push) engelli</td><td>Bu oturum boyunca <code>git push</code> 403 döndü (GitHub App yazma izni yok). 45 commit yerelde duruyor; teslimat arşiv dosyasıyla yapıldı.</td></tr>
+</tbody>
+</table>
+
+<h3 id="s125"><span class="num">12.5</span>Sonraki adımlar</h3>
+
+<ol>
+<li><strong>Ön kontrol.</strong> <code>./Scripts/preflight.sh</code> — dört kontrol ve proje üretimi, tek komut.</li>
+<li><strong>Derle.</strong> macOS'ta <code>xcodebuild</code>; çıkan hataları geri bildir. Kontroller isim çözümlemesine bakıyor, tip çıkarımına değil — hata çıkması hâlâ bekleniyor.</li>
+<li><strong>Testleri koştur.</strong> 588 testin ne kadarının geçtiği, kodun gerçek durumu hakkındaki ilk dürüst sinyaldir.</li>
+<li><strong>Cihazda gör.</strong> Özellikle kas haritası, sirkadiyen yay, ve aydınlık temanın gerçekten çalıştığı — <code>UIUserInterfaceStyle</code> kaldırıldı ama hiçbir ekran aydınlık zeminde görülmedi.</li>
+<li><strong>App Group'u oluştur</strong> ve üç hedefin sağlama profiline ekle. Paket kimliği önekine de burada karar ver.</li>
+<li><strong>NORM-1'i doğrula</strong> — tabloyu yayımlanmış PDF'ten aktar ve <code>isPublicationVerified</code>'ı çevir, ya da karşılaştırmayı kapalı bırak.</li>
+<li><strong>Simgeyi değiştir</strong> tasarımcı çizimiyle.</li>
+<li><strong>Yazma izni</strong> alındığında dalı uzağa it.</li>
+</ol>
+
+
+<h3 id="s126"><span class="num">12.6</span>Yayın öncesi durum</h3>
+
+<p>Yayın kararından önce depo baştan sona tarandı. İki gerçek derleme hatası ve dört yayın engeli çıktı; hepsi kapatıldı.</p>
+
+<table class="wide">
+<thead><tr><th style="width:38mm">Bulgu</th><th style="width:20mm">Tür</th><th>Neden görünmüyordu</th></tr></thead>
+<tbody>
+<tr><td><code>ReportView</code> UIKit import etmiyordu</td><td><span class="chip r">derleme</span></td><td><code>UIActivityViewController</code> ve bir <code>UIViewControllerRepresentable</code> kullanıyor ama yalnızca SwiftUI import ediyordu. Dosya, modülde başka bir şeyin UIKit'i içeri çekmesine bağlı derleniyordu — bağımlılık değil, tesadüf.</td></tr>
+<tr><td>İki <code>ShareLinkSheet</code></td><td><span class="chip a">okunabilirlik</span></td><td>İkisi de <code>private</code> olduğu için yasal; ama biri UIKit köprüsü, öbürü saf SwiftUI. Arşiv olanı <code>ArchiveShareSheet</code> oldu.</td></tr>
+<tr><td>Uygulama simgesi yoktu</td><td><span class="chip r">yayın</span></td><td>Simgesiz uygulama App Store'a gönderilemez. Varlık kataloğunda yalnızca renkler vardı.</td></tr>
+<tr><td>Gizlilik bildirimi yoktu</td><td><span class="chip r">yayın</span></td><td><code>PrivacyInfo.xcprivacy</code> Mayıs 2024'ten beri zorunlu ve her paketin kendisininki gerekiyor — uzantı uygulamanınkiyle kapsanmıyor.</td></tr>
+<tr><td><code>UIUserInterfaceStyle = Dark</code></td><td><span class="chip r">yayın</span></td><td>B6'nın eklediği aydınlık palet ve üç seçenekli görünüm ayarı tek bir Info.plist anahtarıyla geçersiz kalıyordu.</td></tr>
+<tr><td><code>armv7</code> ve boş açılış rengi</td><td><span class="chip a">yapılandırma</span></td><td>32-bit ARM yeteneği bir iOS 18 uygulamasında yanlış; açılış ekranı boş bir renk adına işaret ediyordu.</td></tr>
+<tr><td>Geliştirme dili <code>en</code></td><td><span class="chip a">yapılandırma</span></td><td>Arayüzün tamamı Türkçe.</td></tr>
+</tbody>
+</table>
+
+<h4>Uygulama simgesi</h4>
+
+<p>Uygulamanın kendi görsel kimliğinden üretildi: koyu zemin, spektral toparlanma yayı ve ortada zirve işareti — yani her ekranda görünen şeklin kendisi. iOS 18'in üç varyantı da mevcut (açık, koyu, tinted). <strong>Bir tasarımcı çizimiyle değiştirilmeli;</strong> bu, gönderilebilir olmayı sağlayan bir yer tutucudur, nihai kimlik değil.</p>
+
+<h4>Gizlilik bildirimi</h4>
+
+<p>Üç paketin üçünde de var ve <strong>içeriğinin tamamı boş</strong> — boşluğun kendisi ürün. Ağ katmanı, hesap ve analitik olmadığı için toplanacak veri yok, izlenecek alan adı yok. Tek beyan <code>UserDefaults</code> / <code>CA92.1</code>: App Group süiti.</p>
+
+<div class="note">
+  <span class="tag">İddia denetleniyor</span>
+  <p>Bir gizlilik bildirimi, tam olarak bir yıl doğru kalıp birinin çökme raporlayıcısı eklediği gün sessizce yanlışlaşan türden bir dosyadır. <code>Scripts/check-privacy-manifest.py</code> iddiayı kaynağa karşı sınıyor: 246 dosyada ağ API'si yok, SPM bildirimi yok, ve gerekçe gerektiren API'lerde kullanım ile beyan birebir örtüşüyor. <em>Fazla</em> beyan da eksik beyan kadar yanlış sayılıyor, çünkü olmayan bir uygulamayı tarif ediyor.</p>
+</div>
+
+<h3 id="s127"><span class="num">12.7</span>Derleme öncesi kontroller</h3>
+
+<p>Bu konteynerde Swift derleyicisi yok, dolayısıyla "derlenmeye hazır" doğrulanamaz. Doğrulanabilen her şey <code>Scripts/preflight.sh</code> altında toplandı.</p>
+
+<table class="wide">
+<thead><tr><th style="width:52mm">Kontrol</th><th>Yakaladığı</th></tr></thead>
+<tbody>
+<tr><td><code>check-target-sources.py</code></td><td><code>project.yml</code> ile üretecin bir hedefin neyi derlediği konusunda ayrışması; App Group kimliğinin Swift ile üç yetkilendirme dosyası arasında kayması</td></tr>
+<tr><td><code>check-symbols.py</code></td><td>Bir hedefin derlemediği bir tipi kullanması; çift üst düzey tanım; tipte olmayan argüman etiketi; yasaklı yapı; parantez dengesizliği</td></tr>
+<tr><td><code>check-privacy-manifest.py</code></td><td>Bildirimin kaynaktan az şey iddia etmesi</td></tr>
+<tr><td><code>generate-project.py</code></td><td>Depodaki <code>.xcodeproj</code>'un kaynak ağacına göre bayatlaması</td></tr>
+</tbody>
+</table>
+
+<div class="note warn">
+  <span class="tag">Gürültülü bir kapı, kapı değildir</span>
+  <p><code>check-symbols.py</code>'nin ilk sürümü <strong>272</strong> bulgu veriyordu ve neredeyse hepsi yanlış pozitifti: iç içe parantezleri düzenli ifadeyle ayrıştırmak <code>Foo(bar: Baz(qux: 1))</code> içindeki <code>qux</code>'u <code>Foo</code>'ya yazıyordu. Gerçek parantez eşlemeyle 272 → 3, makro üretimi <code>init</code>'ler tanınınca 3 → <strong>0</strong>.</p>
+  <p>Bu düzeltme isteğe bağlı değildi. İnsanların görmezden gelmeyi öğrendiği bir kontrol, hiç olmayan bir kontrolden kötüdür — çünkü kapsandığı yanılsamasını taşır.</p>
+</div>
+
+<h4>Bugünkü çıktı</h4>
+
+<pre>OK    App Group 'group.com.projectcagla.zenithra': Swift ve üç yetkilendirme dosyası aynı
+OK    ZenithiumWidgets: 13 paylaşılan kaynak, iki dosya da aynı
+OK    ZenithiumWatch:   12 paylaşılan kaynak, iki dosya da aynı
+
+Zenithium        231 dosya, 513 tip · her tip referansı hedefin içinde çözülüyor
+ZenithiumWidgets  88 dosya, 247 tip · her tip referansı hedefin içinde çözülüyor
+ZenithiumWatch    85 dosya, 228 tip · her tip referansı hedefin içinde çözülüyor
+ZenithiumTests   277 dosya, 587 tip · her tip referansı hedefin içinde çözülüyor
+
+OK    her adlandırılmış argüman tipinde mevcut
+OK    yasaklı yapı ve denge temiz
+OK    246 dosyada ağ API'si yok · SPM bildirimi yok · 3/3 pakette gizlilik bildirimi
+
+Wrote Zenithium.xcodeproj/project.pbxproj — 230 app, 88 extension, 85 watch, 46 test</pre>
+
+<div class="note warn">
+  <span class="tag">Yine de derleme değil</span>
+  <p>Bu kontroller isim çözümlemesi ve yapılandırma tutarlılığı bakıyor. <strong>Tip çıkarımını, aşırı yükleme seçimini, jenerik kısıtları ve Swift 6 izolasyon kurallarını denetlemiyorlar</strong> — onlar için tip denetleyicisi gerekiyor ve bu konteynerde yok. İlk <code>xcodebuild</code> çalıştırmasında hata çıkması hâlâ normaldir; bu turun yaptığı, o listeyi kısaltmak.</p>
+</div>
+
+<h2 id="eka"><span class="kicker">Ek A</span><span class="num">A</span>Faz listesi</h2>
+
+<p>Uygulama 33 fazda inşa edildi. Faz 0–9 çekirdeği kurdu (şema, taban çizgisi, toparlanma, uyku, zorlanma, yorgunluk, sirkadiyen, arayüz iskeleti); Faz 10–32 aşağıdadır.</p>
+
+<table class="wide compact">
+<thead><tr><th style="width:16mm">Faz</th><th>Ne inşa edildi</th></tr></thead>
+<tbody>
+<tr><td>10</td><td>Günlük ve korelasyon motoru</td></tr>
+<tr><td>11</td><td>Sağlık izleme katmanı — 18 hayati işaret</td></tr>
+<tr><td>12</td><td>Regl döngüsü farkındalığı, faza duyarlı taban çizgileri</td></tr>
+<tr><td>13</td><td>Stres ve gün içi yük</td></tr>
+<tr><td>14</td><td>Antrenman zekâsı — ACWR, monotonluk, form (tüm mercekler ortak)</td></tr>
+<tr><td>15</td><td>Dayanıklılık merceği — kritik hız, tempo bölgeleri, yarış tahmini</td></tr>
+<tr><td>16</td><td>Hibrit mercek — Hyrox/CrossFit, kompanse koşu cezası</td></tr>
+<tr><td>17</td><td>Kuvvet merceği — tonaj, 1RM, dengesizlik</td></tr>
+<tr><td>18</td><td>Sağlık merceği</td></tr>
+<tr><td>19</td><td>Reçete motoru — beş adımlı karar zinciri</td></tr>
+<tr><td>20</td><td>Planlama ve periyodizasyon</td></tr>
+<tr><td>21</td><td>Apple Watch uygulaması</td></tr>
+<tr><td>22</td><td>Sistem entegrasyonu — widget, App Intents, arka plan</td></tr>
+<tr><td>23</td><td>Laboratuvar zekâsı — PDF/OCR, 51 biyobelirteç</td></tr>
+<tr><td>24</td><td>Cihaz içi yapay zekâ — anlatıcı + güvenlik filtresi</td></tr>
+<tr><td>25</td><td>Görsel sistem profesyonelleşmesi</td></tr>
+<tr><td>26</td><td>Sağlık belge kasası</td></tr>
+<tr><td>27</td><td>Hekime rapor (PDF dışa aktarım)</td></tr>
+<tr><td>28</td><td>Erken uyarı ve anomali tespiti</td></tr>
+<tr><td>29</td><td>Hareket kalitesi ve uzun ömür</td></tr>
+<tr><td>30</td><td>Çevresel bağlam — gün ışığı, saat dilimi</td></tr>
+<tr><td>31</td><td>Sistem derinliği</td></tr>
+<tr><td>32</td><td>Sakatlık ve ağrı haritası</td></tr>
+<tr><td>v4</td><td>Performans (9 madde) · tasarım (10 madde) · özellikler (11 madde)</td></tr>
+</tbody>
+</table>
+
+<h2 id="ekb"><span class="kicker">Ek B</span><span class="num">B</span>Varsayım kayıt defteri</h2>
+
+<p>Belgelenmiş bir cevabı olmayan her karar numaralandırıldı. Numara hem <code>docs/PHASE0-ASSUMPTIONS.md</code>'de hem ilgili kaynak dosyada geçer, böylece bir kararın gerekçesi kodun yanında durur.</p>
+
+<h4>Örnek kayıtlar</h4>
+
+<table class="wide">
+<thead><tr><th style="width:24mm">Numara</th><th>İçerik</th></tr></thead>
+<tbody>
+<tr><td>BASE-3</td><td>Zenithium bilek sıcaklığının <em>mutlak</em> okumasını tabanlar ve ΔT'yi kendisi türetir, çünkü <code>appleSleepingWristTemperature</code> bazı kaynaklarda mutlak, bazılarında farktır.</td></tr>
+<tr><td>CIRC-1</td><td>Sirkadiyen çapa uyku orta noktasına göre yerleştirilir; orta nokta hesaplanamıyorsa uyanma saati kullanılır.</td></tr>
+<tr><td>CORR-1</td><td>Güven aralığı normal yaklaşımı (z = 1,96) kullanır. Telafi olarak minimum örneklem 5 yerine 6 tutulur ve gözlem sayısı her zaman gösterilir.</td></tr>
+<tr><td>AI-1</td><td><code>FoundationModelNarrator</code> yalnızca <code>FoundationModels</code>'ın var olduğu yerde derlenir; yokluğunda deterministik anlatıcı tek yol olur.</td></tr>
+<tr><td>NORM-1</td><td><strong>Riskli.</strong> FRIEND VO₂max tablosu yayımlanmış kaynağa karşı doğrulanmadı.</td></tr>
+<tr><td>BUILD-1</td><td><code>project.yml</code> hedef tanımlarında yetkilidir. <em>Bu iddia v4'te bir kez yanlış çıktı</em> — dosyada saat hedefi yoktu; eklendi.</td></tr>
+</tbody>
+</table>
+
+<div class="divider"></div>
+
+<p class="mono" style="font-size:7.6pt;color:var(--muted);letter-spacing:0.06em">Zenithium teknik dökümanı · Sürüm 0.1 · 21 Ağustos 2026 · İlk yayın · projectcagla/zenithra · HEAD 272da6a · Bu belgedeki her ölçüm depoda çalıştırılan bir komutun çıktısıdır.</p>
+
+</body>

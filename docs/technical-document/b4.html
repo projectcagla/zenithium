@@ -1,0 +1,276 @@
+<h2 id="ch4"><span class="kicker">Bölüm dört</span><span class="num">04</span>Motorlar</h2>
+
+<p class="lead">Uygulamanın hesap yapan her satırı 29 motorda toplanmıştır. Hepsi <code>enum</code> içinde <code>static func</code>'tir: durum tutmazlar, yan etkileri yoktur, yalnızca <code>Foundation</code>'a bağlıdırlar ve aynı girdiye her zaman aynı çıktıyı verirler. Bu, 569 testin varlık sebebidir — bir motoru test etmek için ne cihaz ne veritabanı ne de zaman gerekir.</p>
+
+<div class="strip">
+  <div><span class="v">29</span><span class="l">Motor</span></div>
+  <div><span class="v">6.208</span><span class="l">Satır</span></div>
+  <div><span class="v">342</span><span class="l">Sabit satırı</span></div>
+  <div><span class="v">0</span><span class="l">Yan etki</span></div>
+</div>
+
+<div class="note">
+  <span class="tag">Sabitlerin tek yeri</span>
+  <p><code>EngineConstants.swift</code> (342 satır) her motorun eşiklerini tek bir dosyada toplar; her sabitin yanında <em>neden o değer</em> olduğunu açıklayan bir yorum bulunur. Bir eşiği değiştirmek, o eşiğin gerekçesini de değiştirmeyi gerektirir — sayı ile gerekçe aynı yerde durduğu için sessizce ayrışamazlar.</p>
+</div>
+
+<h3 id="s41"><span class="num">4.1</span>Temel katman</h3>
+
+<div class="eng">
+<h5>BaselineEngine<span class="lines">226 satır</span></h5>
+<p>Her metriğin 60 günlük üstel ağırlıklı hareketli ortalaması (EWMA) ve standart sapması. Uygulamadaki "normalin" tanımı buradan gelir; toparlanma, hayati işaretler ve erken uyarı hepsi bu tabana bakar.</p>
+<p>Beş koruma kuralı çağrı yerlerinde değil burada uygulanır: <strong>(1)</strong> bugün, kendisinin puanlandığı tabanı kirletmez — <code>scoringBaseline(from:)</code> durumu dünden okur; <strong>(2)</strong> winsorization girişte, güncellemeden önce yapılır; <strong>(3)</strong> σ tabanları her σ'ya uygulanır; <strong>(4)</strong> soğuk başlangıç 5 günün altında skoru bastırır, 14 günün altında öncüle doğru harmanlar; <strong>(5)</strong> eksik gün EWMA'yı ilerletmez — hiçbir yerde interpolasyon yoktur.</p>
+<dl>
+<dt>Girdi</dt><dd>Metrik geçmişi, mevcut taban durumu</dd>
+<dt>Çıktı</dt><dd><code>BaselineSnapshot</code> — μ, σ, örnek sayısı, kalibrasyon durumu</dd>
+<dt>Kural</dt><dd>Boş gün asla doldurulmaz; veri yoksa skor yoktur</dd>
+</dl>
+</div>
+
+<div class="eng">
+<h5>MathSupport<span class="lines">174 satır</span></h5>
+<p>Paylaşılan istatistik: ortalama, standart sapma, yüzdelik, en küçük kareler eğimi, Welch standart hatası, Cohen'in <em>d</em>'si, dairesel ortalama ve dairesel fark. Dairesel fonksiyonlar uyku orta noktası ve sirkadiyen hesapları için gereklidir — 23:50 ile 00:10 arasındaki fark 20 dakikadır, 23 saat 40 dakika değil.</p>
+</div>
+
+<div class="eng">
+<h5>MonotoneCubicInterpolator<span class="lines">144 satır</span></h5>
+<p>Fritsch–Carlson monotone kübik Hermite interpolasyonu. Grafik eğrilerinin ve sirkadiyen yayın veri noktaları arasında <em>aşmadan</em> geçmesini sağlar. Sıradan bir kübik spline iki uyku noktası arasında negatif uyanıklık üretebilir; monotone varyant bunu yapısal olarak imkânsız kılar.</p>
+</div>
+
+<div class="eng">
+<h5>EngineConstants<span class="lines">342 satır</span></h5>
+<p>Motor eşiklerinin tek kaynağı. Ayrıca <code>Orchestration.engineVersion</code> burada durur — matematik değiştiğinde artırılır ve eski kayıtların yeniden hesaplanmasını tetikler.</p>
+</div>
+
+<h3 id="s42"><span class="num">4.2</span>Toparlanma ve uyku</h3>
+
+<div class="eng">
+<h5>RecoveryEngine<span class="lines">235 satır</span></h5>
+<p>Uygulamanın en görünür sayısı. Dört fizyolojik sinyalin z-skorlarını ağırlıklandırıp lojistik bir eğriden 1–100 aralığına taşır.</p>
+<div class="formula">Z_HRV    =  (HRV − μ) / σ<br>
+Z_RHR    = −(RHR − μ) / σ<br>
+Z_Temp   = −| ΔT / σ |<br>
+Z_Resp   = −(BR − μ) / σ<br>
+SleepNorm = clamp((SleepScore − 70) / 15, −3, +3)<br>
+Z_total  = Σ wᵢ·Zᵢ         <span style="opacity:.6">// ağırlıklar hayatta kalan terimlere yeniden dağıtılır</span><br>
+Recovery = clamp(100 / (1 + e^(−1.2·Z_total)), 1, 100)</div>
+<p>Sıcaklık terimi mutlak değerlidir ve daima negatiftir: hem yükselen hem düşen bilek sıcaklığı normalden sapmadır. Bir metrik eksikse ağırlığı silinmez, kalan terimlere <em>yeniden normalize</em> edilir — böylece üç metrikle ölçülen bir gün, dört metrikli bir günle aynı ölçekte kalır. Saat takılmadıysa skor üretilmez (<code>.unavailable(.noOvernightData)</code>); tahmin edilmez.</p>
+<dl>
+<dt>Bant</dt><dd>Yeşil / sarı / kırmızı — reçete motorunun ilk girdisi</dd>
+<dt>Sınır</dt><dd>Hedef tavanı §5.3 ile sınırlanır</dd>
+</dl>
+</div>
+
+<div class="eng">
+<h5>SleepScoreEngine<span class="lines">274 satır</span></h5>
+<p>Dört bileşenli uyku skoru. Kritik nokta, <em>ihtiyacın sabit olmaması</em>: dünkü zorlanma ve birikmiş uyku borcu ihtiyacı yukarı, şekerleme kredisi aşağı çeker.</p>
+<div class="formula">need_h      = baselineNeed + 0.25·(yesterdayStrain/21) + min(debt, 1.5) − napCredit<br><br>
+Duration    = 100 · clamp(asleep_h / need_h, 0, 1)                    <span style="opacity:.6">w 0.50</span><br>
+Efficiency  = 100 · clamp((asleep/timeInBed − 0.75) / 0.20, 0, 1)     <span style="opacity:.6">w 0.20</span><br>
+Restorative = 100 · clamp(((deep + REM) / asleep) / 0.42, 0, 1)       <span style="opacity:.6">w 0.20</span><br>
+Consistency = 100 · max(0, 1 − |midpoint − μ_14d| / 90 dk)            <span style="opacity:.6">w 0.10</span></div>
+<p>Tutarlılık bileşeni dairesel ortalamayla hesaplanır. Verimlilik %75'ten başlar çünkü altındaki değerler ölçüm hatasıyla ayırt edilemez.</p>
+</div>
+
+<div class="eng">
+<h5>SleepDebtEngine<span class="lines">176 satır</span><span class="chip">v4 · C4</span></h5>
+<p>14 günlük yuvarlanan uyku borcu defteri ve sosyal jetlag. Her gece <code>ihtiyaç − uyunan</code> kadar katkı verir.</p>
+<p>İki tasarım kararı savunmayı hak ediyor. <strong>Fazlalık sayılır ama tamamen değil</strong> — on saatlik bir cumartesi, iki adet beş saatlik hafta içini geri almaz; fazlalık <code>surplusRepaymentFraction</code> oranında kredilendirilir. <strong>Pencere yuvarlanır, sıfırlanmaz</strong> — takvim haftası sınırında sıfırlanan bir defter, pazartesi sabahı borcu sihirli biçimde yok ederdi.</p>
+<p>Sosyal jetlag Wittmann/Roenneberg tanımıyla hesaplanır: serbest günlerin uyku orta noktası ile iş günlerinin orta noktası arasındaki dairesel fark. Her iki tarafta da <code>SocialJetlag.minimumSideNights</code> kadar gece yoksa sonuç üretilmez.</p>
+</div>
+
+<div class="eng">
+<h5>CircadianEngine<span class="lines">177 satır</span></h5>
+<p>Gün içi uyanıklık yayı. Çapa noktaları uyku orta noktasına göre yerleştirilir ve dairesel 24 saatlik uzayda monotone kübik Hermite ile interpole edilir. Çapa kümesi uydurma öncesinde ±24 saatte kopyalanır — bu, sarma dikişini görünür bir kırıklık yerine C¹-sürekli yapar.</p>
+<div class="formula">Örnek: uyku başlangıcı 23:30, süre 7,5 sa → orta nokta 03:15<br>
+→ zirve 07:45 · çukur 11:15 · ikincil zirve 14:45 · melatonin 18:15</div>
+</div>
+
+<h3 id="s43"><span class="num">4.3</span>Yük ve yorgunluk</h3>
+
+<div class="eng">
+<h5>StrainEngine<span class="lines">242 satır</span></h5>
+<p>Kardiyovasküler zorlanma. Banister TRIMP integrali kalp hızı serisinin üzerinden koşturulur, sonra doyuma giden bir üstel eğriyle 0–21 ölçeğine taşınır.</p>
+<div class="formula">x(t)        = clamp((HR(t) − RHR) / (HRmax − RHR), 0, 1)<br>
+Δt_i        = clamp(t_i − t_{i−1}, 0, 60 sn)   <span style="opacity:.6">// &gt; 120 sn boşluk hiç katkı vermez</span><br>
+TRIMP       = Σ (Δt_i/60) · x_i · b · e^(c · x_i)<br>
+DailyStrain = 21 · (1 − e^(−0,0065 · TRIMP))</div>
+<p>Boşluk kırpma önemlidir: saat çıkarılıp iki saat sonra takıldığında son örnek ile yeni örnek arasındaki fark iki saattir, ve kırpma olmasa bu iki saatlik yüksek yoğunluk olarak sayılırdı. <code>b</code> ve <code>c</code> katsayıları biyolojik cinsiyete göre değişir (Banister'ın orijinal kalibrasyonu).</p>
+<p>Motor beş kalibrasyon çıpasını ±0,1 içinde yeniden üretmek zorundadır ve bu testlerle sabitlenmiştir: TRIMP 65 → 7,2 · 135 → 12,3 · 200 → 15,3 · 365 → 19,0 · 500 → 20,2.</p>
+</div>
+
+<div class="eng">
+<h5>TrainingLoadEngine<span class="lines">249 satır</span></h5>
+<p>Tek bir günlük yük serisinden dört soruyu birden cevaplar.</p>
+<dl>
+<dt>ACWR</dt><dd>Akut:kronik oran, <em>üstel</em> olarak — iki hareketli ortalama çifti olarak değil. Yuvarlanan ortalama penceresinin yarısı kadar gecikir; pazartesi değişen bir hafta ancak perşembe sayıya yansırdı.</dd>
+<dt>Rampa</dt><dd>Haftadan haftaya değişim oranı</dd>
+<dt>Monotonluk</dt><dd>Foster'ın monotonluk ve "strain" ölçüleri — haftanın ne kadar tekdüze olduğu</dd>
+<dt>Form</dt><dd>Banister iki bileşenli model: yavaş hareket eden fitness terimi, hızlı hareket eden yorgunluk terimi, form ikisinin farkı</dd>
+</dl>
+<p>Motor hangi sporun yapıldığını bilmez; mercekler sayılar hakkında ne söyleneceğine karar verir. <strong>§12 notu dosyada yazılıdır:</strong> iş yükü literatürü sakatlıkla <em>ilişki</em> bildirir, nedensellik değil — bu motor daha güçlü iddiaya yetkili değildir ve hiçbir bant bunu ima etmez.</p>
+</div>
+
+<div class="eng">
+<h5>FatigueEngine<span class="lines">150 satır</span></h5>
+<p>16 kas grubu için üstel yorgunluk sönümü. Her seansın kas başına etkisi bağımsız olarak üst üste biner — aynı gün iki antrenman toplanır, birbirinin yerini almaz.</p>
+<div class="formula">sleepModifier = clamp(1,35 − 0,006 · SleepScore, 0,75, 1,35)<br>
+t½_m          = 24 sa · sleepModifier · massClass_m<br>
+λ_m           = ln(2) / t½_m<br>
+Fatigue_m(t)  = min(100, Σ impact_{m,i} · e^(−λ_m·(t − t_i)))<br>
+Readiness_m   = clamp(100 − Fatigue_m, 0, 100)</div>
+<p>Kötü uyku yarılanma süresini uzatır, iyi uyku kısaltır. Kas kütle sınıfı da çarpandır: quadriceps bir ön kol kadar hızlı toparlanmaz.</p>
+</div>
+
+<div class="eng">
+<h5>MuscleInvolvementMatrix<span class="lines">232 satır</span></h5>
+<p>Hareket kalıbı × kas grubu katılım matrisi. Hem yorgunluk motorunun hem kuvvet merceğinin ortak anatomi kaynağıdır — iki ayrı "hangi kas çalışıyor" tablosu yoktur.</p>
+</div>
+
+<h3 id="s44"><span class="num">4.4</span>Mercek motorları</h3>
+
+<div class="eng">
+<h5>EnduranceEngine<span class="lines">227 satır</span></h5>
+<p>Her şey tek bir uydurmadan sarkar: kritik hız modeli. Birkaç en iyi çabadan sürdürülebilir bir hız ve onun üzerinde sonlu bir mesafe çıkarılır.</p>
+<div class="formula">d = CS · t + D′</div>
+<p>Buradan varsayılan değil <em>ölçülmüş</em> tempo bölgeleri ve bu koşucuya kalibre edilmiş yarış tahminleri gelir. 120 saniyeden kısa çabalar D′ tarafından domine edilir ve uydurmayı büker; 2.400 saniyeden uzun çabalar iki parametreli modelden sapar — ikisi de dışlanır.</p>
+<p>Modelin bilinen zayıflığı gizlenmek yerine <em>söylenir</em>: oksijen alımının yavaş bileşeni için bir terimi yoktur, dolayısıyla uzun mesafe performansını fazla tahmin eder. Bu yüzden <code>RacePrediction</code> bir ekstrapolasyon katsayısı taşır ve maraton tahmini bunu ekranda açıkça belirtir.</p>
+<p>Eğim düzeltmesi Minetti maliyet eğrisiyle yapılır; eğri minimumunu −%20 civarında verir, ki bu ölçülmüş davranışla uyumludur ve testle sabitlenmiştir.</p>
+</div>
+
+<div class="eng">
+<h5>StrengthEngine<span class="lines">227 satır</span></h5>
+<p>Kaldırıcının gerçekten sorduğu üç soru: bar yukarı gidiyor mu, her kas yeterli iş alıyor mu, bir şey çarpık mı? Üçü de kaydedilen seanslardan ve 16 kaslık katılım matrisinden gelir — ikinci bir anatomi kaynağı eklemez.</p>
+<dl>
+<dt>1RM</dt><dd>Epley ve Brzycki formülleri; düşük tekrarda birbirine yakın, yüksek tekrarda ayrışırlar ve bu ayrışma gösterilir</dd>
+<dt>Eşik</dt><dd><code>setCountingThreshold = 0,25</code> — bir hareket kalıbı bir kası %25'in altında çalıştırıyorsa çalışan set sayılmaz</dd>
+<dt>Pencere</dt><dd>Hacim 7 gün, ilerleme geçmişi 180 gün</dd>
+</dl>
+</div>
+
+<div class="eng">
+<h5>HybridEngine<span class="lines">237 satır</span></h5>
+<p>Motorun tek bir tezi var: <strong>Hyrox'ta yarışı kaybettiren sayı, yorgunken koşarken ne kadar yavaşladığındır.</strong> İstasyon süreleri ölçülebilir ve herkes ölçüyor; kompanse koşu cezasını ölçen neredeyse yok. Motor tam olarak bunu hesaplar: taze koşu temposu ile istasyon sonrası koşu temposu arasındaki fark.</p>
+</div>
+
+<div class="eng">
+<h5>LongevityEngine<span class="lines">218 satır</span></h5>
+<p>Uzun ufuklu bileşik skor. Her sütun 0–100 puanlanır ve <strong>her biri kullanıcının kendi geçmişine karşı</strong> puanlanır — bir popülasyon tablosuna karşı değil. Mekanizma her yerde aynı: sinyalin kendi uzun penceresi içindeki yüzdelik konumu alınır, yüksek olan daha uygun olacak şekilde yönlendirilir, ve sütunun sahip olduğu sinyaller ortalanır.</p>
+<p>Geçmişi yetersiz bir sinyal tahminle doldurulmaz — yokluğu kabul edilir ve sütunun ağırlığı yeniden dağıtılır.</p>
+</div>
+
+<h3 id="s45"><span class="num">4.5</span>Sağlık motorları</h3>
+
+<div class="eng">
+<h5>VitalsEngine<span class="lines">178 satır</span></h5>
+<p>18 hayati işaret için taban ve sapma. Bu motor <code>BaselineEngine</code>'i kasıtlı olarak <em>yeniden kullanmaz</em>: o, §4'ün sözleşmesini birebir uygular — 60 günlük EWMA, 3σ'da winsorize, metrik başına belgelenmiş öncül ve kalibrasyon kapısı. Bir hayati işaretin öncülü, şartname ağırlığı veya kalibrasyon gereksinimi yoktur; ihtiyacı olan kendi ufkundaki düz pencere ortalaması ve sapmasıdır.</p>
+<p>İkisini karıştırmak ya öncülü olmayan on sekiz sinyal için öncül uydurmak ya da toparlanma tabanını gevşetmek anlamına gelirdi. §12 gereği hiçbir okumanın "iyi" olup olmadığına karar verilmez; yalnızca kişinin kendi son aralığına göre nerede durduğu bildirilir.</p>
+</div>
+
+<div class="eng">
+<h5>StressEngine<span class="lines">208 satır</span></h5>
+<p>Günü böler. Zorlanma motorunun zaten okuduğu gün içi kalp hızı serisi ve günün antrenmanları üzerinden çalışır — yeni HealthKit yüzeyi yok, yeni depolama yok. Aynı veriye farklı bir soru: "ne kadar yük" değil, "yük nereden geldi ve gün ne zaman gevşedi".</p>
+<p>§12: seans dışındaki sürekli yükselme <em>yük</em> ve <em>örüntü</em> olarak tarif edilir. Klinik anlamda strese asla stres denmez ve bu asla bir sağlık bulgusuna dönüşmez.</p>
+</div>
+
+<div class="eng">
+<h5>CycleEngine<span class="lines">250 satır</span></h5>
+<p>İki iş yapar: kaydedilen kanamadan bir günün hangi fazda olduğunu tahmin etmek, ve bir metriğin geçmişini faza göre bölerek bugünü kendisine benzeyen günlerle karşılaştırmak.</p>
+<p><strong>Asıl önemli olan ikincisi.</strong> Luteal fazdaki bir dinlenme kalp hızı, tüm döngü ortalamasına karşı karşılaştırıldığında her ay iki üç atım yüksek durur; bu farkı okuyan bir toparlanma motoru olmayan kötü bir sabah bildirir. Tabanı bölmek sistematik bir hatayı kaldırır — özellik eklemez.</p>
+<p>§12: burada hiçbir şey gebelik çıkarmaz, doğurganlık tahmin etmez veya bir döngüyü düzenli/düzensiz diye nitelemez. Kullanıcının kaydettiğinden bir faz tahmin eder, ne kadar emin olduğunu söyler ve durur.</p>
+</div>
+
+<div class="eng">
+<h5>PainEngine<span class="lines">125 satır</span></h5>
+<p>Tek bir soru: kaydedilmiş bir ağrı girdisinden önceki günler, kaydedilmemiş bir günden öncekilerden daha mı ağırdı? Bu, uygulamanın zaten sahip olduğu iki şey arasında bir karşılaştırmadır — §12'nin çizdiği sınır tam olarak burasıdır. <em>Neden</em> sorusuna dair hiçbir şey bu sınırın dışındadır.</p>
+<p>Pencere 48 saattir: gecikmeli kas ağrısı bir ile iki gün arasında tepe yapar.</p>
+</div>
+
+<div class="eng">
+<h5>LabInsightEngine<span class="lines">262 satır</span></h5>
+<p>Saklanan kan belirteçlerini gözleme çevirir. §12 çizgisi bu motorun üzerinde yaşadığı çizgidir ve açıkça söylenmeyi hak eder: <strong>referans bandının dışındaki bir değer burada tam olarak tek bir çıktı üretir, o da "bunu hekiminize götürün".</strong> Sebep yok, isim yok, takviye yok, doz yok, "bu genelde şu anlama gelir" yok.</p>
+<p>Motorun gerçekten iyi olduğu şey, bir laboratuvar raporunun yapamadığıdır: kan alınmadan önceki günlerde kullanıcının ne yaptığını bilir ve panelin geri kalanının neye benzediğini bilir. Zenithium'un söylemeye hakkı olanlar: bir sayının nerede durduğu, nasıl hareket ettiği, ne kadar eski olduğu ve antrenman etrafında nasıl davrandığı.</p>
+</div>
+
+<h3 id="s46"><span class="num">4.6</span>Bağlam motorları</h3>
+
+<div class="eng">
+<h5>EnvironmentEngine<span class="lines">162 satır</span></h5>
+<p>Yol haritası üç şey saymıştı: gün ışığı, rakım ve saat dilimi kayması. İkisi yapıldı, üçüncüsü kasıtlı olarak yapılmadı.</p>
+<p><strong>Gün ışığı</strong> gerçek bir boşluğu doldurur: sirkadiyen motor uyanıklık eğrisini uyku zamanlamasına göre modeller, ama ışık baskın zeitgeber'dir — neredeyse tamamen kapalı mekânda geçen bir hafta o eğriyi <em>daha az</em> güvenilir kılar ve uygulama aynı kendinden emin yayı sunmak yerine bunu söylemelidir. <strong>Saat dilimi kayması</strong> ucuz ve gerçekten faydalıdır: gün kayıtları zaten hesaplandıkları dilimi taşır.</p>
+</div>
+
+<div class="eng">
+<h5>HeatAcclimationEngine<span class="lines">198 satır</span><span class="chip">v4 · C7</span></h5>
+<p>Sıcakta yapılan seanslardan ısı adaptasyonu. Literatürün desteklediği kısım zaman seyridir ve çalışmalar arasında tutarlıdır: etkinin çoğu günlük maruziyetin beş ilâ on günü içinde ortaya çıkar, plato kabaca iki haftada gelir, ve maruziyet olmadan iki ilâ üç haftada — kazanıldığından hızlı — söner.</p>
+<p>Dolayısıyla model sınırlı bir birikim artı sönümdür, daha fazlası değil: eşiğin üzerindeki her seans, ne kadar sıcak olduğu ve ne kadar sürdüğüyle ölçeklenen bir artış ekler; seanssız her gün biraz eksiltir. Sıcaklık ve nem HealthKit antrenman meta verisinden (<code>HKMetadataKeyWeatherTemperature</code>) okunur.</p>
+</div>
+
+<div class="eng">
+<h5>ReferenceNorms<span class="lines">Domain/Norms</span><span class="chip">v4 · C11</span></h5>
+<p>Yaş ve cinsiyet için VO₂max referans yüzdelikleri (FRIEND kayıt tablosu). Uygulamanın popülasyon karşılaştırması yaptığı tek yer; her yerde varsayılan hâlâ kişinin kendi geçmişidir.</p>
+<div class="note warn" style="margin-top:2.6mm">
+  <span class="tag">ASSUMPTION NORM-1 — kontrol edildi, tutmadı</span>
+  <p>Tablo, dosyanın atıf verdiği kaynağa (Kaminsky ve ark. 2015) karşı kontrol edildi. Kontrol edilebilen dört hücrenin ikisi yanlış: 70–79 yaş 50. persentili erkekte 28,1 yerine <strong>24,4</strong>, kadında 21,5 yerine <strong>18,3</strong> olmalı. 20–29 hücreleri doğru.</p>
+  <p>Kalan 32 hücre bu makineden doğrulanamadı. Bu yüzden <code>isPublicationVerified</code> <strong>false</strong> ve ekran tablo aktarılana kadar karşılaştırma göstermiyor. Aritmetik ve testler duruyor; yanlış olan yalnızca 36 sayı.</p>
+</div>
+</div>
+
+<h3 id="s47"><span class="num">4.7</span>Karar motorları</h3>
+
+<div class="eng">
+<h5>PrescriptionEngine<span class="lines">371 satır — en büyük motor</span></h5>
+<p>Her motorun cevabının buluştuğu yer. Karar tek yönde ilerler ve her adım bir öncekini daraltır:</p>
+<ol style="font-size:9.3pt">
+<li><strong>Toparlanma</strong> niyeti belirler — itmek, korumak veya geri çekilmek.</li>
+<li><strong>Yük oranı</strong> ayarlar. Bir zirvenin tepesindeki yeşil sabah, daha fazla eklemek için izin değildir; iki kolay haftadan sonraki sarı sabah çoğu zaman izindir.</li>
+<li><strong>Kas hazırlığı</strong> seçenek eler. %40'taki bacaklara alt vücut işi yazmanın anlamı yoktur.</li>
+<li><strong>Mercek</strong> kalanı tanınabilir bir seansa çevirir. Aynı girdiler bir koşucu için "55 dakika kolay", sağlığını izleyen biri için "40 dakika tempolu yürüyüş" olur.</li>
+<li><strong>Zorlanma tavanı</strong> süreyi kırpar — <code>StrainEngine</code>'in integrali <em>tersine</em> koşturularak, böylece tahmin bu geceki sayıyla aynı ölçekte kalır.</li>
+</ol>
+<p>Regl döngüsü bağlamı ayrı bir satır olarak eklenir ve kasıtlı olarak yumuşatılmaz:</p>
+<pre style="font-size:7.4pt"><span class="k">static let</span> phaseTypicalFraction: <span class="k">Double</span> = <span class="s">0.10</span>
+
+<span class="k">static func</span> cycleContextLine(cycle: CycleContext?, band: RecoveryBand) -> <span class="k">String</span>? {
+    <span class="k">guard let</span> cycle, cycle.estimate.isConfident <span class="k">else</span> { <span class="k">return nil</span> }
+    <span class="k">guard</span> band != .green <span class="k">else</span> { <span class="k">return nil</span> }
+    <span class="k">let</span> q = cycle.estimate.qualifier          <span class="c">// kısaltıldı</span>
+    <span class="k">guard let</span> deviation = cycle.deviationFromPhaseMean <span class="k">else</span> {
+        <span class="k">return</span> <span class="s">"\(q). Bu faz için henüz yeterli geçmiş yok."</span>
+    }
+    <span class="k">guard</span> abs(deviation) &lt;= phaseTypicalFraction <span class="k">else</span> {
+        <span class="k">return</span> <span class="s">"\(q). HRV'n bu fazın ortalamasından belirgin farklı."</span>
+    }
+    <span class="k">return</span> <span class="s">"\(q). Bu faz için olağan bir sabah."</span>
+}</pre>
+<p>Luteal fazı yumuşatma talebi hem kanıt gerekçesiyle (McNulty 2020 meta-analizi, faz etkisinin küçük ve tutarsız olduğunu bildirir) hem §1 gerekçesiyle reddedildi; bir sonraki katkı sağlayıcının bunu geri getirmemesi için bir <em>değişmezlik testi</em> yazıldı.</p>
+</div>
+
+<div class="eng">
+<h5>PlanEngine<span class="lines">165 satır</span></h5>
+<p>Bugünün bir hedefe giden yolda nerede durduğu. Kasıtlı olarak küçük: faz sınırları olay tarihinden geriye sayılır ve konikleşmenin (taper) form üzerindeki etkisi yük motorunun zaten koşturduğu fitness/yorgunluk modeliyle hesaplanır — ikinci bir antrenman teorisi yok, program taklidi yok.</p>
+</div>
+
+<div class="eng">
+<h5>NarrativeEngine<span class="lines">251 satır</span></h5>
+<p>Deterministik anlatıcı. İnsanların bir sağlık uygulamasında "yapay zekâ" derken kastettikleri katman budur ve ne yaptığı konusunda kesin olmak gerekir: <strong>bir modelden metin üretmez.</strong> Bugün <em>hangi olgunun en çok önemli olduğuna</em> karar verir ve onu bir insanın söyleyeceği bir cümleyle söyler.</p>
+<p>Her motor zaten katkı paylarını hesaplıyor; anlatıcının bütün işi onlara bakıp günü açıklayanı seçmek. Her cihazda çalışır, model gerektirmez, pil harcamaz ve aynı sayılardan her seferinde aynı cümleyi üretir — yani test edilebilir. Dil modeli katmanı bunun <em>üstünde</em> oturur ve kararı asla değiştirmez.</p>
+</div>
+
+<div class="eng">
+<h5>CorrelationEngine<span class="lines">163 satır</span></h5>
+<p>Davranış–ölçüm karşılaştırması. Yaklaşım kasıtlı olarak basit ve savunulabilir: iki grup ortalaması, Welch standart hatasıyla bir güven aralığı ve Cohen'in <em>d</em>'si. Regresyon veya çok değişkenli model kurulmuyor — çünkü eldeki <em>n</em> bunu taşımaz ve taşıyormuş gibi yapmak kullanıcıya hak etmediği bir kesinlik satmak olurdu.</p>
+<p><strong>ASSUMPTION CORR-1:</strong> güven aralığı normal yaklaşımı (z = 1,96) kullanır, t dağılımı değil. Gruplar 5'in altındaysa sonuç hiç üretilmez; 5–10 aralığında normal yaklaşım aralığı bir miktar dar tahmin eder. Telafi olarak minimum örneklem 6'da tutulur ve arayüz gözlem sayısını her zaman gösterir.</p>
+</div>
+
+<div class="eng">
+<h5>RacePlanEngine<span class="lines">208 satır</span><span class="chip">v4 · C2</span></h5>
+<p>Bir parkuru ve bir hedefi kilometre bölümlerine çevirir. Fikir şu: <em>koşucu tempo değil efor tutar.</em> Tepeli bir parkurda eşit <em>tempo</em> tutmak, tırmanışlarda inişlerden çok daha fazla harcamak ve ikinci yarıyı hiçbir şeyle koşarak bitişe varmak demektir. Eşit <em>efor</em> tutmak, temponun zeminle birlikte hareket etmesi demektir — planın işi bunun ne kadar olduğunu söylemektir.</p>
+<p><code>EnduranceEngine.gradeCostRatio</code> zaten "bu eğim ne kadara mal olur" sorusunu cevaplıyor; bu motor onu ters yönde koşturur: düz-eşdeğer tempo <em>p</em> verildiğinde, <em>g</em> eğiminde tutulacak tempo <code>p · ratio(g)</code>'dir. Parkur profili GPX dosyasından okunur.</p>
+</div>
+
+<div class="eng">
+<h5>SessionShapeEngine<span class="lines">125 satır</span><span class="chip">v4 · C8</span></h5>
+<p>Yol haritası HealthKit antrenmanlarının hibrit ekranının modellediği Hyrox istasyonlarına sınıflandırılmasını istemişti. <strong>Bu mümkün değil ve taklit edilmemeli:</strong> bir antrenman özeti bir aktivite tipi, bir süre, bir mesafe ve bir ortalama kalp hızı taşır ve bunların hiçbiri kızak itmeyi wall ball setinden ayırmaz. İkisi de "fonksiyonel kuvvet antrenmanı, 42 dakika" olarak gelir. Tahmin etmek birinin kaydını yapmadığı istasyonlarla doldururdu, ve yanlış bir kayıt boş bir kayıttan kötüdür.</p>
+<p>Veride gerçekten <em>olan</em> şey tekrardır. Her salı sekiz kilometre koşan biri bunu sekiz kez kaydetmiştir; bunu bir şablon olarak geri sunmak — ön doldurulmuş süre, mesafe, yoğunluk — hiçbir şey uydurmadan yazma zahmetini kaldırır. Motor bunu yapar.</p>
+</div>

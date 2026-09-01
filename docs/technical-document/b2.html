@@ -1,0 +1,125 @@
+<h2 id="ch2"><span class="kicker">Bölüm iki</span><span class="num">02</span>Mimari</h2>
+
+<p class="lead">Zenithium tek yönlü bir bağımlılık zinciri üzerine kuruludur. En altta hiçbir şeye bağımlı olmayan saf değer tipleri, en üstte SwiftUI görünümleri vardır. Bu zincirin yönü bir stil tercihi değil, Apple Watch ve widget hedeflerinin derlenebilmesinin ön koşuludur.</p>
+
+<h3 id="s21"><span class="num">2.1</span>Katmanlar</h3>
+
+<pre><span class="c">// Bağımlılık yönü — yukarıdan aşağıya, asla tersi.</span>
+
+Views          SwiftUI görünümleri, Canvas çizimleri, tasarım sistemi
+   ↓
+ViewModels     @MainActor @Observable durum sahipleri
+   ↓
+Orchestration  Günlük yeniden hesaplama, arka plan görevleri, göç
+Persistence    SwiftData deposu, repository protokolleri, önbellek
+Health         HealthKit okuma hattı, canlı seans oturumu
+Intelligence   Cihaz içi dil modeli + güvenlik filtresi
+   ↓
+Engines        29 saf hesap motoru — <span class="k">static func</span>, durum yok
+   ↓
+Domain         Saf değer tipleri. Yalnızca Foundation. Hiçbir şeye bağımlı değil.</pre>
+
+<p>Kural şudur: <strong>bir katman yalnızca kendisinden aşağıdakileri import edebilir.</strong> Motorlar Domain'i görür; Domain motorları görmez. Görünümler ViewModel'i görür; ViewModel görünümü görmez.</p>
+
+<div class="note">
+  <span class="tag">Neden bu kural ihlal edilemez</span>
+  <p>Apple Watch uygulaması ve widget uzantısı, iOS uygulamasının kaynak dosyalarının yalnızca bir <em>alt kümesini</em> derler. Watch hedefi <code>Domain</code>'den birkaç dosya alır ama <code>Engines</code>'i almaz. Eğer bir Domain dosyası bir motora atıfta bulunursa, iOS hedefi sorunsuz derlenir ama <strong>watch hedefi kırılır</strong> — ve bu, iOS'ta hiçbir belirti vermez.</p>
+  <p>Bu tam olarak iki kez oldu: <code>SleepDebtIO.swift</code> <code>SleepDebtEngine</code>'e, <code>HeatAcclimation.swift</code> <code>HeatAcclimationEngine</code>'e sızmıştı. İkisi de her yığın için çalıştırılan statik kaynak-kapanış taramasıyla yakalandı. Çözüm eşiği değer tipine taşımaktı: <code>SleepDebtLedger.minimumNights</code>, <code>HeatAcclimationState.establishedThreshold</code> — motor artık kendi sabitini değer tipinden okuyor.</p>
+</div>
+
+<h3 id="s22"><span class="num">2.2</span>Eşzamanlılık modeli</h3>
+
+<p>Proje <strong>Swift 6 dil kipinde, sıkı eşzamanlılık denetimi "complete"</strong> ayarıyla yazıldı. Bu, veri yarışlarını çalışma zamanında değil derleme zamanında yakalar — ve bedeli, her tipin izolasyon alanının açıkça belirtilmesidir.</p>
+
+<table>
+<caption>Eşzamanlılık envanteri — ölçüm</caption>
+<thead><tr><th style="width:56mm">Yapı</th><th class="n" style="width:18mm">Sayı</th><th>Rolü</th></tr></thead>
+<tbody>
+<tr><td>actor</td><td class="n">10</td><td>Paylaşılan değişken durumun tek sahibi — depo, önbellek, HealthKit köprüsü</td></tr>
+<tr><td>@ModelActor</td><td class="n">2</td><td>SwiftData <code>ModelContext</code>'ini kendi izolasyonunda tutan depo aktörleri</td></tr>
+<tr><td>@Observable</td><td class="n">22</td><td>ViewModel'ler — hepsi <code>@MainActor</code></td></tr>
+<tr><td>@MainActor</td><td class="n">37</td><td>Arayüze dokunan her tip</td></tr>
+<tr><td>Sendable uyumu</td><td class="n">273</td><td>İzolasyon sınırlarını geçen her değer tipi</td></tr>
+</tbody>
+</table>
+
+<h4>Yasak listesi ve denetimi</h4>
+
+<p>Şartname §2.4 bir dizi yapıyı yasaklar. Bugünkü durum, depoda çalıştırılan bir aramanın sonucu:</p>
+
+<table class="compact">
+<thead><tr><th style="width:46mm">Yasaklı yapı</th><th style="width:18mm">Bulunan</th><th>Yerine kullanılan</th></tr></thead>
+<tbody>
+<tr><td>ObservableObject / @Published</td><td>0</td><td><code>@Observable</code> makrosu</td></tr>
+<tr><td>Combine</td><td>0</td><td><code>AsyncSequence</code>, <code>AsyncStream</code></td></tr>
+<tr><td>DispatchQueue</td><td>0<span class="chip">1 yorum</span></td><td>actor izolasyonu, <code>Task</code></td></tr>
+<tr><td>NSLock</td><td>0</td><td>actor izolasyonu</td></tr>
+<tr><td>print()</td><td>0</td><td><code>OSLog</code> / <code>OSSignposter</code></td></tr>
+<tr><td>Zorlamalı açma <code>!</code>, <code>try!</code>, <code>as!</code></td><td>0</td><td><code>guard let</code>, <code>throws</code>, <code>as?</code></td></tr>
+<tr><td>Değişken global durumlu singleton</td><td>0</td><td>Bağımlılık enjeksiyonu, protokol soyutlaması</td></tr>
+<tr><td>Storyboard</td><td>0</td><td>Tamamı SwiftUI</td></tr>
+<tr><td>UIViewRepresentable</td><td>0</td><td>Yerel SwiftUI; iki <code>UIKit</code> import'u var — <code>ReportDocumentRenderer</code>'da PDF çizimi, <code>ProtectedDataGuard</code>'da veri koruma durumu. İkisinin de karşılığı yok ve gerekçeleri dosyalarında yazılı</td></tr>
+</tbody>
+</table>
+
+<p>Yasak listesindeki tek "1 yorum" işareti, <code>BackgroundRefreshScheduler.swift</code> içinde neden <code>DispatchQueue</code> kullanılmadığını açıklayan bir yorum satırıdır — çağrı değildir.</p>
+
+<h4>Sınırlı paralellik deseni</h4>
+
+<p>Birden çok bağımsız okuma gerektiğinde kalıp şudur: sıralı <code>await</code> zinciri değil, <strong>eşzamanlılığı sınırlanmış bir <code>withTaskGroup</code></strong>. Sınır olmadan 18 HealthKit sorgusu aynı anda açılır ve HealthKit'in kendi kuyruğu boğulur.</p>
+
+<pre><span class="k">private enum</span> VitalReadOutcome: <span class="k">Sendable</span> {
+    <span class="k">case</span> samples([VitalSample])
+    <span class="k">case</span> blocked(ZenithiumError)   <span class="c">// izin reddedildi — kullanıcıya söylenir</span>
+    <span class="k">case</span> unreadable                <span class="c">// veri yok — sessizce atlanır</span>
+}
+
+<span class="k">private static let</span> maximumConcurrentVitalReads = <span class="s">4</span></pre>
+
+<p>Aynı desen <code>HealthKitService</code> içindeki iki döngüde de uygulandı. Hata, atılan bir <code>Error</code> yerine bir <code>Sendable</code> enum olarak taşınır; çünkü "izin yok" ile "veri yok" kullanıcı için farklı anlamlara gelir ve bir <code>try</code> zinciri ikisini ayırt edemez.</p>
+
+<h3 id="s23"><span class="num">2.3</span>Dört hedef</h3>
+
+<table class="wide">
+<caption>Hedefler ve kaynak paylaşımı</caption>
+<thead><tr><th style="width:32mm">Hedef</th><th style="width:20mm">Platform</th><th class="n" style="width:14mm">Dosya</th><th>Kapsam</th></tr></thead>
+<tbody>
+<tr><td>Zenithium</td><td>iOS 18</td><td class="n">246</td><td>Ana uygulama — bütün katmanlar</td></tr>
+<tr><td>ZenithiumWatch</td><td>watchOS 11</td><td class="n">7</td><td>Canlı seans, <code>HKWorkoutSession</code>, telefona yayın</td></tr>
+<tr><td>ZenithiumWidgets</td><td>iOS 18</td><td class="n">9</td><td>7 widget + Live Activity + Control Widget</td></tr>
+<tr><td>ZenithiumTests</td><td>iOS 18</td><td class="n">48</td><td>588 test · 66 paket</td></tr>
+</tbody>
+</table>
+
+<p>Watch ve widget hedefleri ana uygulamanın <code>Domain</code> dosyalarından seçtiklerini <em>doğrudan derler</em> — paylaşılan bir çerçeve (framework) hedefi yoktur. Bu, ek bir modül sınırı ve dinamik bağlama maliyeti getirmemek için verilmiş bir karardır; bedeli, §2.1'deki bağımlılık kuralının elle korunmasıdır.</p>
+
+<p>Örnek: watch uygulaması zorlanma (strain) göstergesi çizer ama <code>RecoveryEngine</code>'i derlemez. Bu yüzden TRIMP↔zorlanma dönüşümü <code>RecoveryEngine</code>'den çıkarılıp bağımsız bir <code>Domain/StrainScale.swift</code> dosyasına taşındı; her iki hedef de aynı ölçeği aynı sabitlerle kullanır.</p>
+
+<h3 id="s24"><span class="num">2.4</span>Klasör envanteri</h3>
+
+<table class="compact">
+<caption>Ölçüm — <span class="kbd">wc -l</span>, 21 Ağustos 2026 · sürüm 0.1</caption>
+<thead><tr><th style="width:34mm">Klasör</th><th class="n" style="width:14mm">Dosya</th><th class="n" style="width:16mm">Satır</th><th>İçeriği</th></tr></thead>
+<tbody>
+<tr><td>Views</td><td class="n">55</td><td class="n">11.503</td><td>19 ekran ailesi + tasarım sistemi</td></tr>
+<tr><td>Domain</td><td class="n">67</td><td class="n">10.807</td><td>Saf değer tipleri, 14 alt alan</td></tr>
+<tr><td>Engines</td><td class="n">29</td><td class="n">6.208</td><td>Hesap motorları</td></tr>
+<tr><td>ViewModels</td><td class="n">21</td><td class="n">4.030</td><td><code>@MainActor @Observable</code> durum</td></tr>
+<tr><td>Persistence</td><td class="n">11</td><td class="n">2.833</td><td>SwiftData deposu, önbellek, arşiv</td></tr>
+<tr><td>Health</td><td class="n">6</td><td class="n">2.419</td><td>HealthKit okuma ve canlı oturum</td></tr>
+<tr><td>Orchestration</td><td class="n">6</td><td class="n">1.557</td><td>Günlük hesap, arka plan, göç</td></tr>
+<tr><td>Models</td><td class="n">16</td><td class="n">1.276</td><td>12 SwiftData modeli + 3 şema sürümü</td></tr>
+<tr><td>Reports</td><td class="n">3</td><td class="n">472</td><td>Hekim raporu üretimi</td></tr>
+<tr><td>Intelligence</td><td class="n">3</td><td class="n">338</td><td>Dil modeli + güvenlik filtresi</td></tr>
+<tr><td>Labs</td><td class="n">2</td><td class="n">307</td><td>PDF/OCR ayrıştırma</td></tr>
+<tr><td>Connectivity</td><td class="n">1</td><td class="n">203</td><td>WatchConnectivity köprüsü</td></tr>
+<tr><td>Endurance</td><td class="n">1</td><td class="n">189</td><td>GPX okuyucu</td></tr>
+<tr><td>Support</td><td class="n">3</td><td class="n">182</td><td>Biçimlendirme, signpost, hata tipleri</td></tr>
+<tr><td>Intents</td><td class="n">1</td><td class="n">155</td><td>App Intents / Siri</td></tr>
+<tr><td>App</td><td class="n">3</td><td class="n">473</td><td>Giriş noktası, kök gezinme</td></tr>
+<tr><td>Live</td><td class="n">1</td><td class="n">61</td><td>ActivityKit öznitelikleri</td></tr>
+<tr><td>ZenithiumWidgets</td><td class="n">9</td><td class="n">949</td><td>Widget uzantısı</td></tr>
+<tr><td>ZenithiumWatch</td><td class="n">7</td><td class="n">874</td><td>watchOS uygulaması</td></tr>
+<tr><td>ZenithiumTests</td><td class="n">38</td><td class="n">8.346</td><td>Test paketleri</td></tr>
+</tbody>
+</table>

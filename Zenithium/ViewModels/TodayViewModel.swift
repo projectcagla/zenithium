@@ -1,0 +1,420 @@
+//
+//  TodayViewModel.swift
+//  Zenithium
+//
+//  The Today screen: how recovered am I. Spec §1, §10.
+//
+
+import Foundation
+import Observation
+
+@MainActor
+@Observable
+final class TodayViewModel {
+
+    /// Everything the Today screen renders. Assembled once, so the view computes nothing.
+    struct Content: Sendable, Equatable {
+        let recovery: RecoveryOutput
+        let record: BiometricDaySnapshot
+        let circadian: CircadianArc?
+        let strain: StrainOutput?
+        let profile: UserProfileSnapshot
+
+        /// §12 copy, resolved here so no view can invent it.
+        let headline: String
+        let guidance: String
+        let driverSentence: String
+
+        var score: Double { recovery.score ?? 0 }
+        var band: RecoveryBand { recovery.band ?? .yellow }
+        var ceiling: Double? { recovery.targetStrainCeiling }
+    }
+
+    private(set) var state: ViewState<Content> = .loading
+    private(set) var isRefreshing = false
+
+    /// The narrated briefing. `nil` until the first pass has produced one; the card is
+    /// simply absent until then rather than showing a placeholder.
+    private(set) var briefing: Briefing?
+
+    /// Today's suggestion (Faz 19), and where it sits in a plan (Faz 20). Both arrive with
+    /// the briefing rather than with the score, because both depend on reads the recovery
+    /// pipeline does not make.
+    private(set) var prescription: Prescription?
+    private(set) var planPosition: PlanPosition?
+
+    private let coordinator: any RecalculationDriving
+    private let health: any HealthAuthorizing
+    private let nowProvider: @Sendable () -> Date
+    private var observationTask: Task<Void, Never>?
+    private var briefingTask: Task<Void, Never>?
+
+    /// Writes the briefing. `AdaptiveNarrator` by default, which uses the on-device model
+    /// when there is one and the deterministic narrator otherwise.
+    private let narrator: any IntelligenceProviding
+
+    /// Read for the correlation and laboratory lines in the briefing. Both optional: a
+    /// briefing without them is shorter, not broken.
+    private let journal: (any JournalRepository)?
+    private let bloodMarkers: (any BloodMarkerRepository)?
+    private let records: (any BiometricDayRepository)?
+
+    /// Read only when the profile has cycle awareness switched on (Faz 12).
+    private let cycleSource: (any HealthDataProviding)?
+
+    /// The goal being worked towards, if any (Faz 20).
+    private let goals: (any GoalEventRepository)?
+
+    /// Fits the critical-speed model so an endurance prescription can name a pace band
+    /// rather than only a duration.
+    private let workoutSource: (any HealthDataProviding)?
+
+    init(
+        coordinator: any RecalculationDriving,
+        health: any HealthAuthorizing,
+        narrator: any IntelligenceProviding = AdaptiveNarrator(),
+        journal: (any JournalRepository)? = nil,
+        bloodMarkers: (any BloodMarkerRepository)? = nil,
+        records: (any BiometricDayRepository)? = nil,
+        cycleSource: (any HealthDataProviding)? = nil,
+        goals: (any GoalEventRepository)? = nil,
+        workoutSource: (any HealthDataProviding)? = nil,
+        nowProvider: @escaping @Sendable () -> Date = { Date() }
+    ) {
+        self.coordinator = coordinator
+        self.health = health
+        self.narrator = narrator
+        self.journal = journal
+        self.bloodMarkers = bloodMarkers
+        self.records = records
+        self.cycleSource = cycleSource
+        self.goals = goals
+        self.workoutSource = workoutSource
+        self.nowProvider = nowProvider
+    }
+
+    /// Stops observing. Called from the view's `.onDisappear`.
+    ///
+    /// This is an explicit method rather than a `deinit`: `deinit` is nonisolated, so reading
+    /// a `@MainActor` stored property from it is a strict-concurrency error.
+    func onDisappear() {
+        observationTask?.cancel()
+        observationTask = nil
+        briefingTask?.cancel()
+        briefingTask = nil
+    }
+
+    /// First load, plus subscription to background passes.
+    func onAppear() async {
+        if state.isLoading {
+            await refresh()
+        }
+        startObserving()
+    }
+
+    /// Re-runs the pipeline. Safe to call while one is already running — the coordinator is
+    /// single-flight, so a rapid pull-to-refresh joins the pass instead of queueing another.
+    func refresh() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        guard await ensureAuthorized() else { return }
+        do {
+            let result = try await coordinator.recalculate(now: nowProvider())
+            apply(result)
+        } catch {
+            if let mapped = ViewState<Content>.from(error) {
+                state = mapped
+            }
+        }
+    }
+
+    /// Requests Health access from the gate, then loads.
+    func requestAuthorization() async {
+        do {
+            try await health.requestAuthorization()
+            state = .loading
+            await refresh()
+        } catch {
+            if let mapped = ViewState<Content>.from(error) {
+                state = mapped
+            }
+        }
+    }
+
+    private func startObserving() {
+        guard observationTask == nil else { return }
+        observationTask = Task { [weak self] in
+            guard let self else { return }
+            let stream = await self.coordinator.results()
+            for await result in stream {
+                guard !Task.isCancelled else { return }
+                self.apply(result)
+            }
+        }
+    }
+
+    private func ensureAuthorized() async -> Bool {
+        guard await health.isHealthDataAvailable() else {
+            state = .needsAuthorization(.unavailable)
+            return false
+        }
+        let report = await health.authorizationReport(now: nowProvider())
+        guard report.overall.permitsReads else {
+            state = .needsAuthorization(report.overall)
+            return false
+        }
+        return true
+    }
+
+    private func apply(_ result: RecalculationResult) {
+        switch result.recovery.availability {
+        case .calibrating(let collected, let required):
+            state = .calibrating(
+                progress: BaselineEngine.calibrationProgress(sampleCount: collected),
+                daysCollected: collected,
+                daysRequired: required
+            )
+
+        case .unavailable(let reason):
+            state = .noData(reason: .recoveryUnavailable(reason))
+
+        case .scored:
+            startBriefing(for: result)
+            let band = result.recovery.band ?? .yellow
+            state = .loaded(
+                Content(
+                    recovery: result.recovery,
+                    record: result.record,
+                    circadian: result.circadian,
+                    strain: result.strain,
+                    profile: result.profile,
+                    headline: SafetyCopy.recoveryHeadline(for: band),
+                    guidance: SafetyCopy.recoveryGuidance(for: band),
+                    driverSentence: SafetyCopy.driverSentence(
+                        positive: result.recovery.topPositiveSummary,
+                        negative: result.recovery.topNegativeSummary
+                    )
+                )
+            )
+        }
+    }
+    // MARK: - Briefing
+
+    /// Build the narrated briefing off the critical path.
+    ///
+    /// Deliberately not awaited by `apply`: the recovery card must appear the moment the
+    /// numbers exist, and the briefing — which may wait on a language model — arrives
+    /// afterwards. A pass that lands while one is in flight replaces it.
+    private func startBriefing(for result: RecalculationResult) {
+        briefingTask?.cancel()
+        briefingTask = Task { [weak self] in
+            guard let self else { return }
+            let context = await self.briefingContext(for: result)
+            guard !Task.isCancelled else { return }
+            let written = await self.narrator.briefing(for: context)
+            guard !Task.isCancelled else { return }
+            self.briefing = written
+
+            let plan = await self.nextPlanPosition(for: result)
+            let suggestion = await self.suggestion(for: result, context: context)
+            guard !Task.isCancelled else { return }
+            self.planPosition = plan
+            self.prescription = suggestion
+        }
+    }
+
+    /// Today's prescription.
+    ///
+    /// Built from the same context the narrator saw, plus the load reading and the muscle
+    /// map — so the sentence at the top of the screen and the session below it cannot
+    /// disagree about what kind of day this is.
+    private func suggestion(
+        for result: RecalculationResult,
+        context: BriefingContext
+    ) async -> Prescription? {
+        var load: TrainingLoadOutput?
+        if let records {
+            let window = context.date.addingTimeInterval(-120 * 86_400)
+            if let days = try? await records.dayRecords(from: window, through: context.date) {
+                load = TrainingLoadEngine.analyse(
+                    TrainingLoadInput(
+                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
+                        referenceDay: context.date
+                    )
+                )
+            }
+        }
+
+        return PrescriptionEngine.prescribe(
+            recovery: result.recovery,
+            lens: result.profile.trainingLens,
+            load: load,
+            muscles: Array(result.muscle.values),
+            strainSoFar: result.strain?.strain ?? 0,
+            biologicalSex: result.profile.biologicalSex,
+            criticalSpeed: await criticalSpeedModel(now: context.date),
+            circadian: result.circadian,
+            // The narrator already read the phase; the prescription reads the same one, so
+            // the sentence at the top of the screen and the session below it cannot
+            // disagree about which phase this is. Yol haritası v4, C6.
+            cycle: context.cyclePhase.map {
+                CycleContext(
+                    estimate: $0,
+                    phaseBaselineHRV: context.cyclePhaseHRVMean,
+                    todayHRV: result.record.heartRateVariability
+                )
+            }
+        )
+    }
+
+    /// The critical-speed fit, when there are enough runs for one.
+    ///
+    /// Only used to attach a pace band to a prescribed session. A failure here costs the
+    /// band and nothing else, so it is a silent optional rather than an error path.
+    private func criticalSpeedModel(now: Date) async -> CriticalSpeedModel? {
+        guard let workoutSource else { return nil }
+        let window = now.addingTimeInterval(-Double(EnduranceEngine.effortWindowDays) * 86_400)
+        guard let workouts = try? await workoutSource.fetchWorkouts(
+            in: DateInterval(start: window, end: now)
+        ) else { return nil }
+
+        let runs = workouts.filter { $0.activity == .running }
+        guard !runs.isEmpty else { return nil }
+        return EnduranceEngine.fit(efforts: EnduranceViewModel.efforts(from: runs), now: now)
+    }
+
+    /// Where today sits relative to the next goal.
+    ///
+    /// Named apart from the `planPosition` property on purpose — a stored property and a
+    /// method cannot share a name, and the pair reads clearly enough this way.
+    private func nextPlanPosition(for result: RecalculationResult) async -> PlanPosition? {
+        guard let goals else { return nil }
+        let lookup = try? await goals.nextGoalEvent(onOrAfter: result.dayStart)
+        guard let next = lookup ?? nil else { return nil }
+        return PlanEngine.position(
+            on: result.dayStart,
+            event: next.event,
+            planStart: next.planStart,
+            calendar: Calendar.autoupdatingCurrent
+        )
+    }
+
+    /// Gather everything the narrator gets to see.
+    ///
+    /// Every optional source is allowed to fail silently. A briefing missing its laboratory
+    /// line is still a good briefing; a briefing that never appears because one repository
+    /// threw is not.
+    private func briefingContext(for result: RecalculationResult) async -> BriefingContext {
+        let now = nowProvider()
+
+        var correlations: [CorrelationResult] = []
+        if let journal {
+            correlations = (try? await Self.correlations(from: journal, records: records, now: now)) ?? []
+        }
+
+        var labObservations: [LabObservation] = []
+        if let bloodMarkers, let markers = try? await bloodMarkers.bloodMarkers(), !markers.isEmpty {
+            labObservations = LabInsightEngine.observations(
+                markers: markers,
+                sex: result.profile.biologicalSex,
+                now: now
+            )
+        }
+
+        var recentScores: [Double] = []
+        var previousStrain: Double?
+        if let records {
+            let window = now.addingTimeInterval(-7 * 86_400)
+            if let days = try? await records.dayRecords(from: window, through: now) {
+                let sorted = days.sorted { $0.dayStart < $1.dayStart }
+                // Today's own record is excluded from the comparison mean; comparing a
+                // number against an average that contains it flattens exactly the movement
+                // the sentence is meant to report.
+                let earlier = sorted.filter { $0.dayStart < result.dayStart }
+                recentScores = earlier.compactMap(\.recoveryScore)
+                previousStrain = earlier.last?.dayStrain
+            }
+        }
+
+        let cycle = await cycleReading(for: result, now: now)
+
+        return BriefingContext(
+            date: now,
+            lens: result.profile.trainingLens,
+            recovery: result.recovery,
+            sleep: result.sleep,
+            previousStrain: previousStrain,
+            currentStrain: result.strain?.strain,
+            muscles: Array(result.muscle.values).sorted { $0.readiness < $1.readiness },
+            correlations: correlations,
+            labObservations: labObservations,
+            recentRecoveryScores: recentScores,
+            cyclePhase: cycle.phase,
+            cyclePhaseHRVMean: cycle.hrvMean
+        )
+    }
+
+    /// Today's cycle phase and the user's own HRV mean within it.
+    ///
+    /// Returns nothing at all unless the profile has cycle awareness switched on. It is
+    /// never inferred from biological sex — reading menstrual data because somebody selected
+    /// "female" would be the app deciding something about a person instead of them.
+    private func cycleReading(
+        for result: RecalculationResult,
+        now: Date
+    ) async -> (phase: CyclePhaseEstimate?, hrvMean: Double?) {
+        guard result.profile.tracksMenstrualCycle, let cycleSource else { return (nil, nil) }
+
+        let calendar = Calendar.autoupdatingCurrent
+        guard let flowDays = try? await cycleSource.fetchMenstrualFlowDays(
+            days: CycleEngine.historyWindowDays,
+            now: now,
+            calendar: calendar
+        ), !flowDays.isEmpty else { return (nil, nil) }
+
+        guard let phase = CycleEngine.phase(on: now, flowDays: flowDays, calendar: calendar) else {
+            return (nil, nil)
+        }
+
+        // The phase-aware mean needs a long HRV history, and it is only used when the phase
+        // itself is confident — scoring against the wrong phase is worse than pooling.
+        guard phase.isConfident, let records else { return (phase, nil) }
+        let window = now.addingTimeInterval(-Double(CycleEngine.historyWindowDays) * 86_400)
+        guard let days = try? await records.dayRecords(from: window, through: now) else {
+            return (phase, nil)
+        }
+
+        let values = days.compactMap { day -> (day: Date, value: Double)? in
+            guard let hrv = day.heartRateVariability else { return nil }
+            return (day.dayStart, hrv)
+        }
+        let partitioned = CycleEngine.partition(values: values, flowDays: flowDays, calendar: calendar)
+        let baseline = CycleEngine.phaseBaseline(for: phase.phase.baselineGroup, partitioned: partitioned)
+        return (phase, baseline?.mean)
+    }
+
+    /// Rank the journal correlations.
+    ///
+    /// Reuses `JournalViewModel.buildInsights` rather than restating the pairing rules —
+    /// which day a behaviour belongs to, and why an unlogged day is not a control — so the
+    /// briefing can never disagree with the Journal screen about the same data.
+    private static func correlations(
+        from journal: any JournalRepository,
+        records: (any BiometricDayRepository)?,
+        now: Date
+    ) async throws -> [CorrelationResult] {
+        guard let records else { return [] }
+        let start = now.addingTimeInterval(-90 * 86_400)
+        let days = try await journal.journalDays(from: start, through: now)
+        guard !days.isEmpty else { return [] }
+        let biometrics = try await records.dayRecords(from: start, through: now)
+        return JournalViewModel.buildInsights(
+            outcome: .recovery,
+            logs: days,
+            records: biometrics,
+            calendar: Calendar.autoupdatingCurrent
+        )
+    }
+}

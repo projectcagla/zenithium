@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Teknik döküman üretecinin ara çıktıları — parçalardan yeniden kurulur.
+docs/technical-document/doc.html
+docs/technical-document/cover.html
+docs/technical-document/*.built.html
+docs/technical-document/*.pdf
+docs/technical-document/*.png

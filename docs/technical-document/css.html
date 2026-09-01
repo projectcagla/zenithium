@@ -1,0 +1,440 @@
+<meta charset="utf-8">
+<style>
+/*__FONTS__*/
+
+:root{
+  --paper:#FFFFFF;
+  --panel:#EEF3F2;
+  --panel2:#E4EBEA;
+  --ink:#0F161A;
+  --ink-soft:#33424A;
+  --muted:#6A777E;
+  --rule:#D3DCDB;
+  --rule-soft:#E6EDEC;
+  --accent:#0E8E80;
+  --accent-deep:#08544C;
+  --amber:#A96A14;
+  --rose:#A33449;
+  --indigo:#36479F;
+  --night:#0A0F13;
+}
+
+@page{ size:A4; margin:19mm 20mm 20mm 20mm; }
+
+*{ box-sizing:border-box; }
+
+html{ font-size:10.2pt; }
+
+html{ background:var(--paper); }
+
+body{
+  margin:0;
+  padding-left:18mm;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Zen Text', 'DejaVu Sans', sans-serif;
+  font-weight:400;
+  line-height:1.52;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:geometricPrecision;
+  hyphens:none;
+}
+
+p{ margin:0 0 0.62em 0; max-width:122mm; }
+p.lead{ font-size:1.14rem; line-height:1.46; color:var(--ink-soft); max-width:126mm; }
+ul,ol{ margin:0 0 0.7em 0; padding-left:1.05em; max-width:120mm; }
+li{ margin-bottom:0.22em; }
+li::marker{ color:var(--accent); }
+strong{ font-weight:700; }
+em{ font-style:italic; }
+
+code, .mono{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:0.86em;
+  font-weight:400;
+}
+code{
+  background:var(--panel);
+  padding:0.06em 0.28em;
+  border-radius:2px;
+  color:var(--accent-deep);
+  word-break:break-word;
+}
+
+/* ---- headings ---- */
+h1,h2,h3,h4{ font-weight:700; line-height:1.1; text-wrap:balance; margin:0; }
+
+h2{
+  font-family:'Zen Display','DejaVu Sans',sans-serif;
+  font-size:27pt;
+  letter-spacing:0.005em;
+  text-transform:uppercase;
+  color:var(--ink);
+  margin:0 0 5mm 0;
+  padding-top:2mm;
+  position:relative;
+  break-before:page;
+  break-after:avoid;
+  max-width:132mm;
+}
+h2:first-of-type{ break-before:auto; }
+h2 .num{
+  position:absolute;
+  left:-18mm;
+  top:2.6mm;
+  width:14mm;
+  text-align:right;
+  font-size:27pt;
+  color:var(--accent);
+  letter-spacing:0;
+}
+h2 .kicker{
+  display:block;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.4pt;
+  font-weight:400;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:2.4mm;
+}
+
+h3{
+  font-size:12.2pt;
+  letter-spacing:-0.005em;
+  margin:7mm 0 2.2mm 0;
+  color:var(--ink);
+  break-after:avoid;
+  position:relative;
+  max-width:126mm;
+}
+h3 .num{
+  position:absolute;
+  left:-18mm;
+  width:14mm;
+  text-align:right;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:8pt;
+  font-weight:400;
+  color:var(--accent);
+  top:0.35em;
+  letter-spacing:0.02em;
+}
+
+h4{
+  font-size:9.6pt;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  color:var(--accent-deep);
+  margin:5mm 0 1.6mm 0;
+  break-after:avoid;
+}
+
+/* ---- tables ---- */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:3mm 0 5mm 0;
+  font-size:8.6pt;
+  line-height:1.36;
+  break-inside:auto;
+}
+caption{
+  caption-side:top;
+  text-align:left;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.2pt;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding-bottom:1.6mm;
+}
+th{
+  text-align:left;
+  font-weight:700;
+  font-size:7.6pt;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+  color:var(--ink);
+  border-bottom:0.6pt solid var(--ink);
+  padding:0 2.2mm 1.4mm 0;
+  vertical-align:bottom;
+}
+td{
+  padding:1.5mm 2.2mm 1.5mm 0;
+  border-bottom:0.4pt solid var(--rule-soft);
+  vertical-align:top;
+  color:var(--ink-soft);
+}
+td:first-child{ color:var(--ink); font-weight:700; }
+tr{ break-inside:avoid; }
+thead{ display:table-header-group; }
+td.n, th.n{ text-align:right; font-variant-numeric:tabular-nums; font-family:'Zen Mono','DejaVu Sans Mono',monospace; padding-right:4mm; }
+table.wide{ font-size:8.2pt; }
+table.compact td{ padding:1.05mm 2.2mm 1.05mm 0; }
+
+/* ---- panels ---- */
+.note{
+  border-left:1.6pt solid var(--accent);
+  background:var(--panel);
+  padding:3.2mm 4mm 2.6mm 4mm;
+  margin:4mm 0 5mm 0;
+  break-inside:avoid;
+  max-width:126mm;
+}
+.note p{ margin-bottom:0.4em; max-width:none; }
+.note p:last-child{ margin-bottom:0; }
+.note .tag{
+  display:block;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7pt;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--accent-deep);
+  margin-bottom:1.4mm;
+}
+.note.warn{ border-left-color:var(--rose); background:#F7EDEF; }
+.note.warn .tag{ color:var(--rose); }
+.note.rule{ border-left-color:var(--amber); background:#F8F1E6; }
+.note.rule .tag{ color:var(--amber); }
+
+.formula{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:8.6pt;
+  background:var(--panel2);
+  padding:2.6mm 3.4mm;
+  margin:2.6mm 0 3.6mm 0;
+  border-radius:2px;
+  break-inside:avoid;
+  max-width:126mm;
+  line-height:1.5;
+}
+
+pre{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.9pt;
+  line-height:1.44;
+  background:var(--night);
+  color:#D6E2E0;
+  padding:3.4mm 4mm;
+  margin:3mm 0 5mm 0;
+  border-radius:2.5px;
+  overflow-x:auto;
+  break-inside:avoid;
+  white-space:pre-wrap;
+}
+pre .k{ color:#63C8B8; }
+pre .c{ color:#7E8D93; font-style:italic; }
+pre .s{ color:#D9A45B; }
+
+/* ---- metric strip ---- */
+.strip{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0;
+  border-top:0.6pt solid var(--ink);
+  border-bottom:0.6pt solid var(--rule);
+  margin:3mm 0 5mm 0;
+  break-inside:avoid;
+}
+.strip div{
+  flex:1 1 24%;
+  padding:2.4mm 3mm 2.4mm 0;
+  border-right:0.4pt solid var(--rule-soft);
+}
+.strip div:last-child{ border-right:none; }
+.strip .v{
+  font-family:'Zen Display','DejaVu Sans',sans-serif;
+  font-size:20pt;
+  line-height:1;
+  color:var(--accent-deep);
+  display:block;
+  font-variant-numeric:tabular-nums;
+}
+.strip .l{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:6.8pt;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:block;
+  margin-top:1.2mm;
+}
+
+/* ---- engine cards ---- */
+.eng{
+  break-inside:auto;
+  orphans:3;
+  widows:3;
+  margin:0 0 4.4mm 0;
+  padding-bottom:3.4mm;
+  border-bottom:0.4pt solid var(--rule-soft);
+  max-width:128mm;
+}
+.eng h5{
+  break-after:avoid;
+  margin:0 0 1.4mm 0;
+  font-size:10pt;
+  font-weight:700;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+}
+.eng h5 span.lines{
+  float:right;
+  font-size:7.2pt;
+  font-weight:400;
+  color:var(--muted);
+  letter-spacing:0.1em;
+}
+.eng p{ margin-bottom:0.42em; font-size:9.3pt; max-width:none; }
+.eng dl{ margin:1.6mm 0 0 0; font-size:8.5pt; }
+.eng dt{
+  float:left;
+  clear:left;
+  width:20mm;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.1pt;
+  letter-spacing:0.11em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding-top:0.35em;
+}
+.eng dd{ margin:0 0 1.1mm 22mm; color:var(--ink-soft); }
+.eng dd:last-child{ margin-bottom:0; }
+
+.chip{
+  display:inline-block;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:6.8pt;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  padding:0.6mm 1.6mm;
+  border:0.4pt solid var(--accent);
+  color:var(--accent-deep);
+  border-radius:1.5px;
+  vertical-align:0.12em;
+  margin-left:1.2mm;
+  font-weight:400;
+}
+.chip.a{ border-color:var(--amber); color:var(--amber); }
+.chip.r{ border-color:var(--rose); color:var(--rose); }
+.chip.i{ border-color:var(--indigo); color:var(--indigo); }
+
+/* ---- cover ---- */
+body.cover-page{ padding-left:0; }
+.cover{ padding-top:6mm; }
+.cover .top{
+  border-top:2.2pt solid var(--ink);
+  padding-top:3mm;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.4pt;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--muted);
+  display:flex;
+  justify-content:space-between;
+}
+.cover h1{
+  font-family:'Zen Display','DejaVu Sans',sans-serif;
+  font-size:70pt;
+  line-height:0.9;
+  letter-spacing:0.004em;
+  text-transform:uppercase;
+  margin:26mm 0 0 0;
+  color:var(--ink);
+}
+.cover h1 em{
+  display:block;
+  font-style:normal;
+  font-size:20pt;
+  letter-spacing:0.12em;
+  color:var(--accent);
+  margin-top:3mm;
+}
+.cover .sub{
+  font-size:13.5pt;
+  line-height:1.34;
+  color:var(--ink-soft);
+  max-width:118mm;
+  margin:8mm 0 0 0;
+  font-weight:400;
+}
+.cover .rulebar{
+  height:2.6mm;
+  display:flex;
+  margin:9mm 0 0 0;
+}
+.cover .rulebar i{ flex:1; }
+.spec{
+  margin-top:14mm;
+  background:var(--night);
+  color:#C9D6D4;
+  padding:6mm 7mm 5mm 7mm;
+  border-radius:3px;
+}
+.spec h6{
+  margin:0 0 3.6mm 0;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7pt;
+  font-weight:400;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:#6E8B87;
+}
+.spec table{ margin:0; font-size:8.4pt; }
+.spec th, .spec td{ border:none; color:#C9D6D4; padding:0.9mm 3mm 0.9mm 0; }
+.spec td:first-child{
+  color:#7E9A96;
+  font-weight:400;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.4pt;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  width:38mm;
+}
+.spec td:last-child{ color:#E4EDEB; }
+.spec .hi{ color:#3FBFAD; font-weight:700; }
+.cover .foot{
+  margin-top:10mm;
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:7.2pt;
+  letter-spacing:0.13em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+/* ---- toc ---- */
+.toc{ margin-top:2mm; }
+.toc ol{ list-style:none; margin:0; padding:0; max-width:132mm; }
+.toc li{ margin:0; }
+.toc .c{
+  display:flex;
+  align-items:baseline;
+  gap:2mm;
+  padding:2.1mm 0 2.1mm 0;
+  border-bottom:0.4pt solid var(--rule-soft);
+}
+.toc .c .n{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:8pt;
+  color:var(--accent);
+  width:9mm;
+  flex:none;
+}
+.toc .c .t{ font-weight:700; font-size:10.4pt; flex:1; }
+.toc .c .d{ flex:1; border-bottom:0.4pt dotted var(--rule); margin:0 1mm 0.6mm 1mm; }
+.toc .c .p{
+  font-family:'Zen Mono','DejaVu Sans Mono',monospace;
+  font-size:8.4pt;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  flex:none;
+}
+.toc .c .s{ display:block; font-weight:400; font-size:8.3pt; color:var(--muted); margin-top:0.6mm; }
+.toc .c .t .s{ max-width:88mm; }
+
+.divider{ height:0.6pt; background:var(--ink); margin:6mm 0 4mm 0; max-width:132mm; }
+.kbd{ font-family:'Zen Mono','DejaVu Sans Mono',monospace; font-size:0.86em; color:var(--muted); }
+.avoid{ break-inside:avoid; }
+</style>

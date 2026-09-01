@@ -1,0 +1,217 @@
+# Zenithium — XcodeGen project specification.
+#
+# ASSUMPTION BUILD-1: this file is the authoritative project definition. A checked-in
+# `Zenithium.xcodeproj` is generated from it by `Scripts/generate-project.py`, so the repo
+# opens without any tool installed — but this spec is what a reviewer reads and what
+# regenerates the project deterministically.
+#
+# XcodeGen is a build-time convenience, not a shipped dependency: §2.2's ban is on
+# third-party packages linked into the app, and nothing here is linked into anything.
+
+name: Zenithium
+options:
+  bundleIdPrefix: com.zenithium
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: tr
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    # The version, in one place. Every bundle's Info.plist reads these rather than carrying
+    # its own copy: two of the three used to hardcode "1.0" while the watch read the build
+    # setting — which project.yml never set, so an XcodeGen build gave the watch app an
+    # empty CFBundleShortVersionString. App Store Connect rejects that outright.
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+    # Spec §2.1 — Swift 6 language mode with complete strict concurrency, and warnings
+    # treated as errors so a concurrency diagnostic cannot be ignored.
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    ENABLE_MODULE_VERIFIER: YES
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+  configs:
+    Debug:
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      ENABLE_TESTABILITY: YES
+      # ASSUMPTION BUILD-4 (revised): fatal warnings in Release only, so bring-up on a
+      # device is not blocked by an unused variable. Release still enforces §2.1.
+      SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+      GCC_TREAT_WARNINGS_AS_ERRORS: NO
+    Release:
+      SWIFT_OPTIMIZATION_LEVEL: "-O"
+      SWIFT_COMPILATION_MODE: wholemodule
+      ENABLE_TESTABILITY: NO
+      VALIDATE_PRODUCT: YES
+
+targets:
+  Zenithium:
+    type: application
+    platform: iOS
+    sources:
+      - path: Zenithium
+        excludes:
+          - "Info.plist"
+          - "Zenithium.entitlements"
+      # Shared with the widget extension: one declaration of the App-Group payload.
+      - path: Zenithium/Persistence/WidgetSnapshot.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zenithium.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        PRODUCT_NAME: Zenithium
+        INFOPLIST_FILE: Zenithium/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Zenithium/Zenithium.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - target: ZenithiumWidgets
+        embed: true
+        codeSign: true
+      - target: ZenithiumWatch
+        embed: true
+        codeSign: true
+      # First-party frameworks only (§2.2). Nothing third-party appears anywhere in this file.
+      - sdk: HealthKit.framework
+      - sdk: BackgroundTasks.framework
+      - sdk: SwiftData.framework
+      - sdk: Charts.framework
+      - sdk: WidgetKit.framework
+      - sdk: Accessibility.framework
+      # Yol haritası v4, C10 — the Live Activity for a session running on the watch.
+      - sdk: WatchConnectivity.framework
+      - sdk: ActivityKit.framework
+
+  ZenithiumWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ZenithiumWidgets
+        excludes:
+          - "Info.plist"
+          - "ZenithiumWidgets.entitlements"
+      # The extension compiles the domain and design-system files it renders with. It does
+      # not compile Health, Persistence or Orchestration — a widget has no business opening
+      # a HealthKit store.
+      - path: Zenithium/Domain
+      - path: Zenithium/Support/AppGroup.swift
+      - path: Zenithium/Support/ZenithiumLog.swift
+      - path: Zenithium/Engines/EngineConstants.swift
+      - path: Zenithium/Engines/MathSupport.swift
+      - path: Zenithium/Persistence/WidgetSnapshot.swift
+      # JournalWidget's interactive toggle writes through this. Missing here until now,
+      # which meant the extension did not build from this file at all.
+      - path: Zenithium/Persistence/PendingJournalStore.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumColor.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumColorAsset.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumFont.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumMetrics.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumPalette.swift
+      # Every bundle that draws needs its own copy: `Color(_:bundle:)` resolves against the
+      # bundle it is asked from, and an extension's bundle is its own. Yol haritası v4, B6.
+      - path: Zenithium/Resources/Zenithium.xcassets
+      - path: Zenithium/Live/LiveSessionAttributes.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zenithium.app.widgets
+        # No ASSETCATALOG_COMPILER_APPICON_NAME: an app extension does not display an
+        # app icon, and naming one made the extension look for a set it no longer
+        # compiles now that the icons live beside the targets that show them.
+        PRODUCT_NAME: ZenithiumWidgets
+        INFOPLIST_FILE: ZenithiumWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ZenithiumWidgets/ZenithiumWidgets.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: ActivityKit.framework
+
+  # Added in Faz 21 and, until Yol haritası v4, present only in generate-project.py.
+  # ASSUMPTION BUILD-1 says this file is authoritative and the script is the bug when they
+  # disagree; a target missing from here made that untrue, so it is here now.
+  ZenithiumWatch:
+    type: application
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: ZenithiumWatch
+        excludes:
+          - "Info.plist"
+          - "ZenithiumWatch.entitlements"
+      # A reader, plus the live session it starts itself (Yol haritası v4, C1). It opens no
+      # SwiftData container, so it compiles the domain, the shared snapshot and the design
+      # system — and nothing from Persistence beyond those.
+      - path: Zenithium/Domain
+      - path: Zenithium/Support/AppGroup.swift
+      - path: Zenithium/Support/ZenithiumLog.swift
+      - path: Zenithium/Engines/EngineConstants.swift
+      - path: Zenithium/Engines/MathSupport.swift
+      - path: Zenithium/Persistence/WidgetSnapshot.swift
+      - path: Zenithium/Persistence/PendingJournalStore.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumColor.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumColorAsset.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumFont.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumMetrics.swift
+      - path: Zenithium/Views/DesignSystem/ZenithiumPalette.swift
+      - path: Zenithium/Resources/Zenithium.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zenithium.app.watchkitapp
+        # `AppIconWatch.xcassets`, beside this target's sources, holds the only set by
+        # this name that the watch compiles. The shared catalog carries colours and no
+        # icon at all — an app icon entry is tagged with the platform it belongs to, so
+        # one shared set left every iOS entry looking unassigned to the watch build and
+        # gave the watch nothing it could use.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        PRODUCT_NAME: ZenithiumWatch
+        INFOPLIST_FILE: ZenithiumWatch/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ZenithiumWatch/ZenithiumWatch.entitlements
+        SDKROOT: watchos
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+    dependencies:
+      - sdk: SwiftUI.framework
+      - sdk: HealthKit.framework
+      - sdk: WatchConnectivity.framework
+
+  ZenithiumTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ZenithiumTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zenithium.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Zenithium
+
+schemes:
+  Zenithium:
+    build:
+      targets:
+        Zenithium: all
+        ZenithiumWidgets: all
+        ZenithiumWatch: all
+    test:
+      targets:
+        - ZenithiumTests
+      gatherCoverageData: true
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,105 @@
+<title>Zenithium Teknik Dökümanı</title>
+</head>
+<body>
+
+<h2 id="toc"><span class="kicker">İçindekiler</span>Bölümler</h2>
+
+<div class="toc">
+<ol>
+  <li><div class="c"><span class="n">01</span><span class="t">Ürün<span class="s">Zenithium ne yapar, kimin için, hangi kuralları asla çiğnemez</span></span><span class="d"></span><span class="p" data-tp="ch1">—</span></div></li>
+  <li><div class="c"><span class="n">02</span><span class="t">Mimari<span class="s">Katmanlar, bağımlılık yönü, Swift 6 eşzamanlılık modeli, dört hedef</span></span><span class="d"></span><span class="p" data-tp="ch2">—</span></div></li>
+  <li><div class="c"><span class="n">03</span><span class="t">Veri katmanı<span class="s">SwiftData modelleri, şema göçü, HealthKit okuma hattı, önbellek</span></span><span class="d"></span><span class="p" data-tp="ch3">—</span></div></li>
+  <li><div class="c"><span class="n">04</span><span class="t">Motorlar<span class="s">29 saf hesap motoru — girdi, çıktı, dayandığı bilim, kritik sabitler</span></span><span class="d"></span><span class="p" data-tp="ch4">—</span></div></li>
+  <li><div class="c"><span class="n">05</span><span class="t">Arayüz ve tasarım sistemi<span class="s">Gezinme, ekran envanteri, renk/tipografi altyapısı, erişilebilirlik</span></span><span class="d"></span><span class="p" data-tp="ch5">—</span></div></li>
+  <li><div class="c"><span class="n">06</span><span class="t">Sistem entegrasyonu<span class="s">Apple Watch, widget'lar, Live Activity, App Intents, arka plan</span></span><span class="d"></span><span class="p" data-tp="ch6">—</span></div></li>
+  <li><div class="c"><span class="n">07</span><span class="t">Zekâ katmanı<span class="s">Cihaz içi dil modeli, güvenlik filtresi, laboratuvar OCR hattı</span></span><span class="d"></span><span class="p" data-tp="ch7">—</span></div></li>
+  <li><div class="c"><span class="n">08</span><span class="t">Veri taşınabilirliği<span class="s">Arşiv dışa/içe aktarım, hekim raporu, GPX, belge kasası</span></span><span class="d"></span><span class="p" data-tp="ch8">—</span></div></li>
+  <li><div class="c"><span class="n">09</span><span class="t">Teknoloji yığını<span class="s">Kullanılan 20 birinci parti çatı, nerede ve neden</span></span><span class="d"></span><span class="p" data-tp="ch9">—</span></div></li>
+  <li><div class="c"><span class="n">10</span><span class="t">Kalite ve doğrulama<span class="s">588 test, test stratejisi, varsayım kayıt defteri, yayın öncesi tarama</span></span><span class="d"></span><span class="p" data-tp="ch10">—</span></div></li>
+  <li><div class="c"><span class="n">11</span><span class="t">Yol haritası v4<span class="s">Performans, tasarım, özellikler ve altı adımlık sertleştirme turu</span></span><span class="d"></span><span class="p" data-tp="ch11">—</span></div></li>
+  <li><div class="c"><span class="n">12</span><span class="t">Geliştirme süreci<span class="s">Depo düzeni, üreteç betikleri, yayın öncesi durum, derleme kontrolleri</span></span><span class="d"></span><span class="p" data-tp="ch12">—</span></div></li>
+  <li><div class="c"><span class="n">A</span><span class="t">Ek A — Faz listesi<span class="s">Faz 0'dan Faz 32'ye ne inşa edildi</span></span><span class="d"></span><span class="p" data-tp="eka">—</span></div></li>
+  <li><div class="c"><span class="n">B</span><span class="t">Ek B — Varsayım kayıt defteri<span class="s">106 numaralı varsayım, kategorileri ve riskli olanlar</span></span><span class="d"></span><span class="p" data-tp="ekb">—</span></div></li>
+</ol>
+</div>
+
+<div class="divider"></div>
+
+<h4>Bu belge hakkında</h4>
+<p>Bu döküman Zenithium'un bugünkü kaynak kodundan üretildi. İçindeki her sayı — dosya sayısı, satır sayısı, test sayısı, motor uzunlukları — depoda çalıştırılan bir komutun çıktısıdır, hafızadan yazılmış bir tahmin değil. Nerede bir şey ölçülmediyse veya doğrulanmadıysa, bunu açıkça söylüyorum.</p>
+
+<div class="note warn">
+  <span class="tag">Doğrulama sınırı</span>
+  <p><strong>Bu kod hiç derlenmedi.</strong> Geliştirme, Swift araç zinciri bulunmayan bir Linux konteynerinde yapıldı. Motorların matematiği bağımsız olarak Python'da yeniden hesaplanıp doğrulandı, hedefler arası kaynak kapanışı statik taramayla kontrol edildi, ama <em>hiçbir dosya Swift derleyicisinden geçmedi ve hiçbir test koşturulmadı.</em> İlk <span class="kbd">xcodebuild</span> çalıştırmasında sözdizimi ve tip hataları çıkması beklenmelidir. Belgede "588 test" derken kastedilen, yazılmış ve <span class="kbd">@Test</span> ile işaretlenmiş test sayısıdır — geçmiş test sayısı değil.</p>
+</div>
+
+<h2 id="ch1"><span class="kicker">Bölüm bir</span><span class="num">01</span>Ürün</h2>
+
+<p class="lead">Zenithium, bir kullanıcının kendi vücudundan gelen sinyalleri okuyup ona bugün ne yapması gerektiğini söyleyen, tamamen telefonun içinde çalışan bir uygulamadır. Whoop'un cevapladığı soruyu cevaplar — <em>bugün ne kadar yüklenebilirim?</em> — ama tek bir sporcu tipini değil dördünü birden ciddiye alır.</p>
+
+<h3 id="s11"><span class="num">1.1</span>Problem</h3>
+
+<p>Toparlanma takip eden uygulamalar iki uçtan birinde duruyor. Bir uçta abonelikli donanım ekosistemleri var: kapalı algoritma, buluta giden veri, aylık ücret ve tek bir sporcu profili — genellikle "genel dayanıklılık". Diğer uçta ham veri gösteren panolar var: sayıyı veriyor, ne anlama geldiğini söylemiyor.</p>
+
+<p>Zenithium ikisinin arasını hedefliyor: <strong>ham veriyi karar cümlesine çeviren, ama bunu nasıl yaptığını açıklayan ve veriyi cihazdan hiç çıkarmayan</strong> bir uygulama. Kullanıcı sabah uygulamayı açtığında bir yüzde değil, bir cümle görüyor — ve o cümlenin altında, isterse, o cümleyi üreten sayılar duruyor.</p>
+
+<h3 id="s12"><span class="num">1.2</span>Dört mercek</h3>
+
+<p>Uygulamanın merkezî tasarım kararı <em>mercek</em> kavramıdır. Toparlanma ve uyku hesabı herkes için aynı çalışır; ama o toparlanma skorunun <em>ne anlama geldiği</em> kullanıcının ne yaptığına bağlıdır. Bir maratoncunun %62 toparlanması ile bir powerlifter'ın %62'si aynı öneriyi doğurmaz. Mercek, ortak çekirdeğin üzerine oturan yorum katmanıdır.</p>
+
+<table class="wide">
+<caption>Dört mercek ve her birinin sorduğu soru</caption>
+<thead><tr><th style="width:26mm">Mercek</th><th style="width:44mm">Kullanıcı</th><th>Merceğin cevapladığı soru</th></tr></thead>
+<tbody>
+<tr><td>Dayanıklılık</td><td>Koşucu, bisikletçi, triatlet</td><td>Kritik hızım nerede, bu tempo sürdürülebilir mi, yarış planım gerçekçi mi?</td></tr>
+<tr><td>Hibrit</td><td>Hyrox, CrossFit, engelli koşu</td><td>Aerobik ve kuvvet yükünü aynı hafta içinde nasıl dengeliyorum?</td></tr>
+<tr><td>Kuvvet</td><td>Powerlifting, bodybuilding</td><td>Hangi kas grubum hâlâ yorgun, tonaj eğilimim nereye gidiyor, 1RM'im?</td></tr>
+<tr><td>Sağlık</td><td>Spor yapmayan, sadece izleyen</td><td>Vücudum normalinden sapıyor mu, uykum ve ritmim ne durumda?</td></tr>
+</tbody>
+</table>
+
+<p>Mercek seçimi kalıcı bir kimlik değil, bir ayardır: kullanıcı istediği zaman değiştirir, hatta sağlık merceği hiç antrenman yapmayan biri için varsayılan olarak çalışır. Sekme çubuğunun ikinci sekmesi merceğe göre değişir — dayanıklılık ve hibrit merceğinde "Yük", kuvvette "Kaslar", sağlıkta "Sağlık".</p>
+
+<h3 id="s13"><span class="num">1.3</span>Günlük döngü</h3>
+
+<p>Uygulama üç ana anı etrafında kurgulanmıştır.</p>
+
+<table class="compact">
+<thead><tr><th style="width:22mm">An</th><th style="width:36mm">Ne oluyor</th><th>Kullanıcının gördüğü</th></tr></thead>
+<tbody>
+<tr><td>Sabah</td><td>Gece verisi işlenir, taban çizgileri güncellenir, reçete üretilir</td><td>Toparlanma bandı, tek cümlelik reçete, o cümlenin gerekçesi</td></tr>
+<tr><td>Gün</td><td>Antrenman kaydedilir, canlı seans saatten yayınlanır, zorlanma birikir</td><td>Canlı seans kartı (kilit ekranı + Dynamic Island), zorlanma halkası</td></tr>
+<tr><td>Akşam</td><td>Günlük soruları, ağrı girişi, ertesi gün için plan</td><td>Günlük formu, korelasyon bulguları, yarınki oturumun şekli</td></tr>
+</tbody>
+</table>
+
+<h3 id="s14"><span class="num">1.4</span>Çiğnenmeyen iki kural</h3>
+
+<p>Spesifikasyonun iki maddesi ürün boyunca bağlayıcıdır ve kodda test edilir.</p>
+
+<div class="note rule">
+  <span class="tag">Şartname §1</span>
+  <p>Uygulamanın hiçbir yerinde <strong>kalori hedefi, kilo hedefi veya kısıtlama teşviki</strong> bulunmaz. Beslenme takibi yoktur. "Şu kadar kalori açığı ver" türü hiçbir cümle üretilemez. Bu, yeme bozukluğu riskini ürünün dışında tutmak için verilmiş bilinçli bir karardır ve bir özellik eksikliği değildir.</p>
+</div>
+
+<div class="note rule">
+  <span class="tag">Şartname §12</span>
+  <p>Zenithium <strong>bir tıbbi cihaz değildir</strong>. Teşhis koymaz, koyduğunu ima etmez, ve hiçbir koşulda kullanıcıya bir belirtiyi görmezden gelmesini söylemez. Cihaz içi dil modelinin ürettiği her cümle <code>SafetyFilter</code>'dan geçer; teşhis diline benzeyen çıktı reddedilir ve yerine deterministik şablon metin konur.</p>
+</div>
+
+<h3 id="s15"><span class="num">1.5</span>Gizlilik duruşu</h3>
+
+<p>Zenithium'un mimarisi bir gizlilik politikasından değil, bir kısıttan doğdu: <strong>uygulamanın ağ katmanı yok.</strong> Bu bir tercih beyanı değil, denetlenebilir bir olgudur — depoda <code>URLSession</code>, <code>URLRequest</code> veya herhangi bir ağ çağrısı geçmez.</p>
+
+<table class="compact">
+<thead><tr><th style="width:44mm">Yok olan şey</th><th>Sonucu</th></tr></thead>
+<tbody>
+<tr><td>Sunucu</td><td>Hesap yok, giriş ekranı yok, parola yok, sunucu ihlali yok</td></tr>
+<tr><td>Ağ çağrısı</td><td>Uçak modunda uygulamanın tamamı çalışır</td></tr>
+<tr><td>Analitik</td><td>Crash raporu dahil hiçbir telemetri gönderilmez</td></tr>
+<tr><td>Üçüncü parti paket</td><td>Tedarik zinciri yüzeyi sıfır; SPM bağımlılık listesi boş</td></tr>
+<tr><td>Reklam kimliği</td><td>ATT diyaloğu hiç gösterilmez</td></tr>
+</tbody>
+</table>
+
+<p>Veri kullanıcının cihazında SwiftData deposunda durur; dışa aktarım kullanıcının kendi başlattığı, kendi seçtiği bir dosyaya yazan bir işlemdir (bkz. Bölüm 8). Cihaz içi dil modeli <code>FoundationModels</code> ile çalışır, yani üretilen metin de cihazdan çıkmaz.</p>

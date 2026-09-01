@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Spec §8: HealthKit plus background delivery. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
+	<key>com.apple.developer.healthkit.background-delivery</key>
+	<true/>
+
+	<!-- Spec §10, ASSUMPTION STORE-2 and WIDGET-1: the SwiftData store and the widget
+	     snapshot both live in this group, so the app and the extension read the same data
+	     rather than drifting copies. Must match AppGroup.identifier. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.projectcagla.zenithra</string>
+	</array>
+</dict>
+</plist>
