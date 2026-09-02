@@ -35,6 +35,7 @@ struct BloodMarkerDetailView: View {
                 if series.entries.count >= 2 {
                     chartCard
                 }
+                impactCard
                 historyCard
                 rangeCard
             }
@@ -201,6 +202,42 @@ struct BloodMarkerDetailView: View {
             return "≤ \(ZenithiumFormat.metric(maximum, digits: digits))"
         case (nil, nil):
             return "Girilmemiş"
+        }
+    }
+
+    private var impactCard: some View {
+        SectionCard(title: "Bu değer uygulamayı nasıl etkiliyor?") {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                if let modifier = ClinicalModifierRegistry.modifier(forMarkerKey: series.marker.storageKey) {
+                    HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
+                        Image(systemName: "cross.case.fill")
+                            .foregroundStyle(ZenithiumColor.accent)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                            HStack {
+                                Text(modifier.title)
+                                    .font(ZenithiumFont.label)
+                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                                Spacer()
+                                if modifier.multiplier < 1.0 {
+                                    Text("×\(ZenithiumFormat.metric(modifier.multiplier, digits: 2))")
+                                        .font(ZenithiumFont.callout.monospacedDigit())
+                                        .foregroundStyle(ZenithiumColor.spectrumAmber)
+                                }
+                            }
+                            Text(modifier.rationale)
+                                .font(ZenithiumFont.caption)
+                                .foregroundStyle(ZenithiumColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                } else {
+                    Text("Bu değer hesaplamaları etkilemiyor; yalnızca kaydediliyor.")
+                        .font(ZenithiumFont.callout)
+                        .foregroundStyle(ZenithiumColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 }

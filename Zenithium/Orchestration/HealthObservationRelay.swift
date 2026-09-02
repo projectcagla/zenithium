@@ -78,6 +78,7 @@ actor HealthObservationRelay {
         pendingTask = nil
         pendingEvent = nil
         await health.stopObserving()
+        await coordinator.cancelBackfill()
     }
 
     /// Coalesces an event into the pending window.

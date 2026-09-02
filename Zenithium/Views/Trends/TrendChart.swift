@@ -63,6 +63,12 @@ struct TrendChart: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                 }
 
+                ForEach(content.bloodEvents) { event in
+                    RuleMark(x: .value("Tahlil", event.date))
+                        .foregroundStyle(ZenithiumColor.accent.opacity(0.35))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                }
+
                 if let scrubbedPoint {
                     RuleMark(x: .value("Gün", scrubbedPoint.date))
                         .foregroundStyle(ZenithiumColor.textSecondary.opacity(0.5))

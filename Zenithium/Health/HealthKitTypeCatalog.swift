@@ -181,6 +181,7 @@ enum HealthKitTypeCatalog {
         }
         types.insert(HKCharacteristicType(.dateOfBirth))
         types.insert(HKCharacteristicType(.biologicalSex))
+        types.insert(HKObjectType.electrocardiogramType())
         // Faz 11 — the vitals screen. Requested in the same sheet rather than a second
         // prompt later: one permission conversation is the honest one, and a user who
         // declines a signal simply sees that row empty.

@@ -14,6 +14,7 @@
 		8FE36D7F4D3DCBA56B197029 /* AppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5DC9514B01A9F6CF86F6C /* AppearancePreference.swift */; };
 		953072D864C150D99AB784BC /* BaselineSeries.swift in Sources */ = {isa = PBXBuildFile; fileRef = D026A61F05EFAAD4148C786C /* BaselineSeries.swift */; };
 		B67F33499E8E7A7D9928C37E /* BiologicalSexValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4335776A76236BC84911BC26 /* BiologicalSexValue.swift */; };
+		3F87152CB28B3CEF7378C740 /* ECGRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8232D2C085EC62A4F66D642 /* ECGRecord.swift */; };
 		24AF629C1C360C23C423A20A /* BloodMarkerKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82F9B1BD11F4149D2E7BED5 /* BloodMarkerKind.swift */; };
 		D7A98E38C0252E192AE95171 /* MenstrualCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4FE3B3AF9ADEA8AAD0C4F9 /* MenstrualCycle.swift */; };
 		6387C7C992C98D7C45732B5E /* DataQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676BA56924E1E0E66DD34425 /* DataQuality.swift */; };
@@ -40,6 +41,8 @@
 		7C70F35642D10C705FD067B7 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		5A26B7994851A145E775ADBE /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		E26F5A75D96571010D432058 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		6A4535151282F76084EDB098 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
+		DCB9F780DA85CA05B1ED9968 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		E147753FD9994B52EEF132C0 /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		F5A3CAA343384B919F748D0D /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
 		287A1D72B8A2F359FB68F04E /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
@@ -85,6 +88,7 @@
 		87B4A4203BE06B3D2B43B246 /* GPXReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8F01F6A510B9565A904F3D0 /* GPXReader.swift */; };
 		8689B113A0038C068B432958 /* BaselineEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85168843E19938B9DFB1350D /* BaselineEngine.swift */; };
 		77A3E5AB0CA42F9BEC1DA25B /* CircadianEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72478A40A0040F870106C114 /* CircadianEngine.swift */; };
+		1EF4FC5E86D48A2E5E059B2D /* ClinicalContextEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D150ADD50E681E49CFC8108 /* ClinicalContextEngine.swift */; };
 		54B12EB32D5051D45BB831E5 /* CorrelationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D1E88D6E1AE0EA486085A8 /* CorrelationEngine.swift */; };
 		4051EF1449CAD7D1CC2C799A /* CycleEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0500F8AA81CC6E16C6A60134 /* CycleEngine.swift */; };
 		0D6695F7350B43918159A698 /* DataQualityEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1690A690333039ADF73BF5 /* DataQualityEngine.swift */; };
@@ -247,6 +251,7 @@
 		344D5D88BF37C4DCE3DE0D86 /* AppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5DC9514B01A9F6CF86F6C /* AppearancePreference.swift */; };
 		CABF93F3CD4833E332C19F21 /* BaselineSeries.swift in Sources */ = {isa = PBXBuildFile; fileRef = D026A61F05EFAAD4148C786C /* BaselineSeries.swift */; };
 		DA661E5954DD1770D9F2A915 /* BiologicalSexValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4335776A76236BC84911BC26 /* BiologicalSexValue.swift */; };
+		4844ECF9A982DBCFCE37EE69 /* ECGRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8232D2C085EC62A4F66D642 /* ECGRecord.swift */; };
 		F365DBEC502D5719230C4104 /* BloodMarkerKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82F9B1BD11F4149D2E7BED5 /* BloodMarkerKind.swift */; };
 		27620836733D0FAFAD445A3A /* MenstrualCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4FE3B3AF9ADEA8AAD0C4F9 /* MenstrualCycle.swift */; };
 		5554B2F6E8D486B359D434C7 /* DataQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676BA56924E1E0E66DD34425 /* DataQuality.swift */; };
@@ -273,6 +278,8 @@
 		1D6ED25965402D27E454BE16 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		C2155E6B83DD3633EF3F54A9 /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		9A649A2DFFDDE4C6AEA94768 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		B66C3F34015378219A1D96A7 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
+		50C630B53EBE36AB48553D11 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		F8A014153D3789D6D40D3B8F /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		0142B39786A836CC1B7D1A8F /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
 		9966F7565F790C3434CAE995 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
@@ -339,6 +346,7 @@
 		404D828DB325337BCD01A49B /* AppearancePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E5DC9514B01A9F6CF86F6C /* AppearancePreference.swift */; };
 		FC3E48A00079D592FBEFEF7B /* BaselineSeries.swift in Sources */ = {isa = PBXBuildFile; fileRef = D026A61F05EFAAD4148C786C /* BaselineSeries.swift */; };
 		24F61E5E28A930BB75B82ACC /* BiologicalSexValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4335776A76236BC84911BC26 /* BiologicalSexValue.swift */; };
+		420FEB05A2B951EA7AA2994D /* ECGRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8232D2C085EC62A4F66D642 /* ECGRecord.swift */; };
 		0F397656921A0109DC346E53 /* BloodMarkerKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82F9B1BD11F4149D2E7BED5 /* BloodMarkerKind.swift */; };
 		61ECFF8C895ACE3283640FD2 /* MenstrualCycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4FE3B3AF9ADEA8AAD0C4F9 /* MenstrualCycle.swift */; };
 		99EC6A22547B3DAE83B40535 /* DataQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676BA56924E1E0E66DD34425 /* DataQuality.swift */; };
@@ -365,6 +373,8 @@
 		CB3C688CF934C83649888903 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		99DE79F930D027DF5B8D2F05 /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		FD1FD2F87286B6BD8A29813B /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		06C110D9A97FCF0C9674D5C3 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
+		E13A5067FDDAE524A3A014C9 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		595F6911068866F205186B0E /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		6FA7EBA2A60A9CC9532D4990 /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
 		D3268022850D56DA09C5AC18 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
@@ -432,6 +442,7 @@
 		AF506F499104E9B91B22B381 /* BloodworkTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8923F2DB05F5C59FD9585D1B /* BloodworkTimelineTests.swift */; };
 		E482906EBF991E01FE558930 /* BoundedConcurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6880B454C7868529CD9AF66 /* BoundedConcurrencyTests.swift */; };
 		FD2F9639A3355842BEE8C768 /* CircadianEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A939F7FDA88A317103E65178 /* CircadianEngineTests.swift */; };
+		25E30A51926C8B319AFC13C8 /* ClinicalContextEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3284DCC669CBD6FC731F83F /* ClinicalContextEngineTests.swift */; };
 		6D71C22F7BEB981F32363EC7 /* CorrelationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98BF26C6BC92ECA159C9827 /* CorrelationEngineTests.swift */; };
 		8630ACA9BCAFF57B9FEBE077 /* CycleEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC8A592DC2DFEDD4843861A /* CycleEngineTests.swift */; };
 		575307E13320CAF22061600C /* DataQualityEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C57B6ACF9FC61908554E5D /* DataQualityEngineTests.swift */; };
@@ -546,6 +557,7 @@
 		22E5DC9514B01A9F6CF86F6C /* AppearancePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePreference.swift; sourceTree = "<group>"; };
 		D026A61F05EFAAD4148C786C /* BaselineSeries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineSeries.swift; sourceTree = "<group>"; };
 		4335776A76236BC84911BC26 /* BiologicalSexValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiologicalSexValue.swift; sourceTree = "<group>"; };
+		D8232D2C085EC62A4F66D642 /* ECGRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECGRecord.swift; sourceTree = "<group>"; };
 		F82F9B1BD11F4149D2E7BED5 /* BloodMarkerKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodMarkerKind.swift; sourceTree = "<group>"; };
 		2E4FE3B3AF9ADEA8AAD0C4F9 /* MenstrualCycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenstrualCycle.swift; sourceTree = "<group>"; };
 		676BA56924E1E0E66DD34425 /* DataQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQuality.swift; sourceTree = "<group>"; };
@@ -572,6 +584,8 @@
 		CD06F0394F0D1C021D603875 /* HyroxStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyroxStation.swift; sourceTree = "<group>"; };
 		8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BriefingIO.swift; sourceTree = "<group>"; };
 		0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationState.swift; sourceTree = "<group>"; };
+		4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalContext.swift; sourceTree = "<group>"; };
+		88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalModifierRegistry.swift; sourceTree = "<group>"; };
 		63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTrace.swift; sourceTree = "<group>"; };
 		B0B95EE9BDEC984311D606CE /* EngineResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineResult.swift; sourceTree = "<group>"; };
 		18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistry.swift; sourceTree = "<group>"; };
@@ -617,6 +631,7 @@
 		C8F01F6A510B9565A904F3D0 /* GPXReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPXReader.swift; sourceTree = "<group>"; };
 		85168843E19938B9DFB1350D /* BaselineEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineEngine.swift; sourceTree = "<group>"; };
 		72478A40A0040F870106C114 /* CircadianEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircadianEngine.swift; sourceTree = "<group>"; };
+		0D150ADD50E681E49CFC8108 /* ClinicalContextEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalContextEngine.swift; sourceTree = "<group>"; };
 		00D1E88D6E1AE0EA486085A8 /* CorrelationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrelationEngine.swift; sourceTree = "<group>"; };
 		0500F8AA81CC6E16C6A60134 /* CycleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleEngine.swift; sourceTree = "<group>"; };
 		9F1690A690333039ADF73BF5 /* DataQualityEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngine.swift; sourceTree = "<group>"; };
@@ -788,6 +803,7 @@
 		8923F2DB05F5C59FD9585D1B /* BloodworkTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BloodworkTimelineTests.swift; sourceTree = "<group>"; };
 		A6880B454C7868529CD9AF66 /* BoundedConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundedConcurrencyTests.swift; sourceTree = "<group>"; };
 		A939F7FDA88A317103E65178 /* CircadianEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircadianEngineTests.swift; sourceTree = "<group>"; };
+		A3284DCC669CBD6FC731F83F /* ClinicalContextEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalContextEngineTests.swift; sourceTree = "<group>"; };
 		A98BF26C6BC92ECA159C9827 /* CorrelationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CorrelationEngineTests.swift; sourceTree = "<group>"; };
 		ACC8A592DC2DFEDD4843861A /* CycleEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleEngineTests.swift; sourceTree = "<group>"; };
 		B5C57B6ACF9FC61908554E5D /* DataQualityEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataQualityEngineTests.swift; sourceTree = "<group>"; };
@@ -912,6 +928,14 @@
 			path = Connectivity;
 			sourceTree = "<group>";
 		};
+		8B42BA72B683CD56E9380104 /* Biometrics */ = {
+			isa = PBXGroup;
+			children = (
+				D8232D2C085EC62A4F66D642 /* ECGRecord.swift */,
+			);
+			path = Biometrics;
+			sourceTree = "<group>";
+		};
 		4CBC456ABD15D85CDF8D61D4 /* Cycle */ = {
 			isa = PBXGroup;
 			children = (
@@ -961,6 +985,8 @@
 			children = (
 				8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */,
 				0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */,
+				4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */,
+				88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */,
 				63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */,
 				B0B95EE9BDEC984311D606CE /* EngineResult.swift */,
 				18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */,
@@ -1046,6 +1072,7 @@
 		A7D01AF8D0B9FE796EA7F7FD /* Domain */ = {
 			isa = PBXGroup;
 			children = (
+				8B42BA72B683CD56E9380104 /* Biometrics */,
 				4CBC456ABD15D85CDF8D61D4 /* Cycle */,
 				B87D69DB4A790FCC80BA3387 /* Endurance */,
 				D2935655E914BF6C56F28638 /* EngineIO */,
@@ -1107,6 +1134,7 @@
 			children = (
 				85168843E19938B9DFB1350D /* BaselineEngine.swift */,
 				72478A40A0040F870106C114 /* CircadianEngine.swift */,
+				0D150ADD50E681E49CFC8108 /* ClinicalContextEngine.swift */,
 				00D1E88D6E1AE0EA486085A8 /* CorrelationEngine.swift */,
 				0500F8AA81CC6E16C6A60134 /* CycleEngine.swift */,
 				9F1690A690333039ADF73BF5 /* DataQualityEngine.swift */,
@@ -1553,6 +1581,7 @@
 				8923F2DB05F5C59FD9585D1B /* BloodworkTimelineTests.swift */,
 				A6880B454C7868529CD9AF66 /* BoundedConcurrencyTests.swift */,
 				A939F7FDA88A317103E65178 /* CircadianEngineTests.swift */,
+				A3284DCC669CBD6FC731F83F /* ClinicalContextEngineTests.swift */,
 				A98BF26C6BC92ECA159C9827 /* CorrelationEngineTests.swift */,
 				ACC8A592DC2DFEDD4843861A /* CycleEngineTests.swift */,
 				B5C57B6ACF9FC61908554E5D /* DataQualityEngineTests.swift */,
@@ -1824,6 +1853,7 @@
 				8FE36D7F4D3DCBA56B197029 /* AppearancePreference.swift in Sources */,
 				953072D864C150D99AB784BC /* BaselineSeries.swift in Sources */,
 				B67F33499E8E7A7D9928C37E /* BiologicalSexValue.swift in Sources */,
+				3F87152CB28B3CEF7378C740 /* ECGRecord.swift in Sources */,
 				24AF629C1C360C23C423A20A /* BloodMarkerKind.swift in Sources */,
 				D7A98E38C0252E192AE95171 /* MenstrualCycle.swift in Sources */,
 				6387C7C992C98D7C45732B5E /* DataQuality.swift in Sources */,
@@ -1850,6 +1880,8 @@
 				7C70F35642D10C705FD067B7 /* HyroxStation.swift in Sources */,
 				5A26B7994851A145E775ADBE /* BriefingIO.swift in Sources */,
 				E26F5A75D96571010D432058 /* CalibrationState.swift in Sources */,
+				6A4535151282F76084EDB098 /* ClinicalContext.swift in Sources */,
+				DCB9F780DA85CA05B1ED9968 /* ClinicalModifierRegistry.swift in Sources */,
 				E147753FD9994B52EEF132C0 /* DecisionTrace.swift in Sources */,
 				F5A3CAA343384B919F748D0D /* EngineResult.swift in Sources */,
 				287A1D72B8A2F359FB68F04E /* ScientificBoundaryRegistry.swift in Sources */,
@@ -1895,6 +1927,7 @@
 				87B4A4203BE06B3D2B43B246 /* GPXReader.swift in Sources */,
 				8689B113A0038C068B432958 /* BaselineEngine.swift in Sources */,
 				77A3E5AB0CA42F9BEC1DA25B /* CircadianEngine.swift in Sources */,
+				1EF4FC5E86D48A2E5E059B2D /* ClinicalContextEngine.swift in Sources */,
 				54B12EB32D5051D45BB831E5 /* CorrelationEngine.swift in Sources */,
 				4051EF1449CAD7D1CC2C799A /* CycleEngine.swift in Sources */,
 				0D6695F7350B43918159A698 /* DataQualityEngine.swift in Sources */,
@@ -2064,6 +2097,7 @@
 				344D5D88BF37C4DCE3DE0D86 /* AppearancePreference.swift in Sources */,
 				CABF93F3CD4833E332C19F21 /* BaselineSeries.swift in Sources */,
 				DA661E5954DD1770D9F2A915 /* BiologicalSexValue.swift in Sources */,
+				4844ECF9A982DBCFCE37EE69 /* ECGRecord.swift in Sources */,
 				F365DBEC502D5719230C4104 /* BloodMarkerKind.swift in Sources */,
 				27620836733D0FAFAD445A3A /* MenstrualCycle.swift in Sources */,
 				5554B2F6E8D486B359D434C7 /* DataQuality.swift in Sources */,
@@ -2090,6 +2124,8 @@
 				1D6ED25965402D27E454BE16 /* HyroxStation.swift in Sources */,
 				C2155E6B83DD3633EF3F54A9 /* BriefingIO.swift in Sources */,
 				9A649A2DFFDDE4C6AEA94768 /* CalibrationState.swift in Sources */,
+				B66C3F34015378219A1D96A7 /* ClinicalContext.swift in Sources */,
+				50C630B53EBE36AB48553D11 /* ClinicalModifierRegistry.swift in Sources */,
 				F8A014153D3789D6D40D3B8F /* DecisionTrace.swift in Sources */,
 				0142B39786A836CC1B7D1A8F /* EngineResult.swift in Sources */,
 				9966F7565F790C3434CAE995 /* ScientificBoundaryRegistry.swift in Sources */,
@@ -2163,6 +2199,7 @@
 				404D828DB325337BCD01A49B /* AppearancePreference.swift in Sources */,
 				FC3E48A00079D592FBEFEF7B /* BaselineSeries.swift in Sources */,
 				24F61E5E28A930BB75B82ACC /* BiologicalSexValue.swift in Sources */,
+				420FEB05A2B951EA7AA2994D /* ECGRecord.swift in Sources */,
 				0F397656921A0109DC346E53 /* BloodMarkerKind.swift in Sources */,
 				61ECFF8C895ACE3283640FD2 /* MenstrualCycle.swift in Sources */,
 				99EC6A22547B3DAE83B40535 /* DataQuality.swift in Sources */,
@@ -2189,6 +2226,8 @@
 				CB3C688CF934C83649888903 /* HyroxStation.swift in Sources */,
 				99DE79F930D027DF5B8D2F05 /* BriefingIO.swift in Sources */,
 				FD1FD2F87286B6BD8A29813B /* CalibrationState.swift in Sources */,
+				06C110D9A97FCF0C9674D5C3 /* ClinicalContext.swift in Sources */,
+				E13A5067FDDAE524A3A014C9 /* ClinicalModifierRegistry.swift in Sources */,
 				595F6911068866F205186B0E /* DecisionTrace.swift in Sources */,
 				6FA7EBA2A60A9CC9532D4990 /* EngineResult.swift in Sources */,
 				D3268022850D56DA09C5AC18 /* ScientificBoundaryRegistry.swift in Sources */,
@@ -2263,6 +2302,7 @@
 				AF506F499104E9B91B22B381 /* BloodworkTimelineTests.swift in Sources */,
 				E482906EBF991E01FE558930 /* BoundedConcurrencyTests.swift in Sources */,
 				FD2F9639A3355842BEE8C768 /* CircadianEngineTests.swift in Sources */,
+				25E30A51926C8B319AFC13C8 /* ClinicalContextEngineTests.swift in Sources */,
 				6D71C22F7BEB981F32363EC7 /* CorrelationEngineTests.swift in Sources */,
 				8630ACA9BCAFF57B9FEBE077 /* CycleEngineTests.swift in Sources */,
 				575307E13320CAF22061600C /* DataQualityEngineTests.swift in Sources */,

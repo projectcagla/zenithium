@@ -108,6 +108,15 @@ protocol HealthDataProviding: HealthAuthorizing, VitalsProviding {
     /// consumer — `Orchestration/HealthObservationRelay.swift` (ASSUMPTION BG-2).
     func observationStream() async -> AsyncStream<HealthChangeEvent>
 
+    /// Apple Watch ECG recordings across a window, oldest first. Faz 33.
+    func fetchECGRecords(days: Int, now: Date) async throws -> [ECGRecord]
+
     /// Stops observation and tears down every running query. Idempotent.
     func stopObserving() async
+}
+
+extension HealthDataProviding {
+    func fetchECGRecords(days: Int, now: Date) async throws -> [ECGRecord] {
+        []
+    }
 }

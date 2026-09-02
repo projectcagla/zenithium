@@ -40,6 +40,7 @@ struct SettingsView: View {
     private func sections(_ content: SettingsViewModel.Content) -> some View {
         lensSection(content)
         cycleSection(content)
+        clinicalSection(content)
         profileSection(content)
         sleepSection(content)
         strainSection(content)
@@ -378,6 +379,35 @@ struct SettingsView: View {
         case .authorized: return ZenithiumColor.green
         case .denied: return ZenithiumColor.red
         case .notDetermined, .unavailable: return ZenithiumColor.textSecondary
+        }
+    }
+
+    private func clinicalSection(_ content: SettingsViewModel.Content) -> some View {
+        Section {
+            ForEach(ClinicalModifierRegistry.allModifiers) { modifier in
+                let isEnabled = !ClinicalModifierRegistry.disabledModifierIDs().contains(modifier.id)
+                Toggle(isOn: Binding(
+                    get: { isEnabled },
+                    set: { newValue in
+                        ClinicalModifierRegistry.setModifier(id: modifier.id, isEnabled: newValue)
+                    }
+                )) {
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                        Text(modifier.title)
+                            .foregroundStyle(ZenithiumColor.textPrimary)
+                        Text(modifier.rationale)
+                            .font(ZenithiumFont.caption)
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                    }
+                }
+                .tint(ZenithiumColor.accent)
+            }
+        } header: {
+            Text("Klinik Bağlam")
+        } footer: {
+            Text("Laboratuvar ve EKG bulgularının karar güvenine etkisini tek tek yönetin. Devre dışı bırakılan düzenleyiciler toparlanma ve yük güvenini etkilemez.")
+                .font(ZenithiumFont.caption)
+                .foregroundStyle(ZenithiumColor.textTertiary)
         }
     }
 }

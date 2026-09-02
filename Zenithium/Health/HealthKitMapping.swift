@@ -248,4 +248,50 @@ enum HealthKitMapping {
         @unknown default: return .notSet
         }
     }
+
+    // MARK: - Electrocardiogram
+
+    /// Maps Apple Watch ECG samples to `ECGRecord`, preserving exact official classification.
+    static func ecgRecords(from samples: [HKSample]) -> [ECGRecord] {
+        var records: [ECGRecord] = []
+        for sample in samples {
+            guard let ecg = sample as? HKElectrocardiogram else { continue }
+            let classification = ecgClassification(from: ecg.classification)
+            let avgHR: Double? = ecg.averageHeartRate?.doubleValue(for: HealthKitTypeCatalog.beatsPerMinute)
+            let symptoms: String? = {
+                switch ecg.symptomsStatus {
+                case .none: return "Semptom yok"
+                case .present: return "Semptom bildirildi"
+                case .notSet: return nil
+                @unknown default: return nil
+                }
+            }()
+            records.append(
+                ECGRecord(
+                    id: ecg.uuid,
+                    recordedAt: ecg.startDate,
+                    classification: classification,
+                    averageHeartRate: avgHR,
+                    symptomsStatus: symptoms,
+                    sourceName: ecg.sourceRevision.source.name
+                )
+            )
+        }
+        return records.sorted { $0.recordedAt < $1.recordedAt }
+    }
+
+    /// Maps `HKElectrocardiogram.Classification` to `ECGClassification`.
+    static func ecgClassification(from classification: HKElectrocardiogram.Classification) -> ECGClassification {
+        switch classification {
+        case .notSet: return .notSet
+        case .sinusRhythm: return .sinusRhythm
+        case .atrialFibrillation: return .atrialFibrillation
+        case .inconclusiveLowHeartRate: return .inconclusiveLowHeartRate
+        case .inconclusiveHighHeartRate: return .inconclusiveHighHeartRate
+        case .inconclusivePoorReading: return .inconclusivePoorReading
+        case .inconclusiveOther: return .inconclusiveOther
+        case .unrecognized: return .unrecognized
+        @unknown default: return .unrecognized
+        }
+    }
 }

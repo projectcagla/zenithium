@@ -92,6 +92,17 @@ enum ScientificBoundaryRegistry {
                 "Sensitive to environmental heat, alcohol intake, travel, and altitude"
             ],
             nonCausalityDisclaimer: "Sapma skoru fizyolojik taban çizgisindeki değişimi yansıtır; bu bir teşhis değil, bir gözlemdir — kendini nasıl hissettiğine bak, bir şikâyetin varsa hekimine danış."
+        ),
+        "ClinicalContext": ScientificBoundary(
+            id: "CLINICAL-1",
+            engineName: "ClinicalContextEngine",
+            physiologicalModel: "Multiplicative epistemic confidence modifiers from confirmed lab markers and Apple Watch ECG signals",
+            primaryCitation: "Calbet et al. (2006); Peeling et al. (2008); Sassi et al. (2015) 'Advances in Heart Rate Variability Signal Analysis and AF Invalidation'",
+            documentedLimitations: [
+                "Only affects confidence and measurement error terms; does not diagnose medical conditions",
+                "Requires recent lab/ECG records within validity horizons; stale records gracefully expire to neutral"
+            ],
+            nonCausalityDisclaimer: "Klinik bağlam bir teşhis veya tıbbi iddia içermez; yalnızca biyometrik yük ve toparlanma ölçümlerinin güvenilirlik derecesini ayarlar."
         )
     ]
 

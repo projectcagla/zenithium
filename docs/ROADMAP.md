@@ -639,3 +639,14 @@ bakan bir uygulama yok. Ama kendi kullanımın koşuysa 15 önce gelmeli.
 Performans, tasarım cilası ve yeni özellikler için ayrı bir belge var:
 [`docs/ROADMAP-V4.md`](ROADMAP-V4.md). Kod taramasına dayanıyor; her madde
 bir dosyayı ve o dosyadaki somut durumu gösteriyor.
+
+---
+
+## Faz 33 — Klinik Bağlam Katmanı (Clinical Context Layer)
+
+Klinik veriler (laboratuvar tahlilleri ve Apple Watch EKG kayıtları) doğrudan karar mekanizmasının güvenilirlik katmanına bağlanmıştır.
+* **Yönetici İlke**: Klinik veri skoru değiştirmez, skorun güvenilirliğini (epistemic confidence) ayarlar ve sistematik hata payını belirtir.
+* **ClinicalContext**: `confidenceMultiplier` (taban: 0.70), `penaltyReasons`, `limitations`, `evidence`, `suppressesHRVRecovery`.
+* **ClinicalModifierRegistry**: Hemoglobin, Ferritin, TSH, hsCRP, CK (>5x), EKG AFib, EKG Zayıf Okuma düzenleyicileri ve geçerlilik ufukları (staleness).
+* **EKG Ölçümleri Paneli**: Hastane EKG PDF'leri için PR aralığı, QRS süresi, QT, QTc, QRS aksı biyobelirteç tanımları.
+* **Şeffaflık & Rıza**: Tahlil detayında "Bu değer uygulamayı nasıl etkiliyor?" kartı, Ayarlar'da her düzenleyiciyi tek tek kapatabilme imkânı, HRV/RHR trendlerinde tarafsız tahlil tarih işaretleri.

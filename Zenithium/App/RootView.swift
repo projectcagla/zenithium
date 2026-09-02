@@ -68,6 +68,7 @@ struct RootView: View {
                 journal: store,
                 bloodMarkers: store,
                 records: records,
+                sessions: store,
                 cycleSource: health,
                 goals: store,
                 workoutSource: health
@@ -177,6 +178,11 @@ struct RootView: View {
         .preferredColorScheme(appearance.colorScheme)
         .task { await loadOnboardingState() }
         .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                Task {
+                    await dependencies.coordinator.cancelBackfill()
+                }
+            }
             guard newPhase == .active, hasCompletedOnboarding == true else { return }
             // The user is looking at the screen, so the device is unlocked. Anything a locked
             // background wake had to defer can run now, even if the unlock notification was

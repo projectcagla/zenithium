@@ -98,6 +98,13 @@ struct TrendPoint: Sendable, Equatable, Identifiable {
     var id: Date { date }
 }
 
+/// A blood draw event plotted on a trend chart.
+struct TrendBloodEvent: Sendable, Equatable, Identifiable {
+    let id: UUID
+    let date: Date
+    let panelName: String
+}
+
 @MainActor
 @Observable
 final class TrendsViewModel {
@@ -109,6 +116,25 @@ final class TrendsViewModel {
         let average: Double?
         let minimum: Double?
         let maximum: Double?
+        let bloodEvents: [TrendBloodEvent]
+
+        init(
+            points: [TrendPoint],
+            metric: TrendMetric,
+            range: TrendRange,
+            average: Double?,
+            minimum: Double?,
+            maximum: Double?,
+            bloodEvents: [TrendBloodEvent] = []
+        ) {
+            self.points = points
+            self.metric = metric
+            self.range = range
+            self.average = average
+            self.minimum = minimum
+            self.maximum = maximum
+            self.bloodEvents = bloodEvents
+        }
 
         /// The axis range: the metric's fixed one, or a padded fit to the data.
         var axisRange: ClosedRange<Double> {
@@ -124,16 +150,19 @@ final class TrendsViewModel {
     private(set) var range: TrendRange = .month
 
     private let repository: any BiometricDayRepository
+    private let bloodMarkers: (any BloodMarkerRepository)?
     private let nowProvider: @Sendable () -> Date
     private let calendarProvider: @Sendable () -> Calendar
     private var loadTask: Task<Void, Never>?
 
     init(
         repository: any BiometricDayRepository,
+        bloodMarkers: (any BloodMarkerRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() },
         calendarProvider: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent }
     ) {
         self.repository = repository
+        self.bloodMarkers = bloodMarkers
         self.nowProvider = nowProvider
         self.calendarProvider = calendarProvider
     }
@@ -174,6 +203,30 @@ final class TrendsViewModel {
                 return
             }
             let values = points.map(\.value)
+
+            var bloodEvents: [TrendBloodEvent] = []
+            if (metric == .heartRateVariability || metric == .restingHeartRate), let bloodMarkers {
+                if let markers = try? await bloodMarkers.bloodMarkers() {
+                    let inRange = markers.filter { $0.drawnAt >= start && $0.drawnAt <= now }
+                    // Group by date and panel
+                    var seen = Set<String>()
+                    for marker in inRange {
+                        let panelName = marker.marker.panel?.displayName ?? "Laboratuvar"
+                        let key = "\(calendar.startOfDay(for: marker.drawnAt).timeIntervalSince1970)_\(panelName)"
+                        if !seen.contains(key) {
+                            seen.insert(key)
+                            bloodEvents.append(
+                                TrendBloodEvent(
+                                    id: marker.id,
+                                    date: marker.drawnAt,
+                                    panelName: panelName
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             state = .loaded(
                 Content(
                     points: points,
@@ -181,7 +234,8 @@ final class TrendsViewModel {
                     range: range,
                     average: MathSupport.mean(values),
                     minimum: values.min(),
-                    maximum: values.max()
+                    maximum: values.max(),
+                    bloodEvents: bloodEvents
                 )
             )
         } catch {

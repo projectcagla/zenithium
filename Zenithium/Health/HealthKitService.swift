@@ -926,6 +926,34 @@ actor HealthKitService: HealthDataProviding {
         }
     }
 
+    // MARK: - Electrocardiogram
+
+    func fetchECGRecords(days: Int, now: Date) async throws -> [ECGRecord] {
+        let type = HKObjectType.electrocardiogramType()
+        let start = now.addingTimeInterval(-Double(days) * 86_400)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: start,
+            end: now,
+            options: []
+        )
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+        return try await runQuery { completion in
+            HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HealthQueryTuning.windowedQuerySampleLimit,
+                sortDescriptors: sort
+            ) { _, samples, error in
+                if let error {
+                    completion(.failure(Self.mapError(error, kind: .heartRate)))
+                    return
+                }
+                let mapped = HealthKitMapping.ecgRecords(from: samples ?? [])
+                completion(.success(mapped))
+            }
+        }
+    }
+
     // MARK: - Constants and helpers
 
     /// ASSUMPTION API-8 — how far the overnight window is widened on each side.

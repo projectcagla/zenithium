@@ -20,6 +20,7 @@ struct DecisionInput: Sendable {
     let dataQuality: DataQualityAssessment
     let calibration: CalibrationState
     let lens: TrainingLens
+    let clinical: ClinicalContext
 
     init(
         recoveryScore: Double?,
@@ -31,7 +32,8 @@ struct DecisionInput: Sendable {
         muscleReadiness: [MuscleGroup: MuscleReadiness] = [:],
         dataQuality: DataQualityAssessment,
         calibration: CalibrationState,
-        lens: TrainingLens = .endurance
+        lens: TrainingLens = .endurance,
+        clinical: ClinicalContext = .neutral
     ) {
         self.recoveryScore = recoveryScore
         self.recoveryBand = recoveryBand
@@ -43,6 +45,7 @@ struct DecisionInput: Sendable {
         self.dataQuality = dataQuality
         self.calibration = calibration
         self.lens = lens
+        self.clinical = clinical
     }
 }
 
@@ -66,7 +69,11 @@ enum DecisionEngine {
         )
         stepCounter += 1
 
-        if !input.dataQuality.isUsableForRecovery || input.calibration.tier == .coldStart {
+        // Ingest clinical evidence and limitations
+        evidence.append(contentsOf: input.clinical.evidence)
+        limitations.append(contentsOf: input.clinical.limitations)
+
+        if !input.dataQuality.isUsableForRecovery || input.calibration.tier == .coldStart || input.clinical.suppressesHRVRecovery {
             if input.calibration.tier == .coldStart {
                 limitations.append(
                     ScientificLimitation(
@@ -85,13 +92,25 @@ enum DecisionEngine {
                     )
                 )
             }
+            if input.clinical.suppressesHRVRecovery {
+                limitations.append(
+                    ScientificLimitation(
+                        code: "CLINICAL-AF-SUPPRESSED",
+                        explanation: "Atriyal fibrilasyon ritim düzensizliği nedeniyle HRV toparlanma skoru geçersiz kılındı.",
+                        isBlocking: true
+                    )
+                )
+            }
 
+            let penalties = input.dataQuality.qualityIssues + input.clinical.penaltyReasons
+            let confVal = MathSupport.clamp(input.dataQuality.confidenceFactor * input.clinical.confidenceMultiplier, 0.0, 1.0)
+            
             let decision = AthleticDecision(
                 action: .calibrate,
-                headline: "Taban Çizgisi Oluşturuluyor",
-                primaryRationale: "Kişiselleştirilmiş antrenman önerileri için saatinizi gece uyurken takmaya devam edin.",
+                headline: input.clinical.suppressesHRVRecovery ? "Ritim Düzensizliği Kaydedildi" : "Taban Çizgisi Oluşturuluyor",
+                primaryRationale: input.clinical.suppressesHRVRecovery ? "Atriyal fibrilasyon kaydı varken HRV otonom tonusu yansıtmaz; toparlanma skoru geçici olarak askıya alındı." : "Kişiselleştirilmiş antrenman önerileri için saatinizi gece uyurken takmaya devam edin.",
                 suggestedActivities: [.walking],
-                confidence: ConfidenceScore(value: input.dataQuality.confidenceFactor, penaltyReasons: input.dataQuality.qualityIssues),
+                confidence: ConfidenceScore(value: confVal, penaltyReasons: penalties),
                 evidence: evidence,
                 traceSteps: steps,
                 limitations: limitations
@@ -113,7 +132,7 @@ enum DecisionEngine {
         evidence.append(
             EvidenceNode(
                 sourceCategory: "Toparlanma",
-                summary: "Toparlanma Skoru: %\(Int(recovery)) (\(band.displayName))",
+                summary: "Toparlanma Skoru: \(Int(recovery)) (\(band.displayName))",
                 weight: 0.40,
                 timestamp: Date()
             )
@@ -123,42 +142,43 @@ enum DecisionEngine {
             TraceStep(
                 stepNumber: stepCounter,
                 engineName: "RecoveryEngine",
-                inputDescription: "HRV & RHR z-skorları ve uyku kalitesi",
-                outputDescription: "Toparlanma %\(Int(recovery)) (\(band.displayName))",
-                physiologicalImpact: "Otonom sinir sistemi ve kardiyovasküler hazırbulunuşluk seviyesi belirlendi."
+                inputDescription: "Gecelik HRV ve RHR z-skor dağılımı",
+                outputDescription: "Toparlanma Skoru: \(Int(recovery)) (\(band.displayName))",
+                physiologicalImpact: "Günlük otonom sinir sistemi hazırbulunuşluğu belirlendi."
             )
         )
         stepCounter += 1
 
-        // Step 3: Sleep Synthesis
-        if let sleep = input.sleepScore {
+        // Step 3: Training Load & ACWR Gating
+        if let acwr = input.acwr {
+            let loadBand = LoadBand.band(forRatio: acwr)
             evidence.append(
                 EvidenceNode(
-                    sourceCategory: "Uyku",
-                    summary: "Uyku Skoru: %\(Int(sleep))",
-                    weight: 0.25,
+                    sourceCategory: "Yük Dengesi",
+                    summary: "ACWR: \(MathSupport.decimal(acwr, digits: 2)) (\(loadBand.displayName))",
+                    weight: 0.30,
                     timestamp: Date()
                 )
             )
             steps.append(
                 TraceStep(
                     stepNumber: stepCounter,
-                    engineName: "SleepScoreEngine",
-                    inputDescription: "Uyku süresi ve verimlilik analizi",
-                    outputDescription: "Uyku Skoru %\(Int(sleep))",
-                    physiologicalImpact: "Hücresel onarım ve merkezi sinir sistemi dinlenme durumu doğrulandı."
+                    engineName: "TrainingLoadEngine",
+                    inputDescription: "Akut (7g): \(MathSupport.decimal(input.acuteLoad ?? 0, digits: 1)), Kronik (28g): \(MathSupport.decimal(input.chronicLoad ?? 0, digits: 1))",
+                    outputDescription: "ACWR: \(MathSupport.decimal(acwr, digits: 2)) (\(loadBand.displayName))",
+                    physiologicalImpact: (loadBand == .productive || loadBand == .maintaining) ? "Yük artış hızı güvenli aralıkta." : "Aşırı yüklenme riski nedeniyle tavan sınırlandırıldı."
                 )
             )
             stepCounter += 1
         }
 
-        // Step 4: Fatigue & Muscle Readiness
-        let mostFatigued = input.muscleReadiness.values.sorted { $0.readiness < $1.readiness }.first
-        if let fatigued = mostFatigued, fatigued.readiness < 50 {
+        // Step 4: Muscle Fatigue Screening
+        let fatiguedMuscles = input.muscleReadiness.values.filter { $0.band == .red }
+        if let fatigued = fatiguedMuscles.first {
             evidence.append(
                 EvidenceNode(
-                    sourceCategory: "Kas Hazırlığı",
-                    summary: "\(fatigued.muscle.displayName) %\(Int(fatigued.readiness)) hazır",
+                    sourceCategory: "Kas Yorgunluğu",
+                    summary: "\(fatigued.muscle.displayName) toparlanma sürecinde (%\(Int(fatigued.readiness)))",
                     weight: 0.20,
                     timestamp: Date()
                 )
@@ -170,6 +190,20 @@ enum DecisionEngine {
                     inputDescription: "Son antrenmanların kas bazlı yük süperpozisyonu",
                     outputDescription: "\(fatigued.muscle.displayName) yorgunluk tavanında (\(Int(fatigued.fatigue)) puan)",
                     physiologicalImpact: "Bu kas grubunu içeren yoğun hareketlerin sınırlanması önerildi."
+                )
+            )
+            stepCounter += 1
+        }
+        
+        // Clinical Context Step (if active)
+        if input.clinical != .neutral {
+            steps.append(
+                TraceStep(
+                    stepNumber: stepCounter,
+                    engineName: "ClinicalContextEngine",
+                    inputDescription: "Klinik Çarpan: ×\(MathSupport.decimal(input.clinical.confidenceMultiplier, digits: 2))",
+                    outputDescription: input.clinical.penaltyReasons.joined(separator: "; "),
+                    physiologicalImpact: "Biyobelirteç ve EKG bağlamı karar güvenine ve hata payına yansıtıldı."
                 )
             )
             stepCounter += 1
@@ -203,9 +237,12 @@ enum DecisionEngine {
             activities = [.walking, .coreTraining, .functionalStrengthTraining]
         }
 
+        let finalConfidenceValue = MathSupport.clamp(input.dataQuality.confidenceFactor * input.clinical.confidenceMultiplier, 0.0, 1.0)
+        let combinedPenalties = input.dataQuality.missingSensors.map { "\($0) sensörü eksik" } + input.clinical.penaltyReasons
+
         let confidenceScore = ConfidenceScore(
-            value: input.dataQuality.confidenceFactor,
-            penaltyReasons: input.dataQuality.missingSensors.map { "\($0) sensörü eksik" }
+            value: finalConfidenceValue,
+            penaltyReasons: combinedPenalties
         )
 
         let decision = AthleticDecision(

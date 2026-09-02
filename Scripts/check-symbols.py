@@ -104,6 +104,7 @@ FRAMEWORK_SYMBOLS = {
     "HKStatisticsOptions", "HKQueryOptions", "HKSourceRevision", "HKDevice", "HKObject",
     "HKWorkoutEvent", "HKUpdateFrequency", "HKStatisticsCollection", "HKCharacteristicType",
     "HKSeriesType", "HKMetadataKeyWeatherTemperature", "HKMetadataKeyWeatherHumidity",
+    "HKElectrocardiogram",
     # WidgetKit / ActivityKit / AppIntents / WatchConnectivity
     "Widget", "WidgetBundle", "WidgetConfiguration", "StaticConfiguration", "ControlWidget",
     "ControlWidgetConfiguration", "StaticControlConfiguration", "ControlWidgetButton",

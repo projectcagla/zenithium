@@ -69,6 +69,7 @@ enum BiomarkerPanel: String, Sendable, Codable, Hashable, CaseIterable {
     case hormone
     case micronutrient
     case inflammation
+    case cardiacElectrical
 
     var displayName: String {
         switch self {
@@ -81,6 +82,7 @@ enum BiomarkerPanel: String, Sendable, Codable, Hashable, CaseIterable {
         case .hormone: return "Hormon"
         case .micronutrient: return "Mineral ve vitamin"
         case .inflammation: return "İltihap ve kas hasarı"
+        case .cardiacElectrical: return "EKG ölçümleri"
         }
     }
 
@@ -96,6 +98,7 @@ enum BiomarkerPanel: String, Sendable, Codable, Hashable, CaseIterable {
         case .hormone: return 6
         case .micronutrient: return 7
         case .inflammation: return 8
+        case .cardiacElectrical: return 9
         }
     }
 }
@@ -1015,6 +1018,96 @@ enum BiomarkerCatalog {
             retestMonths: 24,
             synonyms: ["homosistein", "homocysteine", "hcy"],
             contextNote: nil
+        ),
+        BiomarkerDefinition(
+            key: "ecgHeartRate",
+            displayName: "Kalp Hızı",
+            accessibilityName: "EKG kalp hızı",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "vuru/dk", factorToCanonical: 1.0, aliases: ["bpm", "atim dk", "atım/dk", "vuru dk"])
+            ],
+            referenceRange: SexSpecificRange(shared: MarkerRange(minimum: 50.0, maximum: 100.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 50.0, maximum: 80.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["kalp hizi", "kalp hızı", "heart rate", "hr", "nabiz", "nabız", "ventrikul hizi", "ventrikül hızı", "ventricular rate"],
+            contextNote: "İstirahat EKG kaydı sırasında kaydedilen anlık elektriksel kalp hızı."
+        ),
+        BiomarkerDefinition(
+            key: "prInterval",
+            displayName: "PR Aralığı",
+            accessibilityName: "PR aralığı",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "ms", factorToCanonical: 1.0, aliases: ["milisaniye"])
+            ],
+            referenceRange: SexSpecificRange(shared: MarkerRange(minimum: 120.0, maximum: 200.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 120.0, maximum: 200.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["pr araligi", "pr aralığı", "pr interval", "pr suresi", "pr süresi", "pr"],
+            contextNote: "Atriyal depolarizasyon ile ventriküler depolarizasyon başlangıcı arasındaki elektriksel iletim süresi."
+        ),
+        BiomarkerDefinition(
+            key: "qrsDuration",
+            displayName: "QRS Süresi",
+            accessibilityName: "QRS süresi",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "ms", factorToCanonical: 1.0, aliases: ["milisaniye"])
+            ],
+            referenceRange: SexSpecificRange(shared: MarkerRange(minimum: 80.0, maximum: 120.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 80.0, maximum: 100.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["qrs suresi", "qrs süresi", "qrs duration", "qrs araligi", "qrs aralığı", "qrs"],
+            contextNote: "Ventriküllerin elektriksel depolarizasyon süresi."
+        ),
+        BiomarkerDefinition(
+            key: "qtInterval",
+            displayName: "QT Aralığı",
+            accessibilityName: "QT aralığı",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "ms", factorToCanonical: 1.0, aliases: ["milisaniye"])
+            ],
+            referenceRange: SexSpecificRange(shared: MarkerRange(minimum: 350.0, maximum: 450.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 360.0, maximum: 440.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["qt araligi", "qt aralığı", "qt interval", "qt suresi", "qt süresi", "qt"],
+            contextNote: "Ventriküler depolarizasyon ve repolarizasyonun toplam elektriksel süresi."
+        ),
+        BiomarkerDefinition(
+            key: "qtcInterval",
+            displayName: "Düzeltilmiş QT (QTc)",
+            accessibilityName: "Düzeltilmiş QT aralığı",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "ms", factorToCanonical: 1.0, aliases: ["milisaniye"])
+            ],
+            referenceRange: SexSpecificRange(male: MarkerRange(minimum: 350.0, maximum: 450.0), female: MarkerRange(minimum: 350.0, maximum: 460.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 360.0, maximum: 440.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["qtc araligi", "qtc aralığı", "qtc interval", "duzeltilmis qt", "düzeltilmiş qt", "corrected qt", "qtc bazett", "qtc fridericia", "qtc"],
+            contextNote: "Kalp hızına göre normalize edilmiş ventriküler repolarizasyon süresi."
+        ),
+        BiomarkerDefinition(
+            key: "qrsAxis",
+            displayName: "QRS Aksı",
+            accessibilityName: "QRS elektriksel aksı",
+            panel: .cardiacElectrical,
+            units: [
+                BiomarkerUnit(symbol: "°", factorToCanonical: 1.0, aliases: ["derece", "deg"])
+            ],
+            referenceRange: SexSpecificRange(shared: MarkerRange(minimum: -30.0, maximum: 90.0)),
+            optimalRange: SexSpecificRange(shared: MarkerRange(minimum: -30.0, maximum: 90.0)),
+            fractionDigits: 0,
+            retestMonths: 12,
+            synonyms: ["qrs aksi", "qrs aksı", "qrs axis", "frontal aks", "elektriksel aks", "p qrs t aksi", "r aksi"],
+            contextNote: "Ventriküler depolarizasyonun frontal düzlemdeki ana elektriksel yönü."
         )
     ]
 

@@ -56,11 +56,11 @@ final class TodayViewModel {
     /// when there is one and the deterministic narrator otherwise.
     private let narrator: any IntelligenceProviding
 
-    /// Read for the correlation and laboratory lines in the briefing. Both optional: a
-    /// briefing without them is shorter, not broken.
+    /// Read for the correlation and laboratory lines in the briefing.
     private let journal: (any JournalRepository)?
     private let bloodMarkers: (any BloodMarkerRepository)?
     private let records: (any BiometricDayRepository)?
+    private let sessions: (any StrengthSessionRepository)?
 
     /// Read only when the profile has cycle awareness switched on (Faz 12).
     private let cycleSource: (any HealthDataProviding)?
@@ -79,6 +79,7 @@ final class TodayViewModel {
         journal: (any JournalRepository)? = nil,
         bloodMarkers: (any BloodMarkerRepository)? = nil,
         records: (any BiometricDayRepository)? = nil,
+        sessions: (any StrengthSessionRepository)? = nil,
         cycleSource: (any HealthDataProviding)? = nil,
         goals: (any GoalEventRepository)? = nil,
         workoutSource: (any HealthDataProviding)? = nil,
@@ -90,6 +91,7 @@ final class TodayViewModel {
         self.journal = journal
         self.bloodMarkers = bloodMarkers
         self.records = records
+        self.sessions = sessions
         self.cycleSource = cycleSource
         self.goals = goals
         self.workoutSource = workoutSource
@@ -278,6 +280,23 @@ final class TodayViewModel {
             calibration: calibration
         )
 
+        var markers: [BloodMarkerSnapshot] = []
+        if let bloodMarkers {
+            markers = (try? await bloodMarkers.bloodMarkers()) ?? []
+        }
+        var ecgRecords: [ECGRecord] = []
+        if let workoutSource {
+            ecgRecords = (try? await workoutSource.fetchECGRecords(days: 30, now: nowProvider())) ?? []
+        }
+        let disabledIDs = ClinicalModifierRegistry.disabledModifierIDs()
+        let clinicalContext = ClinicalContextEngine.assess(
+            markers: markers,
+            ecgRecords: ecgRecords,
+            disabledModifierIDs: disabledIDs,
+            sex: result.profile.biologicalSex,
+            now: nowProvider()
+        )
+
         let input = DecisionInput(
             recoveryScore: result.recovery.score,
             recoveryBand: result.recovery.band,
@@ -288,7 +307,8 @@ final class TodayViewModel {
             muscleReadiness: result.muscle,
             dataQuality: dataQuality,
             calibration: calibration,
-            lens: result.profile.trainingLens
+            lens: result.profile.trainingLens,
+            clinical: clinicalContext
         )
 
         return DecisionEngine.decide(input: input)
@@ -385,9 +405,21 @@ final class TodayViewModel {
 
         var labObservations: [LabObservation] = []
         if let bloodMarkers, let markers = try? await bloodMarkers.bloodMarkers(), !markers.isEmpty {
+            var sessionDates: [Date] = []
+            if let earliest = markers.map(\.drawnAt).min(), let latest = markers.map(\.drawnAt).max() {
+                let start = earliest.addingTimeInterval(-Double(LabInsightEngine.trainingSensitiveWindowHours) * 3600)
+                let end = latest.addingTimeInterval(3600)
+                if let workoutSource, let workouts = try? await workoutSource.fetchWorkouts(in: DateInterval(start: start, end: end)) {
+                    sessionDates.append(contentsOf: workouts.map(\.interval.start))
+                }
+                if let sessions, let logged = try? await sessions.strengthSessions(from: start, through: end) {
+                    sessionDates.append(contentsOf: logged.map(\.performedAt))
+                }
+            }
             labObservations = LabInsightEngine.observations(
                 markers: markers,
                 sex: result.profile.biologicalSex,
+                sessionDates: sessionDates,
                 now: now
             )
         }
