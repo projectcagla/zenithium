@@ -1,162 +1,294 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenithium — Gizlilik Politikası / Privacy Policy</title>
-    <style>
-        :root {
-            --bg: #090A0F;
-            --surface: #141721;
-            --border: #232838;
-            --text-primary: #F0F2F8;
-            --text-secondary: #9BA3B8;
-            --accent: #38BDF8;
-            --green: #34D399;
-        }
-        body {
-            margin: 0;
-            padding: 32px 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 680px;
-            margin: 0 auto;
-        }
-        header {
-            margin-bottom: 36px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-            letter-spacing: -0.5px;
-        }
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        h2 {
-            font-size: 18px;
-            margin: 0 0 12px 0;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        p {
-            margin: 0 0 12px 0;
-            color: var(--text-primary);
-            font-size: 15px;
-        }
-        p:last-child {
-            margin-bottom: 0;
-        }
-        ul {
-            margin: 0 0 12px 0;
-            padding-left: 20px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        li {
-            margin-bottom: 6px;
-        }
-        footer {
-            margin-top: 48px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--border);
-            padding-top: 24px;
-        }
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Zenithium'un sunucusu, hesabı ve ağ bağlantı yetkisi yoktur. Sağlık verileri cihazdan çıkmaz.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Zenithium — Gizlilik Politikası">
+<meta property="og:description" content="Zenithium'un sunucusu, hesabı ve ağ bağlantı yetkisi yoktur. Sağlık verileri cihazdan çıkmaz.">
+<meta property="og:type" content="website">
+<title>Zenithium — Gizlilik Politikası</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..115,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;600&display=swap">
+<style>
+:root{
+  /* ZenithiumColor.swift ile aynı palet — sayfa uygulamanın kimliğini ödünç
+     almıyor, aynısını kullanıyor. */
+  --ink:#07090E; --surface:#0D111A; --raised:#111725;
+  --hairline:#1F2836; --hairline-soft:#151C28;
+  --text:#E9EDF5; --dim:#8C96AB; --faint:#59627A;
+  --accent:#3ED0BE; --ready:#3FCF8E; --moderate:#F0B23F; --recovering:#EF5560;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --measure:63ch; --gutter:clamp(20px,4.5vw,44px); --col:1140px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; color:var(--text); font-family:var(--body); font-size:16px;
+  line-height:1.6; -webkit-font-smoothing:antialiased;
+  /* Enstrüman kâğıdı: iki eksende çok soluk bir ızgara. Dekorasyon değil —
+     sayfadaki her grafiğin üstünde durduğu ölçek zeminiyle aynı. */
+  background-color:var(--ink);
+  background-image:
+    linear-gradient(var(--hairline-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline-soft) 1px, transparent 1px);
+  background-size:64px 64px, 64px 64px;
+  background-position:-1px -1px, -1px -1px;
+}
+.wrap{max-width:var(--col); margin:0 auto; padding:0 var(--gutter);}
+h1,h2,h3,h4{font-family:var(--display); margin:0; text-wrap:balance;}
+p{margin:0;}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline; text-underline-offset:3px;}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px;}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+.eyebrow{
+  font-family:var(--mono); font-size:.67rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--faint);
+}
+.rule{height:1px; background:var(--hairline); border:0; margin:0;}
+
+/* ── başlık ─────────────────────────────────────────── */
+header{border-bottom:1px solid var(--hairline); background:rgba(7,9,14,.86); backdrop-filter:blur(8px); position:sticky; top:0; z-index:20;}
+.masthead{display:flex; align-items:center; justify-content:space-between; gap:18px; padding:15px 0; flex-wrap:wrap;}
+.mark{font-family:var(--display); font-weight:700; font-size:1.02rem; letter-spacing:.04em;
+      font-variation-settings:"wdth" 86; color:var(--text);}
+.mark b{color:var(--accent); font-weight:700;}
+.masthead nav{display:flex; gap:20px; font-family:var(--mono); font-size:.7rem;
+              letter-spacing:.1em; text-transform:uppercase; flex-wrap:wrap;}
+.masthead nav a{color:var(--dim);}
+.masthead nav a:hover{color:var(--accent); text-decoration:none;}
+.masthead nav a[aria-current="page"]{color:var(--accent);}
+
+/* ── ölçüt şeridi ───────────────────────────────────── */
+.strip{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--hairline);
+       border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);}
+@media(min-width:680px){ .strip{grid-template-columns:repeat(5,1fr);} }
+.strip div{background:var(--ink); padding:16px 18px; display:grid; gap:3px;}
+.strip .v{font-family:var(--mono); font-size:1.7rem; font-weight:600; line-height:1; color:var(--accent);
+          font-variant-numeric:tabular-nums;}
+.strip .k{font-family:var(--mono); font-size:.63rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);}
+
+/* ── bölümler ───────────────────────────────────────── */
+section{padding:clamp(56px,8vw,104px) 0; border-top:1px solid var(--hairline-soft);}
+.sec-head{display:grid; gap:15px; max-width:var(--measure); margin-bottom:clamp(28px,4vw,44px);}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.35rem); font-weight:700; line-height:1.12;
+             letter-spacing:-.015em; font-variation-settings:"wdth" 90;}
+.sec-head p{color:var(--dim);}
+
+/* ── grafik çerçevesi ───────────────────────────────── */
+.panel{border:1px solid var(--hairline); background:var(--surface);}
+.panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+            padding:13px 18px; border-bottom:1px solid var(--hairline); flex-wrap:wrap;}
+.panel-title{font-family:var(--mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--dim);}
+.panel-note{font-family:var(--mono); font-size:.68rem; color:var(--faint); font-variant-numeric:tabular-nums;}
+.panel-body{padding:18px;}
+canvas{display:block; width:100%;}
+.legend{display:flex; flex-wrap:wrap; gap:16px; padding:12px 18px; border-top:1px solid var(--hairline-soft);
+        font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; color:var(--faint);}
+.legend span{display:inline-flex; align-items:center; gap:7px;}
+.swatch{width:12px; height:3px; border-radius:1px; display:inline-block;}
+
+/* ── iddia merdiveni ────────────────────────────────── */
+.ladder{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+@media(min-width:980px){ .ladder{grid-template-columns:repeat(3,1fr);} }
+.claim{background:var(--surface); padding:26px 22px 24px; display:grid; gap:15px; align-content:start;}
+.claim-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.badge{font-family:var(--mono); font-size:.63rem; font-weight:600; letter-spacing:.14em;
+       text-transform:uppercase; padding:4px 9px; border:1px solid currentColor; border-radius:2px;}
+.b-rec{color:var(--ready);} .b-sug{color:var(--moderate);} .b-obs{color:var(--dim);}
+.grade{font-family:var(--mono); font-size:.64rem; color:var(--faint); letter-spacing:.07em; text-align:right;}
+.claim h3{font-size:1.15rem; font-weight:600; line-height:1.32; font-variation-settings:"wdth" 97;}
+.claim .said{color:var(--dim); font-size:.92rem;}
+.meter{display:grid; gap:6px;}
+.track{height:3px; background:var(--hairline); position:relative; overflow:hidden;}
+.fill{position:absolute; inset:0 auto 0 0; background:var(--accent);}
+.mrow{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.64rem;
+      letter-spacing:.08em; text-transform:uppercase; color:var(--faint);}
+.mrow b{color:var(--dim); font-weight:500; font-variant-numeric:tabular-nums;}
+.refs{display:grid; gap:10px; border-top:1px solid var(--hairline-soft); padding-top:14px;}
+.ref{font-size:.79rem; line-height:1.45; color:var(--dim);}
+.ref cite{font-style:normal; color:var(--text);}
+.ref .not{display:block; color:var(--faint); margin-top:4px;}
+.ref .not b{font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+            color:var(--faint); font-weight:600;}
+.flag{font-family:var(--mono); font-size:.67rem; line-height:1.5; color:var(--moderate);}
+
+/* ── iki sütun ──────────────────────────────────────── */
+.split{display:grid; gap:clamp(24px,4vw,48px); align-items:start;}
+@media(min-width:900px){ .split{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);} }
+.split .prose{display:grid; gap:16px;}
+.split .prose h3{font-size:1.3rem; font-weight:700; font-variation-settings:"wdth" 92;}
+.split .prose p{color:var(--dim);}
+
+/* ── kas listesi ────────────────────────────────────── */
+.muscles{display:grid; gap:1px; background:var(--hairline-soft);}
+@media(min-width:640px){ .muscles{grid-template-columns:repeat(2,1fr);} }
+.mus{background:var(--surface); padding:12px 16px; display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center;}
+.mus .n{font-size:.9rem;}
+.mus .p{font-family:var(--mono); font-size:.82rem; color:var(--dim); font-variant-numeric:tabular-nums;}
+.mus .bar{grid-column:1/-1; height:3px; background:var(--hairline); position:relative;}
+.mus .bar i{position:absolute; inset:0 auto 0 0; display:block;}
+
+/* ── motor dizini ───────────────────────────────────── */
+.grid3{display:grid; gap:1px; background:var(--hairline-soft); border:1px solid var(--hairline);}
+@media(min-width:700px){ .grid3{grid-template-columns:repeat(2,1fr);} }
+@media(min-width:1000px){ .grid3{grid-template-columns:repeat(3,1fr);} }
+.cell{background:var(--surface); padding:20px 18px; display:grid; gap:7px; align-content:start;}
+.cell .t{font-family:var(--display); font-weight:600; font-size:1rem; font-variation-settings:"wdth" 94;}
+.cell .d{font-size:.85rem; color:var(--dim); line-height:1.5;}
+.cell canvas{margin-bottom:4px;}
+
+/* ── gizlilik / sınırlar ────────────────────────────── */
+.claimlist{display:grid; gap:0; max-width:var(--measure);}
+.item{display:grid; grid-template-columns:auto 1fr; gap:16px; padding:17px 0;
+      border-bottom:1px solid var(--hairline-soft);}
+.item:first-child{border-top:1px solid var(--hairline-soft);}
+.item .g{font-family:var(--mono); font-size:.8rem; line-height:1.9;}
+.item .g.no{color:var(--recovering);} .item .g.yes{color:var(--ready);}
+.item .t{font-weight:600;}
+.item .d{color:var(--dim); font-size:.92rem;}
+
+/* ── belge sayfaları (privacy / support) ────────────── */
+.doc{padding:clamp(44px,7vw,80px) 0 0; display:grid; gap:18px; max-width:var(--measure);}
+.doc h1{font-size:clamp(2.1rem,5vw,3.1rem); font-weight:800; line-height:1.05;
+        letter-spacing:-.02em; font-variation-settings:"wdth" 84;}
+.doc .lede{color:var(--dim); font-size:1.05rem;}
+.stamp{font-family:var(--mono); font-size:.67rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+.clauses{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+.clause{background:var(--surface); padding:24px clamp(18px,3vw,30px); display:grid;
+        grid-template-columns:auto 1fr; gap:6px 20px;}
+.clause .no{font-family:var(--mono); font-size:.72rem; font-weight:600; color:var(--accent);
+            letter-spacing:.08em; padding-top:5px; font-variant-numeric:tabular-nums;}
+.clause h3{font-size:1.08rem; font-weight:600; font-variation-settings:"wdth" 95;}
+.clause .c{grid-column:2; color:var(--dim); display:grid; gap:10px;}
+.clause ul{margin:2px 0 0; padding-left:1.1em; display:grid; gap:7px;}
+.clause li::marker{color:var(--faint);}
+.lang{grid-column:2; font-family:var(--mono); font-size:.62rem; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--faint); padding-top:12px; margin-top:4px;
+      border-top:1px solid var(--hairline-soft);}
+.en{color:var(--faint); font-size:.88rem;}
+.qa{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+.qa > div{background:var(--surface); padding:22px clamp(18px,3vw,28px); display:grid; gap:8px;}
+.qa h3{font-size:1rem; font-weight:600; font-variation-settings:"wdth" 96;}
+.qa p{color:var(--dim); font-size:.93rem;}
+.contact{border:1px solid var(--accent); background:var(--surface); padding:clamp(22px,3.5vw,32px);
+         display:grid; gap:10px; max-width:var(--measure);}
+.contact .k{font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);}
+.contact a{font-family:var(--mono); font-size:1.05rem; word-break:break-all;}
+
+/* ── altlık ─────────────────────────────────────────── */
+footer{border-top:1px solid var(--hairline); margin-top:clamp(48px,7vw,88px);
+       padding:38px 0 60px; display:grid; gap:22px;}
+.flinks{display:flex; flex-wrap:wrap; gap:10px;}
+.flink{border:1px solid var(--hairline); background:var(--surface); padding:11px 17px; color:var(--text);
+       font-family:var(--mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; border-radius:2px;}
+.flink:hover{border-color:var(--accent); color:var(--accent); text-decoration:none;}
+.fine{color:var(--faint); font-size:.82rem; max-width:var(--measure); line-height:1.6;}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{animation:none!important; transition:none!important;}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Zenithium</h1>
-            <div class="subtitle">Gizlilik Politikası / Privacy Policy</div>
-            <div class="subtitle">Son Güncelleme / Last Updated: 2 Eylül 2026</div>
-        </header>
+<header>
+  <div class="wrap masthead">
+    <a class="mark" href="index.html">ZENITH<b>IUM</b></a>
+    <nav>
+      <a href="index.html#gece">Gece</a>
+      <a href="index.html#karar">Karar</a>
+      <a href="privacy.html" aria-current="page">Gizlilik</a>
+      <a href="support.html">Destek</a>
+      <a href="https://github.com/projectcagla/zenithium">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-        <!-- TÜRKÇE -->
-        <section id="tr">
-            <div class="card">
-                <h2>1. Sıfır Sunucu, Sıfır Ağ İzni</h2>
-                <p>Zenithium'un kullanıcı hesabı sistemi, uzak sunucusu ve hiçbir türde ağ bağlantı yetkisi (Network Entitlement) yoktur. Uygulama internete bağlanamaz, veri gönderemez veya alamaz.</p>
-            </div>
+<main class="wrap">
+  <div class="doc">
+    <span class="eyebrow">Gizlilik Politikası · Privacy Policy</span>
+    <h1>Veri hiçbir yere gitmiyor, çünkü gidecek bir yer yok.</h1>
+    <p class="lede">Zenithium'un sunucusu, kullanıcı hesabı ve ağ bağlantı yetkisi yoktur. Aşağıdaki maddeler bir taahhüt listesi değil, uygulamanın teknik olarak yapabildiklerinin sınırıdır.</p>
+    <span class="stamp">Son güncelleme · Last updated: 2 Eylül 2026</span>
+  </div>
 
-            <div class="card">
-                <h2>2. Apple Sağlık (HealthKit) Verileri</h2>
-                <p>Zenithium, antrenman toparlanması ve kardiyovasküler zorlanma analizlerini yapabilmek için yalnızca cihazınızdaki Apple Sağlık verilerini okur.</p>
-                <ul>
-                    <li>Sağlık verileriniz hiçbir zaman üçüncü taraflarla paylaşılmaz, satılmaz veya reklam amaçlı kullanılamaz.</li>
-                    <li>Hiçbir analitik, telemetri veya izleme kodu içermez.</li>
-                    <li>Tüm matematiksel motorlar (29 model) doğrudan telefonunuzun ve saatinizin işlemcisinde çalışır.</li>
-                </ul>
-            </div>
+  <div class="strip" style="margin:34px 0 0">
+    <div><span class="v">0</span><span class="k">Sunucu</span></div>
+    <div><span class="v">0</span><span class="k">Hesap</span></div>
+    <div><span class="v">0</span><span class="k">Ağ yetkisi</span></div>
+    <div><span class="v">0</span><span class="k">Analitik</span></div>
+    <div><span class="v">0</span><span class="k">Üçüncü parti</span></div>
+  </div>
 
-            <div class="card">
-                <h2>3. Cihaz İçi Depolama ve Yedekleme İzolasyonu</h2>
-                <p>Tüm geçmiş hesaplamalar cihazınızdaki yerel veritabanında saklanır. Apple App Store İnceleme Kılavuzu 5.1.3 uyarınca bu yerel veritabanı harici iCloud / iTunes yedeklemelerinden çıkarılmıştır (<code>isExcludedFromBackup = true</code>).</p>
-            </div>
+  <section style="border-top:0; padding-top:clamp(36px,5vw,56px)">
+    <div class="clauses">
 
-            <div class="card">
-                <h2>4. Veri Dışa Aktarma ve Silme</h2>
-                <p>PDF/rapor dışa aktarmaları yalnızca kullanıcının talebiyle oluşturulur ve nereye paylaşılacağına tamamen kullanıcı karar verir. Zenithium uygulamasını cihazınızdan sildiğinizde yerel tüm hesaplama veritabanı kalıcı olarak silinir. Apple Sağlık'taki orijinal sağlık kayıtlarınız güvenle kalmaya devam eder.</p>
-            </div>
-        </section>
+      <article class="clause">
+        <span class="no">01</span>
+        <h3>Sıfır sunucu, sıfır ağ izni</h3>
+        <div class="c">
+          <p>Zenithium'un kullanıcı hesabı sistemi, uzak sunucusu ve hiçbir türde ağ bağlantı yetkisi (network entitlement) yoktur. Uygulama internete bağlanamaz, veri gönderemez veya alamaz.</p>
+        </div>
+        <span class="lang">English</span>
+        <div class="c"><p class="en">Zenithium has no backend servers, no user accounts, and zero network entitlements. The application cannot connect to the internet, upload, or transmit any data.</p></div>
+      </article>
 
-        <hr style="border: 0; border-top: 1px solid var(--border); margin: 36px 0;">
+      <article class="clause">
+        <span class="no">02</span>
+        <h3>Apple Sağlık (HealthKit) verileri</h3>
+        <div class="c">
+          <p>Zenithium, antrenman toparlanması ve kardiyovasküler zorlanma analizlerini yapabilmek için yalnızca cihazındaki Apple Sağlık verilerini, senin açık iznin ile okur.</p>
+          <ul>
+            <li>Sağlık verilerin hiçbir zaman üçüncü taraflarla paylaşılmaz, satılmaz veya reklam amaçlı kullanılamaz.</li>
+            <li>Hiçbir analitik, telemetri, çökme raporlama veya izleme kodu içermez.</li>
+            <li>Tüm matematiksel motorlar doğrudan telefonunun ve saatinin işlemcisinde çalışır.</li>
+          </ul>
+        </div>
+        <span class="lang">English</span>
+        <div class="c">
+          <p class="en">Zenithium reads nocturnal and workout metrics strictly from Apple Health, with your explicit consent, to compute on-device athletic recovery and strain scores. Health data is never shared, sold, or used for advertising. No third-party SDKs, analytics, crash reporting, or tracking frameworks are included. All deterministic calculation engines run entirely on your device hardware.</p>
+        </div>
+      </article>
 
-        <!-- ENGLISH -->
-        <section id="en">
-            <div class="card">
-                <h2>1. Zero Servers, Zero Network Entitlements</h2>
-                <p>Zenithium has no backend servers, no user accounts, and zero network entitlements. The application cannot connect to the internet, upload, or transmit any data.</p>
-            </div>
+      <article class="clause">
+        <span class="no">03</span>
+        <h3>Cihaz içi depolama ve yedekleme izolasyonu</h3>
+        <div class="c">
+          <p>Tüm geçmiş hesaplamalar cihazındaki yerel veritabanında saklanır. App Store İnceleme Kılavuzu 5.1.3 uyarınca bu veritabanı şifresiz iCloud ve iTunes yedeklemelerinin dışında tutulur. İçeri aktardığın tahlil belgeleri, cihaz kilitliyken açılamayan tam dosya koruması altında saklanır.</p>
+        </div>
+        <span class="lang">English</span>
+        <div class="c"><p class="en">All computed logs remain in the local SwiftData App Group container on your device. In compliance with App Store Guideline 5.1.3, this container is explicitly excluded from unencrypted iCloud and iTunes backups. Imported laboratory documents are stored under complete file protection and are unreadable while the device is locked.</p></div>
+      </article>
 
-            <div class="card">
-                <h2>2. Apple Health (HealthKit) Data</h2>
-                <p>Zenithium reads nocturnal and workout metrics strictly from Apple Health with your explicit consent to compute on-device athletic recovery and strain scores.</p>
-                <ul>
-                    <li>Health data is never shared, sold, or used for advertising or marketing.</li>
-                    <li>No third-party SDKs, analytics, crash reporting, or tracking frameworks are included.</li>
-                    <li>All 29 deterministic calculation engines run 100% locally on your device hardware.</li>
-                </ul>
-            </div>
+      <article class="clause">
+        <span class="no">04</span>
+        <h3>Dışa aktarma ve silme</h3>
+        <div class="c">
+          <p>PDF ve rapor dışa aktarmaları yalnızca senin talebinle oluşturulur; nereye paylaşılacağına tamamen sen karar verirsin. Uygulamayı cihazından sildiğinde yerel hesaplama veritabanı kalıcı olarak silinir. Apple Sağlık'taki orijinal kayıtların olduğu gibi kalır.</p>
+        </div>
+        <span class="lang">English</span>
+        <div class="c"><p class="en">Data export is strictly user-initiated through the standard iOS share sheet. Deleting Zenithium removes all locally stored calculation databases immediately. Your original records in Apple Health remain untouched.</p></div>
+      </article>
 
-            <div class="card">
-                <h2>3. Local Storage & iCloud Backup Exclusion</h2>
-                <p>All computed logs remain in the local SwiftData App Group container on your device. In strict compliance with App Store Guideline 5.1.3, this container is explicitly marked to prevent inclusion in unencrypted iCloud / iTunes backups.</p>
-            </div>
-
-            <div class="card">
-                <h2>4. Data Export & Deletion</h2>
-                <p>Data export is strictly user-initiated via standard iOS share sheets. Deleting the Zenithium application removes all locally cached calculation databases immediately. Your native Apple Health data remains untouched in Apple Health.</p>
-            </div>
-        </section>
-
-        <footer>
-            <p>İletişim / Contact: <a href="mailto:aytac.drsn@gmail.com">aytac.drsn@gmail.com</a></p>
-            <p><a href="support.html">Destek Sayfası / Support Page</a> • <a href="index.html">Ana Sayfa / Home</a></p>
-        </footer>
     </div>
+
+    <div class="contact" style="margin-top:32px">
+      <span class="k">İletişim · Contact</span>
+      <a href="mailto:aytac.drsn@gmail.com">aytac.drsn@gmail.com</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="flinks">
+    <a class="flink" href="index.html">Ana Sayfa</a>
+    <a class="flink" href="privacy.html">Gizlilik Politikası</a>
+    <a class="flink" href="support.html">Destek</a>
+    <a class="flink" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
+  </div>
+  <p class="fine">Zenithium bir spor ve iyi yaşam aracıdır. Tıbbi cihaz değildir, teşhis koymaz ve sağlığının yerinde olup olmadığını söyleyemez. Bir şikâyetin varsa hekimine danış — buradaki hiçbir şey o konuşmanın yerine geçmez.</p>
+</footer>
 </body>
 </html>

@@ -1,145 +1,286 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenithium — Destek ve İletişim / Support</title>
-    <style>
-        :root {
-            --bg: #090A0F;
-            --surface: #141721;
-            --border: #232838;
-            --text-primary: #F0F2F8;
-            --text-secondary: #9BA3B8;
-            --accent: #38BDF8;
-            --green: #34D399;
-        }
-        body {
-            margin: 0;
-            padding: 32px 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 680px;
-            margin: 0 auto;
-        }
-        header {
-            margin-bottom: 36px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-            letter-spacing: -0.5px;
-        }
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        h2 {
-            font-size: 18px;
-            margin: 0 0 12px 0;
-            color: var(--accent);
-        }
-        p {
-            margin: 0 0 12px 0;
-            color: var(--text-primary);
-            font-size: 15px;
-        }
-        p:last-child {
-            margin-bottom: 0;
-        }
-        .contact-box {
-            background: rgba(56, 189, 248, 0.08);
-            border: 1px solid var(--accent);
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        .contact-box a {
-            color: var(--accent);
-            font-weight: 600;
-            font-size: 16px;
-            text-decoration: none;
-        }
-        footer {
-            margin-top: 48px;
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-secondary);
-            border-top: 1px solid var(--border);
-            padding-top: 24px;
-        }
-        a {
-            color: var(--accent);
-            text-decoration: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Zenithium için sıkça sorulan sorular, kalibrasyon davranışı ve doğrudan iletişim.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Zenithium — Destek">
+<meta property="og:description" content="Zenithium için sıkça sorulan sorular, kalibrasyon davranışı ve doğrudan iletişim.">
+<meta property="og:type" content="website">
+<title>Zenithium — Destek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..115,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;600&display=swap">
+<style>
+:root{
+  /* ZenithiumColor.swift ile aynı palet — sayfa uygulamanın kimliğini ödünç
+     almıyor, aynısını kullanıyor. */
+  --ink:#07090E; --surface:#0D111A; --raised:#111725;
+  --hairline:#1F2836; --hairline-soft:#151C28;
+  --text:#E9EDF5; --dim:#8C96AB; --faint:#59627A;
+  --accent:#3ED0BE; --ready:#3FCF8E; --moderate:#F0B23F; --recovering:#EF5560;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --measure:63ch; --gutter:clamp(20px,4.5vw,44px); --col:1140px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; color:var(--text); font-family:var(--body); font-size:16px;
+  line-height:1.6; -webkit-font-smoothing:antialiased;
+  /* Enstrüman kâğıdı: iki eksende çok soluk bir ızgara. Dekorasyon değil —
+     sayfadaki her grafiğin üstünde durduğu ölçek zeminiyle aynı. */
+  background-color:var(--ink);
+  background-image:
+    linear-gradient(var(--hairline-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline-soft) 1px, transparent 1px);
+  background-size:64px 64px, 64px 64px;
+  background-position:-1px -1px, -1px -1px;
+}
+.wrap{max-width:var(--col); margin:0 auto; padding:0 var(--gutter);}
+h1,h2,h3,h4{font-family:var(--display); margin:0; text-wrap:balance;}
+p{margin:0;}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline; text-underline-offset:3px;}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px;}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+.eyebrow{
+  font-family:var(--mono); font-size:.67rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--faint);
+}
+.rule{height:1px; background:var(--hairline); border:0; margin:0;}
+
+/* ── başlık ─────────────────────────────────────────── */
+header{border-bottom:1px solid var(--hairline); background:rgba(7,9,14,.86); backdrop-filter:blur(8px); position:sticky; top:0; z-index:20;}
+.masthead{display:flex; align-items:center; justify-content:space-between; gap:18px; padding:15px 0; flex-wrap:wrap;}
+.mark{font-family:var(--display); font-weight:700; font-size:1.02rem; letter-spacing:.04em;
+      font-variation-settings:"wdth" 86; color:var(--text);}
+.mark b{color:var(--accent); font-weight:700;}
+.masthead nav{display:flex; gap:20px; font-family:var(--mono); font-size:.7rem;
+              letter-spacing:.1em; text-transform:uppercase; flex-wrap:wrap;}
+.masthead nav a{color:var(--dim);}
+.masthead nav a:hover{color:var(--accent); text-decoration:none;}
+.masthead nav a[aria-current="page"]{color:var(--accent);}
+
+/* ── ölçüt şeridi ───────────────────────────────────── */
+.strip{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--hairline);
+       border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);}
+@media(min-width:680px){ .strip{grid-template-columns:repeat(5,1fr);} }
+.strip div{background:var(--ink); padding:16px 18px; display:grid; gap:3px;}
+.strip .v{font-family:var(--mono); font-size:1.7rem; font-weight:600; line-height:1; color:var(--accent);
+          font-variant-numeric:tabular-nums;}
+.strip .k{font-family:var(--mono); font-size:.63rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);}
+
+/* ── bölümler ───────────────────────────────────────── */
+section{padding:clamp(56px,8vw,104px) 0; border-top:1px solid var(--hairline-soft);}
+.sec-head{display:grid; gap:15px; max-width:var(--measure); margin-bottom:clamp(28px,4vw,44px);}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.35rem); font-weight:700; line-height:1.12;
+             letter-spacing:-.015em; font-variation-settings:"wdth" 90;}
+.sec-head p{color:var(--dim);}
+
+/* ── grafik çerçevesi ───────────────────────────────── */
+.panel{border:1px solid var(--hairline); background:var(--surface);}
+.panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+            padding:13px 18px; border-bottom:1px solid var(--hairline); flex-wrap:wrap;}
+.panel-title{font-family:var(--mono); font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--dim);}
+.panel-note{font-family:var(--mono); font-size:.68rem; color:var(--faint); font-variant-numeric:tabular-nums;}
+.panel-body{padding:18px;}
+canvas{display:block; width:100%;}
+.legend{display:flex; flex-wrap:wrap; gap:16px; padding:12px 18px; border-top:1px solid var(--hairline-soft);
+        font-family:var(--mono); font-size:.66rem; letter-spacing:.06em; color:var(--faint);}
+.legend span{display:inline-flex; align-items:center; gap:7px;}
+.swatch{width:12px; height:3px; border-radius:1px; display:inline-block;}
+
+/* ── iddia merdiveni ────────────────────────────────── */
+.ladder{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+@media(min-width:980px){ .ladder{grid-template-columns:repeat(3,1fr);} }
+.claim{background:var(--surface); padding:26px 22px 24px; display:grid; gap:15px; align-content:start;}
+.claim-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.badge{font-family:var(--mono); font-size:.63rem; font-weight:600; letter-spacing:.14em;
+       text-transform:uppercase; padding:4px 9px; border:1px solid currentColor; border-radius:2px;}
+.b-rec{color:var(--ready);} .b-sug{color:var(--moderate);} .b-obs{color:var(--dim);}
+.grade{font-family:var(--mono); font-size:.64rem; color:var(--faint); letter-spacing:.07em; text-align:right;}
+.claim h3{font-size:1.15rem; font-weight:600; line-height:1.32; font-variation-settings:"wdth" 97;}
+.claim .said{color:var(--dim); font-size:.92rem;}
+.meter{display:grid; gap:6px;}
+.track{height:3px; background:var(--hairline); position:relative; overflow:hidden;}
+.fill{position:absolute; inset:0 auto 0 0; background:var(--accent);}
+.mrow{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.64rem;
+      letter-spacing:.08em; text-transform:uppercase; color:var(--faint);}
+.mrow b{color:var(--dim); font-weight:500; font-variant-numeric:tabular-nums;}
+.refs{display:grid; gap:10px; border-top:1px solid var(--hairline-soft); padding-top:14px;}
+.ref{font-size:.79rem; line-height:1.45; color:var(--dim);}
+.ref cite{font-style:normal; color:var(--text);}
+.ref .not{display:block; color:var(--faint); margin-top:4px;}
+.ref .not b{font-family:var(--mono); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase;
+            color:var(--faint); font-weight:600;}
+.flag{font-family:var(--mono); font-size:.67rem; line-height:1.5; color:var(--moderate);}
+
+/* ── iki sütun ──────────────────────────────────────── */
+.split{display:grid; gap:clamp(24px,4vw,48px); align-items:start;}
+@media(min-width:900px){ .split{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);} }
+.split .prose{display:grid; gap:16px;}
+.split .prose h3{font-size:1.3rem; font-weight:700; font-variation-settings:"wdth" 92;}
+.split .prose p{color:var(--dim);}
+
+/* ── kas listesi ────────────────────────────────────── */
+.muscles{display:grid; gap:1px; background:var(--hairline-soft);}
+@media(min-width:640px){ .muscles{grid-template-columns:repeat(2,1fr);} }
+.mus{background:var(--surface); padding:12px 16px; display:grid; grid-template-columns:1fr auto; gap:4px 12px; align-items:center;}
+.mus .n{font-size:.9rem;}
+.mus .p{font-family:var(--mono); font-size:.82rem; color:var(--dim); font-variant-numeric:tabular-nums;}
+.mus .bar{grid-column:1/-1; height:3px; background:var(--hairline); position:relative;}
+.mus .bar i{position:absolute; inset:0 auto 0 0; display:block;}
+
+/* ── motor dizini ───────────────────────────────────── */
+.grid3{display:grid; gap:1px; background:var(--hairline-soft); border:1px solid var(--hairline);}
+@media(min-width:700px){ .grid3{grid-template-columns:repeat(2,1fr);} }
+@media(min-width:1000px){ .grid3{grid-template-columns:repeat(3,1fr);} }
+.cell{background:var(--surface); padding:20px 18px; display:grid; gap:7px; align-content:start;}
+.cell .t{font-family:var(--display); font-weight:600; font-size:1rem; font-variation-settings:"wdth" 94;}
+.cell .d{font-size:.85rem; color:var(--dim); line-height:1.5;}
+.cell canvas{margin-bottom:4px;}
+
+/* ── gizlilik / sınırlar ────────────────────────────── */
+.claimlist{display:grid; gap:0; max-width:var(--measure);}
+.item{display:grid; grid-template-columns:auto 1fr; gap:16px; padding:17px 0;
+      border-bottom:1px solid var(--hairline-soft);}
+.item:first-child{border-top:1px solid var(--hairline-soft);}
+.item .g{font-family:var(--mono); font-size:.8rem; line-height:1.9;}
+.item .g.no{color:var(--recovering);} .item .g.yes{color:var(--ready);}
+.item .t{font-weight:600;}
+.item .d{color:var(--dim); font-size:.92rem;}
+
+/* ── belge sayfaları (privacy / support) ────────────── */
+.doc{padding:clamp(44px,7vw,80px) 0 0; display:grid; gap:18px; max-width:var(--measure);}
+.doc h1{font-size:clamp(2.1rem,5vw,3.1rem); font-weight:800; line-height:1.05;
+        letter-spacing:-.02em; font-variation-settings:"wdth" 84;}
+.doc .lede{color:var(--dim); font-size:1.05rem;}
+.stamp{font-family:var(--mono); font-size:.67rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+.clauses{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+.clause{background:var(--surface); padding:24px clamp(18px,3vw,30px); display:grid;
+        grid-template-columns:auto 1fr; gap:6px 20px;}
+.clause .no{font-family:var(--mono); font-size:.72rem; font-weight:600; color:var(--accent);
+            letter-spacing:.08em; padding-top:5px; font-variant-numeric:tabular-nums;}
+.clause h3{font-size:1.08rem; font-weight:600; font-variation-settings:"wdth" 95;}
+.clause .c{grid-column:2; color:var(--dim); display:grid; gap:10px;}
+.clause ul{margin:2px 0 0; padding-left:1.1em; display:grid; gap:7px;}
+.clause li::marker{color:var(--faint);}
+.lang{grid-column:2; font-family:var(--mono); font-size:.62rem; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--faint); padding-top:12px; margin-top:4px;
+      border-top:1px solid var(--hairline-soft);}
+.en{color:var(--faint); font-size:.88rem;}
+.qa{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+.qa > div{background:var(--surface); padding:22px clamp(18px,3vw,28px); display:grid; gap:8px;}
+.qa h3{font-size:1rem; font-weight:600; font-variation-settings:"wdth" 96;}
+.qa p{color:var(--dim); font-size:.93rem;}
+.contact{border:1px solid var(--accent); background:var(--surface); padding:clamp(22px,3.5vw,32px);
+         display:grid; gap:10px; max-width:var(--measure);}
+.contact .k{font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);}
+.contact a{font-family:var(--mono); font-size:1.05rem; word-break:break-all;}
+
+/* ── altlık ─────────────────────────────────────────── */
+footer{border-top:1px solid var(--hairline); margin-top:clamp(48px,7vw,88px);
+       padding:38px 0 60px; display:grid; gap:22px;}
+.flinks{display:flex; flex-wrap:wrap; gap:10px;}
+.flink{border:1px solid var(--hairline); background:var(--surface); padding:11px 17px; color:var(--text);
+       font-family:var(--mono); font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; border-radius:2px;}
+.flink:hover{border-color:var(--accent); color:var(--accent); text-decoration:none;}
+.fine{color:var(--faint); font-size:.82rem; max-width:var(--measure); line-height:1.6;}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{animation:none!important; transition:none!important;}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Zenithium Destek / Support</h1>
-            <div class="subtitle">Yardım, Geri Bildirim ve Teknik Destek</div>
-        </header>
+<header>
+  <div class="wrap masthead">
+    <a class="mark" href="index.html">ZENITH<b>IUM</b></a>
+    <nav>
+      <a href="index.html#gece">Gece</a>
+      <a href="index.html#karar">Karar</a>
+      <a href="privacy.html">Gizlilik</a>
+      <a href="support.html" aria-current="page">Destek</a>
+      <a href="https://github.com/projectcagla/zenithium">GitHub</a>
+    </nav>
+  </div>
+</header>
 
-        <!-- TÜRKÇE -->
-        <section id="tr">
-            <div class="card">
-                <h2>İletişim ve Yardım</h2>
-                <p>Zenithium ile ilgili sorularınız, hata bildirimleriniz veya geri bildirimleriniz için doğrudan geliştiriciye ulaşabilirsiniz:</p>
-                <div class="contact-box">
-                    E-posta: <a href="mailto:aytac.drsn@gmail.com">aytac.drsn@gmail.com</a>
-                </div>
-            </div>
+<main class="wrap">
+  <div class="doc">
+    <span class="eyebrow">Destek · Support</span>
+    <h1>Bir sorun mu var, yoksa uygulama bilerek mi öyle davranıyor?</h1>
+    <p class="lede">Zenithium'un birkaç davranışı ilk bakışta eksiklik gibi görünür ama kasıtlıdır. Aşağıdakiler en sık sorulanlar; cevabını bulamadığını doğrudan bana yazabilirsin.</p>
+  </div>
 
-            <div class="card">
-                <h2>Sıkça Sorulan Sorular</h2>
-                <p><strong>Neden ilk gün toparlanma skoru göremiyorum?</strong><br>
-                Zenithium uydurma veri üretmez. Bireysel fizyolojik taban çizginizi doğru modelleyebilmek için en az 5 gecelik uyku ve HRV ölçümüne ihtiyaç duyar.</p>
-
-                <p><strong>Verilerim güvende mi?</strong><br>
-                Zenithium'un sunucusu yoktur. Verileriniz yalnızca cihazınızda işlenir ve hiçbir yere aktarılmaz.</p>
-            </div>
-        </section>
-
-        <hr style="border: 0; border-top: 1px solid var(--border); margin: 36px 0;">
-
-        <!-- ENGLISH -->
-        <section id="en">
-            <div class="card">
-                <h2>Support & Inquiries</h2>
-                <p>For technical support, feature feedback, or assistance with Zenithium, please reach out directly:</p>
-                <div class="contact-box">
-                    Email: <a href="mailto:aytac.drsn@gmail.com">aytac.drsn@gmail.com</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Frequently Asked Questions</h2>
-                <p><strong>Why is my recovery score in calibration?</strong><br>
-                Zenithium requires a minimum 5-night nocturnal baseline to generate mathematically sound recovery scores without arbitrary approximations.</p>
-
-                <p><strong>Where is my data stored?</strong><br>
-                100% on your device hardware. Zenithium has no backend servers and makes no external network requests.</p>
-            </div>
-        </section>
-
-        <footer>
-            <p><a href="privacy.html">Gizlilik Politikası / Privacy Policy</a> • <a href="index.html">Ana Sayfa / Home</a></p>
-        </footer>
+  <section style="border-top:0; padding-top:clamp(32px,5vw,48px)">
+    <div class="contact">
+      <span class="k">Doğrudan geliştiriciye · Straight to the developer</span>
+      <a href="mailto:aytac.drsn@gmail.com">aytac.drsn@gmail.com</a>
+      <p style="color:var(--dim); font-size:.9rem">Hata bildirimi, özellik önerisi ve her türlü geri bildirim için. Cihaz modelini ve iOS sürümünü yazarsan iş kolaylaşır.</p>
     </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">Sıkça sorulanlar</span>
+      <h2>Türkçe</h2>
+    </div>
+    <div class="qa">
+      <div>
+        <h3>Neden ilk gün toparlanma skoru göremiyorum?</h3>
+        <p>Zenithium uydurma veri üretmez. Bireysel fizyolojik taban çizgini doğru modelleyebilmek için en az beş gecelik uyku ve HRV ölçümüne ihtiyaç duyar. O süre boyunca kaç gecelik veri kaldığını açıkça yazar.</p>
+      </div>
+      <div>
+        <h3>Bir gece saatimi takmadım, skor yok. Hata mı?</h3>
+        <p>Hayır. Gece HRV ve dinlenik nabız kaydı olmadan üretilen bir skor ölçüme değil varsayıma dayanırdı. O sabah skor yerine hangi sinyalin eksik olduğunu görürsün.</p>
+      </div>
+      <div>
+        <h3>Verilerim güvende mi?</h3>
+        <p>Zenithium'un sunucusu ve ağ bağlantı yetkisi yoktur. Verilerin yalnızca cihazında işlenir ve hiçbir yere aktarılamaz. Ayrıntı için <a href="privacy.html">gizlilik politikası</a>.</p>
+      </div>
+      <div>
+        <h3>Tahlil sonucum neden yorumlanmıyor?</h3>
+        <p>Zenithium tıbbi cihaz değildir ve teşhis koymaz. Bir değerin nerede durduğunu, nasıl hareket ettiğini ve ne kadar eski olduğunu söyler; ne anlama geldiğini hekimin söyler.</p>
+      </div>
+      <div>
+        <h3>Neden sohbet edebileceğim bir asistan yok?</h3>
+        <p>Cevaplar bir dil modelinden değil, izlenebilir bir hesaptan gelir. Bunun bedeli serbest sohbet edememek; karşılığı ise her cevabın tekrarlanabilir olması ve kaynağını gösterebilmesi.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>English</h2></div>
+    <div class="qa">
+      <div>
+        <h3>Why is my recovery score still calibrating?</h3>
+        <p>Zenithium requires a minimum five-night nocturnal baseline before it will produce a recovery score, rather than filling the gap with an approximation. It tells you how many nights remain.</p>
+      </div>
+      <div>
+        <h3>I slept without my watch and got no score. Is that a bug?</h3>
+        <p>No. Without nocturnal HRV and resting heart rate, any score would rest on assumption rather than measurement. That morning names the missing signal instead.</p>
+      </div>
+      <div>
+        <h3>Where is my data stored?</h3>
+        <p>Entirely on your device. Zenithium has no backend servers and holds no network entitlement, so it cannot make external requests. See the <a href="privacy.html">privacy policy</a>.</p>
+      </div>
+      <div>
+        <h3>Why doesn't the app interpret my blood test?</h3>
+        <p>Zenithium is not a medical device and does not diagnose. It reports where a value sits, how it has moved and how old it is — what it means is a conversation for your clinician.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="flinks">
+    <a class="flink" href="index.html">Ana Sayfa</a>
+    <a class="flink" href="privacy.html">Gizlilik Politikası</a>
+    <a class="flink" href="support.html">Destek</a>
+    <a class="flink" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
+  </div>
+  <p class="fine">Zenithium bir spor ve iyi yaşam aracıdır. Tıbbi cihaz değildir, teşhis koymaz ve sağlığının yerinde olup olmadığını söyleyemez. Bir şikâyetin varsa hekimine danış — buradaki hiçbir şey o konuşmanın yerine geçmez.</p>
+</footer>
 </body>
 </html>
