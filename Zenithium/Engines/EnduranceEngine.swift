@@ -202,7 +202,7 @@ enum EnduranceEngine {
 
     /// How much a gradient costs relative to level ground. 1 is flat.
     ///
-    /// Minetti et al. (2002), cost of running in J/kg/m, reduced to a quintic that matches
+    /// MINETTI-2002 polynomial model, cost of running in J/kg/m, reduced to a quintic that matches
     /// the published curve closely over ±30%. Running uphill costs more than downhill saves,
     /// and below the curve's minimum the cost starts rising again as braking takes over —
     /// which the fitted curve captures and a linear "add fifteen seconds per percent" rule

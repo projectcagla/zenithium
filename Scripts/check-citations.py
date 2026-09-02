@@ -52,7 +52,7 @@ def split_reference_literals(source):
     taşıyor, ve `StudiedPopulation(...)` iç içe geçmiş bir çağrı.
     """
     bodies = []
-    for match in re.finditer(r"Reference\(", source):
+    for match in re.finditer(r"\bReference\(", source):
         index = match.end()
         depth = 1
         in_string = False
@@ -291,7 +291,9 @@ def main():
     problems = []
     references = parse_references(problems)
 
-    if references:
+    if not references:
+        fail(problems, "Kütüphanede hiçbir Reference tanımı ayrıştırılamadı.")
+    else:
         check_entries(references, problems)
         used = collect_usages(problems, references)
         check_dead_entries(references, used, problems)

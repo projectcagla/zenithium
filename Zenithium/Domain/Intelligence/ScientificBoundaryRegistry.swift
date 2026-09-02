@@ -117,11 +117,24 @@ enum ScientificBoundaryRegistry {
             engineName: "ClinicalContextEngine",
             physiologicalModel: "Multiplicative epistemic confidence modifiers from confirmed lab markers and Apple Watch ECG signals",
             primaryCitation: "Calbet et al. (2006); Peeling et al. (2008); Sassi et al. (2015) 'Advances in Heart Rate Variability Signal Analysis and AF Invalidation'",
+            referenceIDs: ["KAMINSKY-2015"],
             documentedLimitations: [
                 "Only affects confidence and measurement error terms; does not diagnose medical conditions",
                 "Requires recent lab/ECG records within validity horizons; stale records gracefully expire to neutral"
             ],
             nonCausalityDisclaimer: "Klinik bağlam bir teşhis değildir ve tıbbi iddia içermez; yalnızca biyometrik yük ve toparlanma ölçümlerinin güvenilirlik derecesini ayarlar."
+        ),
+        "LocomotionCost": ScientificBoundary(
+            id: "LOCOMOTION-1",
+            engineName: "EnduranceEngine",
+            physiologicalModel: "Eğim koşu maliyeti polinom modeli (±%30 aralığında J/kg/m)",
+            primaryCitation: "Minetti AE, et al. (2002), 'Energy cost of walking and running at extreme uphill and downhill slopes'",
+            referenceIDs: ["MINETTI-2002"],
+            documentedLimitations: [
+                "Koşu bandında 10 koşucu ile ölçülmüştür; zemin ve arazi değişkenliği sonucu etkileyebilir",
+                "Eğim ±%30 sınırının ötesinde ekstrapolasyon yapılmaz"
+            ],
+            nonCausalityDisclaimer: "Eğim düzeltmeli tempo mekanik bir enerji harcama tahminidir; fizyolojik yorgunluk ve glikojen tükenmesini doğrudan ölçmez."
         )
     ]
 
