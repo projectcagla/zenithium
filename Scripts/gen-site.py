@@ -1,28 +1,23 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
-<meta name="theme-color" content="#07090E">
-<meta name="color-scheme" content="dark">
-<meta property="og:title" content="Zenithium — Her Sayı Kendi İşini Gösterir">
-<meta property="og:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://projectcagla.github.io/zenithium/">
-<meta property="og:image" content="https://projectcagla.github.io/zenithium/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Zenithium — Her sayı kendi işini gösterir">
-<meta property="og:locale" content="tr_TR">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Zenithium — Her Sayı Kendi İşini Gösterir">
-<meta name="twitter:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
-<meta name="twitter:image" content="https://projectcagla.github.io/zenithium/og.png">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090E'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%231F2836' stroke-width='2.8'/%3E%3Cpath d='M16 6 A10 10 0 0 1 26 16' fill='none' stroke='%233ED0BE' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
-<title>Zenithium — Her Sayı Kendi İşini Gösterir</title>
-<style>
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Zenithium — Tanıtım Sitesi Üreticisi (gen-site.py)
+Şartname Yasa 8: Üç sayfa (index.html, privacy.html, support.html) tek bir kaynaktan üretilir.
+Şartname Yasa 5: 0 harici istek, yerel docs/fonts/ woff2 fontları.
+Şartname Yasa 3 & 4: Tipografi rampası ve L0-L2 yükselti modeli.
+Şartname Yasa 2: Yeni uygulama tasarımına (64pt açık yay, hipnogram, L1 listeler) sadık maketler.
+"""
 
+import sys
+import os
+import difflib
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DOCS = os.path.join(ROOT, "docs")
+
+# ── ORTAK PALET VE STİLLER ──────────────────────────────────────────
+# ZenithiumColor.swift ile bayt bayt uyumlu
+SHARED_CSS = """
 :root {
   --ink: #07090E;
   --surface: #0D111A;
@@ -855,7 +850,35 @@ footer {
   .btn { text-align: center; }
   .device { min-width: 100%; max-width: 100%; }
 }
+"""
 
+def page_layout(title, description, canonical_url, active_page, body_content):
+    """Ortak HTML iskeleti."""
+    return f"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{description}">
+<meta name="theme-color" content="#07090E">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{canonical_url}">
+<meta property="og:image" content="https://projectcagla.github.io/zenithium/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Zenithium — Her sayı kendi işini gösterir">
+<meta property="og:locale" content="tr_TR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="https://projectcagla.github.io/zenithium/og.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090E'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%231F2836' stroke-width='2.8'/%3E%3Cpath d='M16 6 A10 10 0 0 1 26 16' fill='none' stroke='%233ED0BE' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>{title}</title>
+<style>
+{SHARED_CSS}
 </style>
 </head>
 <body>
@@ -864,15 +887,40 @@ footer {
   <div class="wrap masthead">
     <a class="mark" href="index.html">ZEN<b>İ</b>TH<b>İ</b>UM</a>
     <nav aria-label="Ana gezinme">
-      <a href="index.html" aria-current="page">Ölçüm</a>
-      <a href="privacy.html" >Gizlilik</a>
-      <a href="support.html" >Destek</a>
+      <a href="index.html" {'aria-current="page"' if active_page == 'index' else ''}>Ölçüm</a>
+      <a href="privacy.html" {'aria-current="page"' if active_page == 'privacy' else ''}>Gizlilik</a>
+      <a href="support.html" {'aria-current="page"' if active_page == 'support' else ''}>Destek</a>
       <a href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
     </nav>
   </div>
 </header>
 
+{body_content}
 
+<footer>
+  <div class="wrap">
+    <div class="flinks">
+      <a class="btn" href="index.html">Ana Sayfa</a>
+      <a class="btn" href="privacy.html">Gizlilik Politikası</a>
+      <a class="btn" href="support.html">Destek ve İletişim</a>
+      <a class="btn" href="https://github.com/projectcagla/zenithium/blob/main/docs/EVIDENCE.md">Kanıt Tablosu (16 Kaynak)</a>
+      <a class="btn" href="https://github.com/projectcagla/zenithium">GitHub Deposu</a>
+    </div>
+    <p class="fine">Zenithium bir spor ve atletik performans izleme aracıdır. Tıbbi cihaz değildir, klinik teşhis koymaz ve tedavi önerisinde bulunmaz. Herhangi bir sağlık şikâyetinizde lütfen hekiminize danışın. İletişim: <a href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
+"""
+
+# ── 1. INDEX.HTML İÇERİĞİ ──────────────────────────────────────────
+def build_index():
+    title = "Zenithium — Her Sayı Kendi İşini Gösterir"
+    desc = "Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi."
+    url = "https://projectcagla.github.io/zenithium/"
+
+    content = """
 <div class="hero-band"><div class="wrap hero">
   <div class="hero-copy">
     <span class="eyebrow">iOS 18 · watchOS 11 · Türkçe</span>
@@ -1266,20 +1314,196 @@ footer {
   </section>
 
 </main>
+"""
+    return page_layout(title, desc, url, "index", content)
 
+# ── 2. PRIVACY.HTML İÇERİĞİ ─────────────────────────────────────────
+def build_privacy():
+    title = "Zenithium — Gizlilik Politikası"
+    desc = "Zenithium'un sunucusu, hesabı ve ağ bağlantı yetkisi yoktur. Sağlık verileri cihazdan asla çıkmaz."
+    url = "https://projectcagla.github.io/zenithium/privacy.html"
 
-<footer>
-  <div class="wrap">
-    <div class="flinks">
-      <a class="btn" href="index.html">Ana Sayfa</a>
-      <a class="btn" href="privacy.html">Gizlilik Politikası</a>
-      <a class="btn" href="support.html">Destek ve İletişim</a>
-      <a class="btn" href="https://github.com/projectcagla/zenithium/blob/main/docs/EVIDENCE.md">Kanıt Tablosu (16 Kaynak)</a>
-      <a class="btn" href="https://github.com/projectcagla/zenithium">GitHub Deposu</a>
+    content = """
+<div class="hero-band"><div class="wrap hero">
+  <div class="hero-copy">
+    <span class="eyebrow">Gizlilik Protokolü · Privacy Protocol</span>
+    <h1>Sıfır sunucu.<br><em>Sıfır hesap. Sıfır izleme.</em></h1>
+    <p class="lede">Zenithium bir gizlilik sözü vermez; gizlilik ihlalini <strong>teknik olarak imkânsız</strong> kılan bir mimariyle çalışır. Uygulamanın işletim sisteminden ağ bağlantı izni (Network Capability) dahi yoktur.</p>
+    <div class="manifest">
+      <div class="mhead">Mimari Güvenceler</div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Sunucu altyapısı</span><span class="st">0 Bayt</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Kullanıcı kaydı ve e-posta</span><span class="st">Yok</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Üçüncü parti SDK</span><span class="st">0 Adet</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">İnternet erişim yetkisi</span><span class="st">Kapalı</span></div>
+      <p class="foot">Gizlilik politikamız bir hukuk metni değil, kaynak koduyla denetlenebilen teknik bir gerçektir.</p>
     </div>
-    <p class="fine">Zenithium bir spor ve atletik performans izleme aracıdır. Tıbbi cihaz değildir, klinik teşhis koymaz ve tedavi önerisinde bulunmaz. Herhangi bir sağlık şikâyetinizde lütfen hekiminize danışın. İletişim: <a href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
   </div>
-</footer>
+</div></div>
 
-</body>
-</html>
+<main class="wrap">
+  <section style="border-top:0;">
+    <div class="sec-head">
+      <span class="eyebrow">Hükümler · Clauses</span>
+      <h2>Verilerin Yalnızca Cihazında Yaşar</h2>
+    </div>
+
+    <div style="display:grid; gap:24px; max-width:var(--measure);">
+      <article class="panel" style="padding:20px;">
+        <span class="eyebrow">01 · Sağlık Verileri</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Apple HealthKit Entegrasyonu</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium, kalp atış hızı, HRV, uyku evreleri ve antrenman kayıtlarını yalnızca cihaz üzerindeki Apple HealthKit veri tabanından okur. Okunan hiçbir veri harici bir belleğe veya üçüncü tarafa kopyalanmaz. Hesaplamalar Apple'ın korumalı sandbox ortamında gerçekleşir.</p>
+        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> Zenithium reads biometric data exclusively from your on-device Apple HealthKit store. No health metrics ever leave your device. All mathematical calculations execute inside Apple's sandboxed environment.</p>
+      </article>
+
+      <article class="panel" style="padding:20px;">
+        <span class="eyebrow">02 · Ağ ve İletişim</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Sıfır Ağ Yetkisi</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulama derlenirken hiçbir ağ kütüphanesi (URLSession, WebKit vb.) içermez. Xcode Info.plist dosyasında harici iletişim için hiçbir yetki talep edilmemiştir. Uygulama internete bağlanamaz.</p>
+        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> The application binary does not include network libraries or communication capabilities. It is structurally impossible for Zenithium to transmit telemetry or biometric data over the internet.</p>
+      </article>
+
+      <article class="panel" style="padding:20px;">
+        <span class="eyebrow">03 · Analitik ve Çerezler</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Sıfır Telemetri ve İzleme</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulama ve bu tanıtım sitesi; Google Analytics, Meta Pixel, Firebase, Crashlytics veya çerez kullanmaz. Ziyaretçilerin IP adresleri saklanmaz veya profillenmez.</p>
+        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> We do not employ tracking pixels, cookies, crash reporting frameworks, or behavioral analytics of any kind. Your identity and usage remain completely anonymous.</p>
+      </article>
+
+      <article class="panel" style="padding:20px;">
+        <span class="eyebrow">04 · Veri Silme ve İhracat</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Tam Kullanıcı Kontrolü</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulamayı sildiğinizde, cihazda tutulan yerel hesaplama arşivi kalıcı olarak silinir. Apple Health'teki orijinal verileriniz korunur. Verilerini dışa aktarmak istediğinizde standart iOS paylaşım menüsü üzerinden .zenithium formatında tamamen sizin denetiminizde yedek alınır.</p>
+        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> Uninstalling Zenithium purges all local model parameters immediately. Data export is strictly user-driven via standard encrypted iOS share sheets.</p>
+      </article>
+    </div>
+
+    <div style="margin-top:40px; padding:20px; background:var(--surface); border:1px solid var(--hairline); border-radius:4px; max-width:var(--measure);">
+      <span class="eyebrow">İletişim · Contact</span>
+      <p style="margin-top:6px; font-size:0.95rem; color:var(--text);">Gizlilikle ilgili tüm sorularınız için: <a href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
+    </div>
+  </section>
+</main>
+"""
+    return page_layout(title, desc, url, "privacy", content)
+
+# ── 3. SUPPORT.HTML İÇERİĞİ ─────────────────────────────────────────
+def build_support():
+    title = "Zenithium — Destek ve Kılavuz"
+    desc = "Zenithium için sıkça sorulan sorular, kalibrasyon davranışı, eksik gece modeli ve doğrudan geliştirici iletişimi."
+    url = "https://projectcagla.github.io/zenithium/support.html"
+
+    content = """
+<div class="hero-band"><div class="wrap hero">
+  <div class="hero-copy">
+    <span class="eyebrow">Destek & Kılavuz · Support</span>
+    <h1>Bir sorun mu var,<br><em>yoksa bilerek mi öyle?</em></h1>
+    <p class="lede">Zenithium'un bazı davranışları ilk bakışta eksiklik gibi görünebilir; ancak hepsi sahte veriyi engellemek için <strong>kasıtlı olarak</strong> tasarlanmıştır. Aşağıdaki kılavuz en sık karşılaşılan durumları açıklar.</p>
+    <div class="hero-cta">
+      <a class="btn solid" href="mailto:hi@zenithium.app">Doğrudan İletişim</a>
+      <a class="btn" href="https://github.com/projectcagla/zenithium/issues">GitHub Sorun Bildir</a>
+    </div>
+  </div>
+</div></div>
+
+<main class="wrap">
+  <section style="border-top:0;">
+    <div class="sec-head">
+      <span class="eyebrow">Sıkça Sorulan Sorular</span>
+      <h2>Fizyolojik Karar Davranışı</h2>
+    </div>
+
+    <div style="display:grid; gap:20px; max-width:var(--measure);">
+
+      <!-- Şartname Gereği Eklenen Yeni SSS: Skor Vermeme / Kalibrasyon -->
+      <div class="panel" style="padding:20px;">
+        <span class="eyebrow" style="color:var(--moderate)">En Çok Sorulan</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Uygulama neden bazı günler toparlanma skoru vermiyor?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium uydurma veri üretmez. Eğer o gece Apple Watch takılmadıysa veya optik sensör yeterli HRV/nabız kaydı alamadıysa uygulama skor tahmin etmez. Olmayan bir ölçümün yerine tahmini skor koymak bilimsel güvenilirliği sıfırlardı. Bu günlerde sistem "Eksik Gece Biyometrisi" uyarısı verir ve taban çizgisi hesaplamasını korur.</p>
+      </div>
+
+      <div class="panel" style="padding:20px;">
+        <span class="eyebrow">Kalibrasyon Dönemi</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">İlk günlerde skor neden değişken veya kısıtlı?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Her bireyin otonom sinir sistemi benzersizdir. Bir sporcuda 45 ms HRV toparlanma anlamına gelirken, bir diğerinde aşırı yorgunluk işaretidir. Bireysel taban aralığının (normal dağılım bandının) oturması için en az 14 gecelik sürekli ölçüm gereklidir. Kalibrasyon süresince öneriler düşük güven katsayısıyla verilir.</p>
+      </div>
+
+      <div class="panel" style="padding:20px;">
+        <span class="eyebrow">Öneri Dili</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Neden bazı öneriler emir kipi ("yap") yerine "düşünebilirsin" diyor?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Bir tavsiyenin ne kadar iddialı olabileceğini arkasındaki akademik çalışmanın kanıt gücü belirler. Eğer dayanak alınan literatür (örneğin Plews 2013) tekil gün sapmalarında kesin hüküm vermiyorsa, Zenithium kullanıcıya yapay kesinlik satmaz; sınırları korur.</p>
+      </div>
+
+      <div class="panel" style="padding:20px;">
+        <span class="eyebrow">Tahlil Entegrasyonu</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Kan tahlilim neden klinik olarak teşhis edilmiyor?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium bir teşhis cihazı değildir. Tahlil modülü yalnızca belirteçlerin sporcu referans aralıklarındaki konumunu ve antrenman yüküyle olan kinetiğini gösterir. Anormal değerlerin klinik değerlendirmesi daima hekiminiz tarafından yapılmalıdır.</p>
+      </div>
+
+      <div class="panel" style="padding:20px;">
+        <span class="eyebrow">Yapay Zekâ ve Sohbet</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Neden serbest sohbet edebileceğim bir yapay zekâ botu yok?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Büyük dil modelleri (LLM) biyometrik veride halüsinasyon görmeye ve tutarsız tavsiyeler üretmeye yatkındır. Zenithium deterministik bir matematik motoruyla çalışır; aynı biyometrik girdi her zaman aynı şeffaf kanıt zincirini üretir.</p>
+      </div>
+
+    </div>
+
+    <!-- İletişim Bloğu -->
+    <div style="margin-top:40px; padding:24px; background:var(--surface); border:1px solid var(--hairline); border-radius:4px; max-width:var(--measure);">
+      <span class="eyebrow">Doğrudan Geliştiriciye</span>
+      <h3 style="font-size:1.15rem; margin:8px 0 12px; color:var(--text);">Sorunuzun cevabını bulamadınız mı?</h3>
+      <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Hata bildirimleri, metodoloji soruları veya geri bildirimleriniz için doğrudan e-posta gönderebilirsiniz:</p>
+      <p style="margin-top:12px;"><a class="btn solid" href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
+      <p style="margin-top:12px; font-size:0.8rem; color:var(--faint);">Cihaz modelinizi, watchOS ve iOS sürümünüzü belirtmeniz incelemeyi hızlandırır.</p>
+    </div>
+  </section>
+</main>
+"""
+    return page_layout(title, desc, url, "support", content)
+
+# ── 4. DERLEME VE KONTROL ───────────────────────────────────────────
+def main():
+    check_mode = "--check" in sys.argv
+
+    pages = {
+        "index.html": build_index(),
+        "privacy.html": build_privacy(),
+        "support.html": build_support(),
+    }
+
+    if check_mode:
+        mismatches = []
+        for filename, generated_html in pages.items():
+            path = os.path.join(DOCS, filename)
+            if not os.path.exists(path):
+                mismatches.append(f"{filename} diskte yok!")
+                continue
+            with open(path, "r", encoding="utf-8") as f:
+                disk_html = f.read()
+            if disk_html.strip() != generated_html.strip():
+                diff = difflib.unified_diff(
+                    disk_html.strip().splitlines()[:20],
+                    generated_html.strip().splitlines()[:20],
+                    fromfile=f"disk/{filename}",
+                    tofile=f"gen/{filename}"
+                )
+                mismatches.append(f"{filename} üretici çıktısıyla uyuşmuyor!\n" + "\n".join(diff))
+
+        if mismatches:
+            print("\033[31mHATA: Tanıtım sitesi dosyaları Scripts/gen-site.py ile uyuşmuyor!\033[0m")
+            for m in mismatches:
+                print(m)
+            sys.exit(1)
+        else:
+            print("\033[32mOK\033[0m    docs/ HTML dosyaları Scripts/gen-site.py ile birebir tutarlı (0 sapma).")
+            sys.exit(0)
+
+    # Normal mod: Dosyaları yaz
+    os.makedirs(DOCS, exist_ok=True)
+    for filename, html in pages.items():
+        path = os.path.join(DOCS, filename)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        print(f"Üretildi: {path} ({len(html.encode('utf-8')) / 1024:.1f} KB)")
+
+if __name__ == "__main__":
+    main()

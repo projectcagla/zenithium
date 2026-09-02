@@ -26,6 +26,7 @@ run "Xcode projesi"             python3 Scripts/generate-project.py
 # itself about it — XcodeGen quotes correctly, so only the checked-in file was broken.
 run "Bilimsel kaynaklar"      python3 Scripts/check-citations.py
 run "Proje dosyası çözümlemesi" python3 Scripts/check-pbxproj.py
+run "Tanıtım sitesi tutarlılığı" python3 Scripts/gen-site.py --check
 
 printf '\n'
 if [ "$failed" -eq 0 ]; then

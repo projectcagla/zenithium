@@ -1,0 +1,7 @@
+# Zenithium
+> Her sayı kendi işini gösterir. Arkasını saklamaz.
+
+Zenithium, Apple Watch verisinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir fizyolojik ölçüm ve karar sistemidir.
+- Sıfır sunucu, sıfır hesap, sıfır ağ yetkisi.
+- 29 yerel hesap motoru, 21 kas grubu yorgunluk modeli, 50 laboratuvar biyobelirteç eşlemesi.
+- 7 adımlı açık, deterministik kanıt zinciri.
