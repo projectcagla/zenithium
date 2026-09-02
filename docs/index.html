@@ -3,287 +3,716 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Zenithium — Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir ölçüm aleti. Hesap yok, ağ çağrısı yok, her karar kaynağını gösterir.">
+<meta name="description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir ölçüm aleti. Hesap yok, ağ bağlantı yetkisi yok; her karar kaynağını ve o kaynağın sınırını gösterir.">
+<meta name="theme-color" content="#07090E">
 <meta name="color-scheme" content="dark">
-<meta property="og:title" content="Zenithium">
-<meta property="og:description" content="Kararın arkasında ne olduğunu görebildiğin bir ölçüm aleti.">
+<meta property="og:title" content="Zenithium — Cihaz Üzerinde Biyometrik Ölçüm ve Karar Sistemi">
+<meta property="og:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir ölçüm aleti. Sıfır sunucu, sıfır ağ yetkisi, matematiksel şeffaflık.">
 <meta property="og:type" content="website">
-<title>Zenithium</title>
+<meta property="og:url" content="https://projectcagla.github.io/zenithium/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Zenithium">
+<meta name="twitter:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir ölçüm aleti.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090E'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%231F2836' stroke-width='2.8'/%3E%3Cpath d='M16 6 A10 10 0 0 1 26 16' fill='none' stroke='%233ED0BE' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Zenithium — Cihaz Üzerinde Biyometrik Ölçüm ve Karar Sistemi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..110,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..115,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;600&display=swap">
 <style>
-  :root{
-    --ink:#07090E; --surface:#0D111A; --surface-2:#111725;
-    --hairline:#1F2836; --hairline-soft:#151C28;
-    --text:#E9EDF5; --text-dim:#8C96AB; --text-faint:#59627A;
-    --accent:#3ED0BE; --ready:#3FCF8E; --moderate:#F0B23F; --recovering:#EF5560;
-    --font-display:"Archivo","Helvetica Neue",Arial,sans-serif;
-    --font-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
-    --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
-    --measure:64ch; --gutter:clamp(20px,5vw,40px);
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; background:var(--ink); color:var(--text);
-    font-family:var(--font-body); font-size:16px; line-height:1.62;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:1060px; margin:0 auto; padding:0 var(--gutter);}
-  h1,h2,h3{font-family:var(--font-display); margin:0; text-wrap:balance; font-variation-settings:"wdth" 92;}
-  a{color:var(--accent); text-decoration:none;}
-  a:hover{text-decoration:underline; text-underline-offset:3px;}
-  a:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
-  .eyebrow{
-    font-family:var(--font-mono); font-size:.68rem; font-weight:600;
-    letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint);
-  }
-  .num{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+:root{
+  /* ZenithiumColor.swift ile aynı palet — sayfa uygulamanın kimliğini ödünç
+     almıyor, aynısını kullanıyor. */
+  --ink:#07090E; --surface:#0D111A; --raised:#111725;
+  --hairline:#1F2836; --hairline-soft:#151C28;
+  --text:#E9EDF5; --dim:#8C96AB; --faint:#59627A;
+  --accent:#3ED0BE; --ready:#3FCF8E; --moderate:#F0B23F; --recovering:#EF5560;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --measure:62ch; --gutter:clamp(20px,4.5vw,44px); --col:1180px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; color:var(--text); font-family:var(--body); font-size:16px;
+  line-height:1.6; -webkit-font-smoothing:antialiased; background:var(--ink);
+}
+.wrap{max-width:var(--col); margin:0 auto; padding:0 var(--gutter);}
+h1,h2,h3,h4{font-family:var(--display); margin:0; text-wrap:balance;}
+p{margin:0;}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline; text-underline-offset:3px;}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px;}
+.eyebrow{font-family:var(--mono); font-size:.67rem; font-weight:600; letter-spacing:.18em;
+         text-transform:uppercase; color:var(--faint);}
 
-  /* ── masthead ─────────────────────────────────────── */
-  header{border-bottom:1px solid var(--hairline);}
-  .masthead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:20px 0; flex-wrap:wrap;}
-  .mark{font-family:var(--font-display); font-weight:700; font-size:1.05rem; letter-spacing:.02em; font-variation-settings:"wdth" 88;}
-  .mark span{color:var(--accent);}
-  nav{display:flex; gap:22px; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;}
-  nav a{color:var(--text-dim);}
-  nav a:hover{color:var(--accent);}
+/* ── başlık ─────────────────────────────────────────── */
+header{border-bottom:1px solid var(--hairline); background:rgba(7,9,14,.9);
+       backdrop-filter:blur(10px); position:sticky; top:0; z-index:40;}
+.masthead{display:flex; align-items:center; justify-content:space-between; gap:18px;
+          padding:15px 0; flex-wrap:wrap;}
+.mark{font-family:var(--display); font-weight:700; font-size:1.02rem; letter-spacing:.04em;
+      font-variation-settings:"wdth" 86; color:var(--text);}
+.mark b{color:var(--accent); font-weight:700;}
+.masthead nav{display:flex; gap:20px; font-family:var(--mono); font-size:.7rem;
+              letter-spacing:.1em; text-transform:uppercase; flex-wrap:wrap;}
+.masthead nav a{color:var(--dim);}
+.masthead nav a:hover{color:var(--accent); text-decoration:none;}
+.masthead nav a[aria-current="page"]{color:var(--accent);}
 
-  /* ── hero ─────────────────────────────────────────── */
-  .hero{padding:clamp(56px,10vw,104px) 0 clamp(40px,6vw,64px); display:grid; gap:26px; max-width:var(--measure);}
-  .hero h1{font-size:clamp(2.6rem,7vw,4.4rem); font-weight:800; line-height:1.02; letter-spacing:-.02em; font-variation-settings:"wdth" 85;}
-  .hero .lede{font-size:clamp(1.05rem,2.2vw,1.28rem); color:var(--text-dim); line-height:1.55;}
-  .hero .lede strong{color:var(--text); font-weight:600;}
+/* ── kahraman ───────────────────────────────────────── */
+/* Enstrüman kâğıdı: yalnızca kahraman bölümünde, sayfanın tamamında değil.
+   Her yerde olsaydı doku değil gürültü olurdu. Zemin tam genişlikte, içerik
+   sütunda — o yüzden desen .hero-band'de, yerleşim .hero'da. */
+.hero-band{
+  background-image:
+    radial-gradient(115% 88% at 76% 10%, rgba(62,208,190,.11), transparent 62%),
+    linear-gradient(var(--hairline-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline-soft) 1px, transparent 1px);
+  background-size:auto, 68px 68px, 68px 68px;
+  background-position:0 0, -1px -1px, -1px -1px;
+  border-bottom:1px solid var(--hairline-soft);
+}
+.hero{
+  display:grid; gap:clamp(32px,5vw,56px); align-items:center;
+  padding:clamp(44px,6vw,78px) 0 clamp(44px,5vw,70px);
+}
+@media(min-width:940px){ .hero{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);} }
+.hero-copy{display:grid; gap:22px; max-width:var(--measure);}
+.hero h1{font-size:clamp(2.5rem,6.2vw,4.15rem); font-weight:800; line-height:1.02;
+         letter-spacing:-.025em; font-variation-settings:"wdth" 82;}
+.hero h1 em{font-style:normal; color:var(--dim);}
+.lede{font-size:clamp(1.03rem,1.9vw,1.22rem); color:var(--dim); line-height:1.55;}
+.lede strong{color:var(--text); font-weight:600;}
+.hero-cta{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+.btn{border:1px solid var(--hairline); background:var(--surface); padding:13px 20px;
+     color:var(--text); font-family:var(--mono); font-size:.74rem; letter-spacing:.1em;
+     text-transform:uppercase; border-radius:3px;}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none;}
+.btn.solid{background:var(--accent); border-color:var(--accent); color:#04120F; font-weight:600;}
+.btn.solid:hover{filter:brightness(1.09); color:#04120F;}
 
-  .constraints{
-    display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--hairline);
-    border-bottom:1px solid var(--hairline); margin-top:8px;
-  }
-  .constraints div{
-    flex:1 1 128px; padding:14px 18px 14px 0; display:grid; gap:2px;
-  }
-  .constraints .v{font-family:var(--font-mono); font-size:1.5rem; font-weight:600; color:var(--accent); line-height:1;}
-  .constraints .k{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint);}
+/* Yetki manifestosu — sıfırların yerine geçen şey. Bunlar miktar değil, kapalı
+   kapı; o yüzden sayı gibi değil, imzalı bir bildirim gibi görünüyorlar. */
+.manifest{border:1px solid var(--hairline); background:rgba(13,17,26,.72); border-radius:4px;
+          display:grid; gap:0; max-width:var(--measure);}
+.manifest .mhead{padding:11px 16px; border-bottom:1px solid var(--hairline);
+                 font-family:var(--mono); font-size:.63rem; letter-spacing:.16em;
+                 text-transform:uppercase; color:var(--faint);}
+.manifest .mrow{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:baseline;
+                padding:10px 16px; border-bottom:1px solid var(--hairline-soft);}
+.manifest .mrow:last-child{border-bottom:0;}
+.manifest .x{color:var(--recovering); font-family:var(--mono); font-size:.82rem; line-height:1.5;}
+.manifest .lab{font-size:.88rem;}
+.manifest .st{font-family:var(--mono); font-size:.62rem; letter-spacing:.12em;
+              text-transform:uppercase; color:var(--recovering);}
+.manifest .foot{padding:11px 16px; border-top:1px solid var(--hairline);
+                color:var(--faint); font-size:.8rem; line-height:1.5;}
 
-  /* ── sections ─────────────────────────────────────── */
-  section{padding:clamp(52px,8vw,88px) 0; border-top:1px solid var(--hairline-soft);}
-  .sec-head{display:grid; gap:14px; max-width:var(--measure); margin-bottom:38px;}
-  .sec-head h2{font-size:clamp(1.6rem,3.4vw,2.1rem); font-weight:700; letter-spacing:-.01em; line-height:1.15;}
-  .sec-head p{margin:0; color:var(--text-dim);}
+/* ── sayaç şeridi (yalnızca gerçek miktarlar) ───────── */
+.counts{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--hairline);
+        border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);}
+@media(min-width:760px){ .counts{grid-template-columns:repeat(4,1fr);} }
+.counts div{background:var(--ink); padding:20px 20px; display:grid; gap:4px;}
+.counts .v{font-family:var(--mono); font-size:clamp(1.7rem,3vw,2.2rem); font-weight:600;
+           line-height:1; color:var(--text); font-variant-numeric:tabular-nums;}
+.counts .v i{font-style:normal; color:var(--accent); font-size:.55em; margin-left:2px;}
+.counts .k{font-size:.86rem; color:var(--dim);}
+.counts .s{font-family:var(--mono); font-size:.62rem; letter-spacing:.1em;
+           text-transform:uppercase; color:var(--faint);}
 
-  /* ── the claim ladder ─────────────────────────────── */
-  .ladder{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
-  @media(min-width:900px){ .ladder{grid-template-columns:repeat(3,1fr);} }
-  .claim{background:var(--surface); padding:24px 22px 26px; display:grid; gap:16px; align-content:start;}
-  .claim-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-  .badge{
-    font-family:var(--font-mono); font-size:.64rem; font-weight:600; letter-spacing:.12em;
-    text-transform:uppercase; padding:4px 8px; border:1px solid currentColor; border-radius:3px;
-  }
-  .b-rec{color:var(--ready);} .b-sug{color:var(--moderate);} .b-obs{color:var(--text-dim);}
-  .grade{font-family:var(--font-mono); font-size:.66rem; color:var(--text-faint); letter-spacing:.06em;}
-  .claim h3{font-size:1.12rem; font-weight:600; line-height:1.35; font-variation-settings:"wdth" 96;}
-  .claim .body{font-size:.92rem; color:var(--text-dim); margin:0;}
+/* ── bölümler ───────────────────────────────────────── */
+section{padding:clamp(58px,8vw,110px) 0; border-top:1px solid var(--hairline-soft);}
+.sec-head{display:grid; gap:15px; max-width:var(--measure); margin-bottom:clamp(30px,4vw,48px);}
+.sec-head h2{font-size:clamp(1.75rem,3.7vw,2.5rem); font-weight:700; line-height:1.11;
+             letter-spacing:-.018em; font-variation-settings:"wdth" 88;}
+.sec-head p{color:var(--dim);}
 
-  .meter{display:grid; gap:6px;}
-  .meter-track{height:3px; background:var(--hairline); position:relative; overflow:hidden;}
-  .meter-fill{position:absolute; inset:0 auto 0 0; background:var(--accent);}
-  .meter-row{display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.66rem; color:var(--text-faint); letter-spacing:.06em;}
-  .meter-row .val{color:var(--text-dim); font-variant-numeric:tabular-nums;}
+/* ── cihaz çerçevesi ────────────────────────────────── */
+.device{width:100%; max-width:302px; margin:0 auto;}
+.device .frame{position:relative; border-radius:46px; padding:9px;
+  background:linear-gradient(158deg,#333A4C 0%,#151A25 34%,#0C1018 62%,#2A3142 100%);
+  box-shadow:0 34px 64px -26px rgba(0,0,0,.92), 0 0 0 1px var(--hairline);}
+.device .screen{position:relative; border-radius:38px; overflow:hidden; background:var(--ink);
+  aspect-ratio:9/19.3; display:flex; flex-direction:column;}
+.device .island{position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:62px; height:18px; background:#000; border-radius:10px; z-index:4;}
+.sbar{display:flex; justify-content:space-between; align-items:center;
+      padding:13px 19px 3px; font-family:var(--mono); font-size:.58rem; color:var(--text);
+      font-variant-numeric:tabular-nums;}
+.sbar .r{display:flex; gap:4px; align-items:center; opacity:.85;}
+.sbar .bat{width:15px; height:8px; border:1px solid currentColor; border-radius:2px; position:relative;}
+.sbar .bat::after{content:""; position:absolute; inset:1.5px; right:4px; background:currentColor; border-radius:1px;}
+.appwrap{flex:1; overflow:hidden; padding:6px 15px 15px; display:flex; flex-direction:column; gap:11px;}
+.app-h{display:flex; align-items:baseline; justify-content:space-between;}
+.app-h .t{font-family:var(--display); font-weight:700; font-size:1.02rem; font-variation-settings:"wdth" 90;}
+.app-h .d{font-family:var(--mono); font-size:.56rem; color:var(--faint); letter-spacing:.06em; text-transform:uppercase;}
+.app-card{border:1px solid var(--hairline); background:var(--surface); border-radius:11px; padding:11px 12px;}
+.app-lab{font-family:var(--mono); font-size:.52rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);}
 
-  .refs{display:grid; gap:9px; border-top:1px solid var(--hairline-soft); padding-top:14px;}
-  .ref{font-size:.8rem; line-height:1.45; color:var(--text-dim);}
-  .ref cite{font-style:normal; color:var(--text);}
-  .ref .not{display:block; color:var(--text-faint); margin-top:3px;}
-  .ref .not b{font-weight:600; color:var(--text-faint); font-family:var(--font-mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase;}
-  .flag{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.04em; color:var(--moderate);}
+.ringwrap{display:flex; align-items:center; gap:13px;}
+.ringwrap canvas{width:96px; height:96px; flex:none;}
+.ringwrap .meta{display:grid; gap:4px; min-width:0;}
+.ringwrap .band{font-family:var(--mono); font-size:.55rem; letter-spacing:.1em; text-transform:uppercase;}
+.ringwrap .say{font-size:.68rem; color:var(--dim); line-height:1.4;}
 
-  /* ── engine index ─────────────────────────────────── */
-  .index{display:grid; gap:1px; background:var(--hairline-soft); border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);}
-  @media(min-width:760px){ .index{grid-template-columns:repeat(2,1fr);} }
-  .row{background:var(--ink); padding:18px 0; display:grid; grid-template-columns:1fr; gap:4px;}
-  @media(min-width:760px){ .row{padding:18px 24px 18px 0;} .index .row:nth-child(even){padding-left:24px;} }
-  .row .t{font-family:var(--font-display); font-weight:600; font-size:1rem; font-variation-settings:"wdth" 94;}
-  .row .d{font-size:.88rem; color:var(--text-dim);}
+.tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+.tile{border:1px solid var(--hairline); background:var(--surface); border-radius:9px; padding:8px 9px; display:grid; gap:3px;}
+.tile .k{font-family:var(--mono); font-size:.5rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+.tile .v{font-family:var(--mono); font-size:.86rem; font-weight:600; font-variant-numeric:tabular-nums;}
+.tile .s{font-size:.55rem; color:var(--faint);}
 
-  /* ── refusals ─────────────────────────────────────── */
-  .refusals{display:grid; gap:0; max-width:var(--measure);}
-  .refusal{display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start; padding:16px 0; border-bottom:1px solid var(--hairline-soft);}
-  .refusal:first-child{border-top:1px solid var(--hairline-soft);}
-  .refusal .x{font-family:var(--font-mono); color:var(--recovering); font-size:.9rem; line-height:1.7;}
-  .refusal .t{font-weight:600;}
-  .refusal .d{color:var(--text-dim); font-size:.92rem;}
+.advice{border:1px solid var(--hairline); background:var(--raised); border-radius:11px; padding:11px 12px; display:grid; gap:7px;}
+.advice .top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.pill{font-family:var(--mono); font-size:.5rem; font-weight:600; letter-spacing:.14em;
+      text-transform:uppercase; padding:3px 7px; border:1px solid currentColor; border-radius:2px;}
+.advice h4{font-size:.82rem; font-weight:600; line-height:1.3; font-variation-settings:"wdth" 96;}
+.advice .why{font-size:.62rem; color:var(--faint); line-height:1.45;}
+.advice .conf{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:.53rem; color:var(--faint);}
+.advice .conf .tr{flex:1; height:2px; background:var(--hairline); position:relative;}
+.advice .conf .tr i{position:absolute; inset:0 auto 0 0; background:var(--accent);}
 
-  /* ── privacy ──────────────────────────────────────── */
-  .privacy{border:1px solid var(--hairline); background:var(--surface); padding:clamp(24px,4vw,36px);}
-  .privacy p{max-width:var(--measure); color:var(--text-dim);}
-  .privacy p:first-of-type{margin-top:0;}
-  .plist{list-style:none; margin:22px 0 0; padding:0; display:grid; gap:10px;}
-  .plist li{display:grid; grid-template-columns:auto 1fr; gap:12px; font-size:.92rem; color:var(--text-dim);}
-  .plist .c{color:var(--ready); font-family:var(--font-mono); font-size:.85rem;}
+.rows{display:grid; gap:7px;}
+.rw{display:grid; grid-template-columns:1fr auto; gap:3px 8px; align-items:center;}
+.rw .n{font-size:.68rem;}
+.rw .p{font-family:var(--mono); font-size:.63rem; color:var(--dim); font-variant-numeric:tabular-nums;}
+.rw .bar{grid-column:1/-1; height:3px; background:var(--hairline); border-radius:2px; overflow:hidden;}
+.rw .bar i{display:block; height:100%;}
 
-  /* ── footer ───────────────────────────────────────── */
-  footer{border-top:1px solid var(--hairline); padding:40px 0 56px; display:grid; gap:24px;}
-  .flinks{display:flex; flex-wrap:wrap; gap:12px;}
-  .flink{
-    border:1px solid var(--hairline); background:var(--surface); padding:12px 18px;
-    color:var(--text); font-family:var(--font-mono); font-size:.76rem; letter-spacing:.06em;
-    text-transform:uppercase; border-radius:3px;
-  }
-  .flink:hover{border-color:var(--accent); color:var(--accent); text-decoration:none;}
-  .fine{color:var(--text-faint); font-size:.82rem; max-width:var(--measure);}
-  @media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important;}}
+.labrow{display:grid; grid-template-columns:1fr auto; gap:2px 8px; padding:7px 0;
+        border-bottom:1px solid var(--hairline-soft); align-items:baseline;}
+.labrow:last-child{border-bottom:0;}
+.labrow .n{font-size:.68rem;}
+.labrow .v{font-family:var(--mono); font-size:.68rem; font-variant-numeric:tabular-nums;}
+.labrow .r{grid-column:1/-1; font-family:var(--mono); font-size:.53rem; color:var(--faint);}
+.labrow.out .v{color:var(--recovering);}
+.labrow.out .r{color:var(--recovering);}
+
+.chain{display:grid; gap:0;}
+.chain .step{display:grid; grid-template-columns:auto 1fr; gap:9px; padding:8px 0;
+             border-bottom:1px solid var(--hairline-soft);}
+.chain .step:last-child{border-bottom:0;}
+.chain .no{font-family:var(--mono); font-size:.52rem; color:var(--accent); padding-top:2px;}
+.chain .k{font-family:var(--mono); font-size:.5rem; letter-spacing:.12em; text-transform:uppercase; color:var(--faint);}
+.chain .t{font-size:.66rem; line-height:1.42; color:var(--dim);}
+.chain .t b{color:var(--text); font-weight:500;}
+
+/* saat */
+.watch{width:100%; max-width:172px; margin:0 auto;}
+.watch .band{height:26px; margin:0 30px; background:linear-gradient(#232A38,#151A24); border-radius:0 0 7px 7px;}
+.watch .band.top{border-radius:7px 7px 0 0; background:linear-gradient(#151A24,#232A38);}
+.watch .case{border-radius:34px; padding:8px; background:linear-gradient(155deg,#3A4152,#171C26 45%,#2C3342);
+             box-shadow:0 20px 40px -18px rgba(0,0,0,.9);}
+.watch .wscreen{border-radius:27px; background:#000; aspect-ratio:41/50; padding:13px 12px;
+                display:grid; gap:6px; align-content:center; justify-items:center; text-align:center;}
+.watch .wnum{font-family:var(--mono); font-size:2.1rem; font-weight:600; line-height:1; color:var(--recovering);}
+.watch .wlab{font-family:var(--mono); font-size:.48rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);}
+.watch .wsay{font-size:.55rem; color:var(--dim); line-height:1.35;}
+
+/* ── yerleşim ───────────────────────────────────────── */
+.showcase{display:grid; gap:clamp(30px,5vw,64px); align-items:center;}
+@media(min-width:900px){
+  .showcase{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);}
+  .showcase.flip .art{order:2;}
+}
+.showcase .prose{display:grid; gap:16px; max-width:var(--measure);}
+.showcase .prose h3{font-size:clamp(1.3rem,2.4vw,1.65rem); font-weight:700; font-variation-settings:"wdth" 90;}
+.showcase .prose p{color:var(--dim);}
+.notes{display:grid; gap:0; margin-top:4px;}
+.note{display:grid; grid-template-columns:auto 1fr; gap:13px; padding:12px 0; border-top:1px solid var(--hairline-soft);}
+.note .g{font-family:var(--mono); font-size:.72rem; color:var(--accent); line-height:1.75;}
+.note .t{font-weight:600; font-size:.94rem;}
+.note .d{color:var(--dim); font-size:.88rem;}
+
+/* ── grafik paneli ──────────────────────────────────── */
+.panel{border:1px solid var(--hairline); background:var(--surface); border-radius:4px;}
+.panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+            padding:13px 18px; border-bottom:1px solid var(--hairline); flex-wrap:wrap;}
+.panel-title{font-family:var(--mono); font-size:.69rem; letter-spacing:.14em; text-transform:uppercase; color:var(--dim);}
+.panel-note{font-family:var(--mono); font-size:.67rem; color:var(--faint); font-variant-numeric:tabular-nums;}
+.panel-body{padding:18px;}
+canvas{display:block; width:100%;}
+.legend{display:flex; flex-wrap:wrap; gap:16px; padding:12px 18px; border-top:1px solid var(--hairline-soft);
+        font-family:var(--mono); font-size:.65rem; letter-spacing:.05em; color:var(--faint);}
+.legend span{display:inline-flex; align-items:center; gap:7px;}
+.swatch{width:12px; height:3px; border-radius:1px; display:inline-block;}
+
+/* ── iddia merdiveni ────────────────────────────────── */
+.ladder{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline); border-radius:4px; overflow:hidden;}
+@media(min-width:980px){ .ladder{grid-template-columns:repeat(3,1fr);} }
+.claim{background:var(--surface); padding:26px 22px 24px; display:grid; gap:15px; align-content:start;}
+.claim-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.badge{font-family:var(--mono); font-size:.62rem; font-weight:600; letter-spacing:.14em;
+       text-transform:uppercase; padding:4px 9px; border:1px solid currentColor; border-radius:2px;}
+.b-rec{color:var(--ready);} .b-sug{color:var(--moderate);} .b-obs{color:var(--dim);}
+.grade{font-family:var(--mono); font-size:.63rem; color:var(--faint); letter-spacing:.06em; text-align:right; line-height:1.4;}
+.claim h3{font-size:1.14rem; font-weight:600; line-height:1.32; font-variation-settings:"wdth" 97;}
+.claim .said{color:var(--dim); font-size:.91rem;}
+.meter{display:grid; gap:6px;}
+.track{height:3px; background:var(--hairline); position:relative; overflow:hidden;}
+.fill{position:absolute; inset:0 auto 0 0; background:var(--accent);}
+.mrow{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.63rem;
+      letter-spacing:.08em; text-transform:uppercase; color:var(--faint);}
+.mrow b{color:var(--dim); font-weight:500; font-variant-numeric:tabular-nums;}
+.refs{display:grid; gap:10px; border-top:1px solid var(--hairline-soft); padding-top:14px;}
+.ref{font-size:.78rem; line-height:1.45; color:var(--dim);}
+.ref cite{font-style:normal; color:var(--text);}
+.ref .not{display:block; color:var(--faint); margin-top:4px;}
+.ref .not b{font-family:var(--mono); font-size:.61rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:600;}
+.flag{font-family:var(--mono); font-size:.66rem; line-height:1.5; color:var(--moderate);}
+
+/* ── motor dizini ───────────────────────────────────── */
+.grid3{display:grid; gap:1px; background:var(--hairline-soft); border:1px solid var(--hairline); border-radius:4px; overflow:hidden;}
+@media(min-width:700px){ .grid3{grid-template-columns:repeat(2,1fr);} }
+@media(min-width:1000px){ .grid3{grid-template-columns:repeat(3,1fr);} }
+.cell{background:var(--surface); padding:20px 18px; display:grid; gap:7px; align-content:start;}
+.cell .t{font-family:var(--display); font-weight:600; font-size:1rem; font-variation-settings:"wdth" 94;}
+.cell .d{font-size:.85rem; color:var(--dim); line-height:1.5;}
+
+/* ── liste blokları ─────────────────────────────────── */
+.claimlist{display:grid; gap:0; max-width:var(--measure);}
+.item{display:grid; grid-template-columns:auto 1fr; gap:16px; padding:17px 0; border-bottom:1px solid var(--hairline-soft);}
+.item:first-child{border-top:1px solid var(--hairline-soft);}
+.item .g{font-family:var(--mono); font-size:.8rem; line-height:1.9;}
+.item .g.no{color:var(--recovering);} .item .g.yes{color:var(--ready);}
+.item .t{font-weight:600;}
+.item .d{color:var(--dim); font-size:.92rem;}
+
+/* ── belge sayfaları ────────────────────────────────── */
+.doc{padding:clamp(44px,7vw,80px) 0 0; display:grid; gap:18px; max-width:var(--measure);}
+.doc h1{font-size:clamp(2.05rem,4.8vw,3rem); font-weight:800; line-height:1.06;
+        letter-spacing:-.022em; font-variation-settings:"wdth" 84;}
+.doc .lede{color:var(--dim); font-size:1.04rem;}
+.stamp{font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);}
+.clauses{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline); border-radius:4px; overflow:hidden;}
+.clause{background:var(--surface); padding:24px clamp(18px,3vw,30px); display:grid; grid-template-columns:auto 1fr; gap:6px 20px;}
+.clause .no{font-family:var(--mono); font-size:.72rem; font-weight:600; color:var(--accent);
+            letter-spacing:.08em; padding-top:5px; font-variant-numeric:tabular-nums;}
+.clause h3{font-size:1.07rem; font-weight:600; font-variation-settings:"wdth" 95;}
+.clause .c{grid-column:2; color:var(--dim); display:grid; gap:10px;}
+.clause ul{margin:2px 0 0; padding-left:1.1em; display:grid; gap:7px;}
+.clause li::marker{color:var(--faint);}
+.lang{grid-column:2; font-family:var(--mono); font-size:.61rem; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--faint); padding-top:12px; margin-top:4px;
+      border-top:1px solid var(--hairline-soft);}
+.en{color:var(--faint); font-size:.88rem;}
+.qa{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline); border-radius:4px; overflow:hidden;}
+.qa > div{background:var(--surface); padding:22px clamp(18px,3vw,28px); display:grid; gap:8px;}
+.qa h3{font-size:1rem; font-weight:600; font-variation-settings:"wdth" 96;}
+.qa p{color:var(--dim); font-size:.93rem;}
+.contact{border:1px solid var(--accent); background:var(--surface); border-radius:4px;
+         padding:clamp(22px,3.5vw,32px); display:grid; gap:10px; max-width:var(--measure);}
+.contact .k{font-family:var(--mono); font-size:.65rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint);}
+.contact a{font-family:var(--mono); font-size:1.04rem; word-break:break-all;}
+
+/* ── altlık ─────────────────────────────────────────── */
+footer{border-top:1px solid var(--hairline); margin-top:clamp(48px,7vw,88px);
+       padding:38px 0 60px; display:grid; gap:22px;}
+.flinks{display:flex; flex-wrap:wrap; gap:10px;}
+.fine{color:var(--faint); font-size:.82rem; max-width:var(--measure); line-height:1.6;}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{animation:none!important; transition:none!important;}}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap masthead">
-    <div class="mark">ZENITH<span>IUM</span></div>
+    <a class="mark" href="index.html">ZENITH<b>IUM</b></a>
     <nav>
-      <a href="#karar">Karar</a>
-      <a href="#olcum">Ölçüm</a>
-      <a href="#gizlilik">Gizlilik</a>
-      <a href="#sinirlar">Sınırlar</a>
+      <a href="index.html#gece">Gece</a>
+      <a href="index.html#karar">Karar</a>
+      <a href="index.html#tahlil">Tahlil</a>
+      <a href="privacy.html">Gizlilik</a>
+      <a href="support.html">Destek</a>
+      <a href="https://github.com/projectcagla/zenithium">GitHub</a>
     </nav>
   </div>
 </header>
 
-<main class="wrap">
-
-  <div class="hero">
-    <div class="eyebrow">iOS 18 · watchOS 11 · Türkçe</div>
-    <h1>Kararın arkasında ne olduğunu görebildiğin bir ölçüm aleti.</h1>
-    <p class="lede">Zenithium, Apple Watch'ının <strong>zaten kaydettiği</strong> veriden antrenman kararı üretir. Farkı, kararın kendisi değil: her cümlenin altında hangi ölçümden çıktığı, hangi çalışmaya dayandığı, o çalışmanın <strong>neyi göstermediği</strong> ve fikrini neyin değiştireceği yazar.</p>
-    <div class="constraints">
-      <div><span class="v">0</span><span class="k">Hesap</span></div>
-      <div><span class="v">0</span><span class="k">Ağ çağrısı</span></div>
-      <div><span class="v">0</span><span class="k">Üçüncü parti</span></div>
-      <div><span class="v">0</span><span class="k">Analitik</span></div>
-      <div><span class="v">28</span><span class="k">Hesap motoru</span></div>
+<div class="hero-band"><div class="wrap hero">
+  <div class="hero-copy">
+    <span class="eyebrow">iOS 18 · watchOS 11 · Türkçe</span>
+    <h1>Bir sayı vermek kolay.<br><em>Arkasını göstermek zor.</em></h1>
+    <p class="lede">Zenithium her sabah bir toparlanma skoru verir. Ayırt edici olan skor değil: o skorun hangi geceden çıktığını, hangi çalışmaya yaslandığını, o çalışmanın <strong>neyi göstermediğini</strong> ve fikrini neyin değiştireceğini de verir.</p>
+    <div class="hero-cta">
+      <a class="btn solid" href="#karar">Nasıl karar veriyor</a>
+      <a class="btn" href="https://github.com/projectcagla/zenithium">Kaynak kodu</a>
+    </div>
+    <div class="manifest">
+      <div class="mhead">Uygulamanın sahip olmadığı yetkiler</div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Ağ bağlantı yetkisi</span><span class="st">yok</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Kullanıcı hesabı ve sunucu</span><span class="st">yok</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Üçüncü parti paket ve SDK</span><span class="st">yok</span></div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Analitik ve çökme raporlama</span><span class="st">yok</span></div>
+      <p class="foot">Bunlar kapatılmış ayarlar değil, hiç verilmemiş izinler. Uygulama internete bağlanamaz — istese bile.</p>
     </div>
   </div>
+  <div class="art"><div class="device" role="img" aria-label="Zenithium ana ekranı: toparlanma skoru 38, uyku, zorlanma ve yük kartları, ve gerekçesiyle birlikte bir öneri.">
+  <div class="frame"><div class="island"></div><div class="screen">
+    <div class="sbar"><span>07:14</span><span class="r">Zenithium<span class="bat"></span></span></div>
+    <div class="appwrap">
+      <div class="app-h"><span class="t">Bugün</span><span class="d">2 Eyl · Salı</span></div>
+      <div class="app-card">
+        <div class="ringwrap">
+          <canvas data-ring="38" data-tone="recovering" aria-hidden="true"></canvas>
+          <div class="meta">
+            <span class="app-lab">Toparlanma</span>
+            <span class="band" style="color:var(--recovering)">Toparlanma Önceliği</span>
+            <span class="say">Ana belirleyici: gece HRV 41 ms — taban bandının 5,4 ms altında.</span>
+          </div>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="k">Uyku</span><span class="v">7:25</span><span class="s">%19 derin</span></div>
+        <div class="tile"><span class="k">Zorlanma</span><span class="v">8,4</span><span class="s">tavan 11,0</span></div>
+        <div class="tile"><span class="k">Yük</span><span class="v">1,38</span><span class="s">akut / kronik</span></div>
+      </div>
+      <div class="advice">
+        <div class="top"><span class="pill b-sug" style="color:var(--moderate)">Öneri</span>
+          <span class="app-lab">Kaynak kapsamıyla sınırlı</span></div>
+        <h4>Bugünü hafif tutmayı düşünebilirsin</h4>
+        <p class="why">Plews ve ark. (2013) haftalık ortalamaların takibini savunuyor; tek gecelik bir değer bu yüzden tavsiye seviyesine yükseltilmiyor.</p>
+        <div class="conf"><span>Güven</span><span class="tr"><i style="width:88%"></i></span><span>0,88</span></div>
+      </div>
+      <div class="app-card" style="padding:9px 12px">
+        <span class="app-lab">Ne değişirse</span>
+        <p class="why" style="margin-top:4px">Yarın gece HRV'n 7 günlük ortalamana dönerse bu kart kalkar.</p>
+      </div></div>
+  </div></div>
+</div></div>
+</div></div>
 
-  <section id="karar">
+<div class="wrap">
+  <div class="counts">
+    <div><span class="v">28</span><span class="k">hesap motoru</span><span class="s">hepsi cihazda</span></div>
+    <div><span class="v">21</span><span class="k">kas grubu</span><span class="s">ayrı ayrı izlenir</span></div>
+    <div><span class="v">50</span><span class="k">biyobelirteç</span><span class="s">202 eş anlamlı ad</span></div>
+    <div><span class="v">14<i>gece</i></span><span class="k">taban çizgisi</span><span class="s">senin ortalaman</span></div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section id="gece">
     <div class="sec-head">
-      <div class="eyebrow">Kanıt kadar konuşur</div>
-      <h2>Zayıf kanıt emir kipi kuramaz.</h2>
-      <p>Bir cümlenin ne kadar iddialı olabileceği, arkasındaki çalışmanın tasarımından ve ölçümün güvenilirliğinden <em>türetilir</em>. Aşağıda aynı sabahın üç ayrı okuması var — hiçbiri diğerinden daha az doğru değil, üçü farklı sağlamlıkta kanıta yaslanıyor.</p>
+      <span class="eyebrow">Gece</span>
+      <h2>Skor uykudan çıkar, uykudan konuşur.</h2>
+      <p>Saatini takarak uyuduğun her gece dört sinyal bırakır: kalp hızı değişkenliği, dinlenik nabız, bilek sıcaklığı ve solunum hızı. Zenithium bunları nüfus ortalamasıyla değil, senin son haftalarınla karşılaştırır — çünkü 41 ms bir insanda alarm, başkasında sıradan bir salı gecesidir.</p>
     </div>
-
-    <div class="ladder">
-
-      <article class="claim">
-        <div class="claim-top">
-          <span class="badge b-rec">Tavsiye</span>
-          <span class="grade">Derleme / konsensüs</span>
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Gece HRV · son 14 gece</span>
+        <span class="panel-note">taban 60,4 ms · σ 3,6</span></div>
+      <div class="panel-body"><canvas id="c-hrv" role="img"
+        aria-label="Son on dört gecenin kalp hızı değişkenliği. Taban çizgisi 60,4 milisaniye; dün gece 41 milisaniye ile bandın belirgin biçimde altında."></canvas></div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--dim)"></i>gecelik ölçüm</span>
+        <span><i class="swatch" style="background:var(--accent);opacity:.5"></i>kendi taban bandın (±1σ)</span>
+        <span><i class="swatch" style="background:var(--recovering)"></i>bandın dışında</span>
+      </div>
+    </div>
+    <div class="showcase" style="margin-top:clamp(34px,5vw,60px)">
+      <div class="art"><div class="device" role="img" aria-label="Uyku ekranı: gecenin evre dağılımı, süre, derin ve REM oranları, ve biriken uyku borcu.">
+  <div class="frame"><div class="island"></div><div class="screen">
+    <div class="sbar"><span>07:14</span><span class="r">Zenithium<span class="bat"></span></span></div>
+    <div class="appwrap">
+      <div class="app-h"><span class="t">Uyku</span><span class="d">Dün gece</span></div>
+      <div class="app-card">
+        <span class="app-lab">Evre dağılımı</span>
+        <canvas data-hypno="1" style="margin-top:8px" aria-hidden="true"></canvas>
+      </div>
+      <div class="tiles">
+        <div class="tile"><span class="k">Süre</span><span class="v">7:25</span><span class="s">hedef 8:10</span></div>
+        <div class="tile"><span class="k">Derin</span><span class="v">1:24</span><span class="s">%19</span></div>
+        <div class="tile"><span class="k">REM</span><span class="v">1:38</span><span class="s">%22</span></div>
+      </div>
+      <div class="app-card">
+        <span class="app-lab">Uyku borcu</span>
+        <div class="rows" style="margin-top:8px">
+          <div class="rw"><span class="n">Son 7 gün</span><span class="p">−2,4 sa</span>
+            <span class="bar"><i style="width:62%;background:var(--moderate)"></i></span></div>
+          <div class="rw"><span class="n">Uyku ortası kayması</span><span class="p">+1,4 sa</span>
+            <span class="bar"><i style="width:38%;background:var(--dim)"></i></span></div>
         </div>
-        <h3>Bu gece 45 dakika daha uzun uyu</h3>
-        <p class="body">Son günlerde 2,4 saat uyku borcu birikti. Borcu tek gecede değil birkaç geceye yayarak kapatmak daha gerçekçi.</p>
-        <div class="meter">
-          <div class="meter-track"><div class="meter-fill" style="width:92%"></div></div>
-          <div class="meter-row"><span>Güven</span><span class="val">0,92</span></div>
+      </div></div>
+  </div></div>
+</div></div>
+      <div class="prose">
+        <h3>Dört gece yetmez, on dört yeter.</h3>
+        <p>Taban çizgin oturana kadar Zenithium skor uydurmaz. Kalibrasyon süresince kararın toplum ortalamalarıyla harmanlandığını ve kaç gecelik veri kaldığını açıkça söyler.</p>
+        <p>Saatini takmadan uyuduğun bir gecenin ardından da uydurmaz: o sabah skor yerine hangi sinyalin eksik olduğunu yazar. Eksik veriyle üretilen bir skor ölçüme değil, varsayıma dayanırdı.</p>
+        <div class="notes">
+          <div class="note"><span class="g">◆</span><span><span class="t">Evreler ölçülür, tahmin edilmez.</span> <span class="d">Derin, REM ve hafif uyku süreleri Apple Sağlık'ın kendi evre kaydından gelir.</span></span></div>
+          <div class="note"><span class="g">◆</span><span><span class="t">Borç birikir ve kapanır.</span> <span class="d">Uyku borcu tek gecelik değil, hareketli bir bakiyedir; birkaç geceye yayarak kapatılır.</span></span></div>
         </div>
-        <div class="refs">
-          <div class="ref">
-            <cite>Watson NF, Badr MS, Belenky G, ve ark. (2015)</cite> — <span class="num">AASM</span> ve Sleep Research Society ortak bildirisi.
-            <span class="not"><b>Ne göstermiyor</b> Bir bireyin ihtiyacını vermez. Yetişkin nüfus için bir aralık bildirir; aralığın dışında uyuyan herkesin yetersiz uyuduğu anlamına gelmez.</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="claim">
-        <div class="claim-top">
-          <span class="badge b-sug">Öneri</span>
-          <span class="grade">Kaynak kapsamıyla sınırlı</span>
-        </div>
-        <h3>Toparlanma 38 — bugünü hafif tutmayı düşünebilirsin</h3>
-        <p class="body">Gece biyometrilerin taban çizginin belirgin biçimde altında. Bu tek gecelik bir sapma olabilir; birden çok gün süren bir eğilim daha anlamlıdır.</p>
-        <div class="meter">
-          <div class="meter-track"><div class="meter-fill" style="width:88%"></div></div>
-          <div class="meter-row"><span>Güven</span><span class="val">0,88</span></div>
-        </div>
-        <div class="refs">
-          <div class="ref">
-            <cite>Plews DJ, Laursen PB, Stanley J, ve ark. (2013)</cite> — <span class="num">Sports Medicine</span>.
-            <span class="not"><b>Ne göstermiyor</b> Tek bir günün HRV değerinden o günün antrenman kapasitesini çıkarmayı desteklemez; savunduğu şey haftalık ortalamaların takibidir.</span>
-          </div>
-          <div class="ref flag">Kaynağı tek geceye değil haftalık ortalamaya işaret ettiği için bu cümle tavsiye seviyesine yükseltilmedi.</div>
-        </div>
-      </article>
-
-      <article class="claim">
-        <div class="claim-top">
-          <span class="badge b-obs">Gözlem</span>
-          <span class="grade">Literatür çelişkili</span>
-        </div>
-        <h3>Akut yükün kronik ortalamanın %38 üstünde</h3>
-        <p class="body">Oran 1,4. Bu ölçütün sakatlıkla ilişkisi tartışmalı: akut değer kronik değerin içinde yer aldığı için, gerçek bir ilişki olmasa bile korelasyon üretebiliyor.</p>
-        <div class="meter">
-          <div class="meter-track"><div class="meter-fill" style="width:93%"></div></div>
-          <div class="meter-row"><span>Güven</span><span class="val">0,93</span></div>
-        </div>
-        <div class="refs">
-          <div class="ref">
-            <cite>Gabbett TJ (2016)</cite> ↔ <cite>Lolli L, Batterham AM, ve ark. (2019)</cite> — <span class="num">Br J Sports Med</span>.
-            <span class="not"><b>Ne göstermiyor</b> İlki belirli bir oranın güvenli olduğunu göstermez; ikincisi yük takibinin işe yaramadığını söylemez, yalnızca oranın matematiğinin sahte korelasyon ürettiğini gösterir.</span>
-          </div>
-          <div class="ref flag">Bu konuda literatür hemfikir değil. Zenithium sayıyı gösterir, üzerine talimat vermez.</div>
-        </div>
-      </article>
-
+      </div>
     </div>
   </section>
 
-  <section id="olcum">
+  <section id="karar">
     <div class="sec-head">
-      <div class="eyebrow">Ne ölçüyor</div>
-      <h2>Yirmi sekiz motor, tek bir cihazda.</h2>
-      <p>Hepsi saf hesap: aynı girdi her zaman aynı çıktıyı verir. Sunucuya soru sorulmadığı için sonuç uçakta da, kapsama alanı dışında da aynı.</p>
+      <span class="eyebrow">Karar</span>
+      <h2>Zayıf kanıt emir kipi kuramaz.</h2>
+      <p>Bir cümlenin ne kadar iddialı olabileceğini yazan kişi değil, arkasındaki çalışmanın tasarımı belirler. Aşağıdaki üç kart aynı sabaha ait. Hiçbiri diğerinden daha az doğru — üçü farklı sağlamlıkta kanıta yaslandığı için farklı dilbilgisiyle konuşuyor.</p>
     </div>
-    <div class="index">
-      <div class="row"><span class="t">Toparlanma</span><span class="d">Gece HRV, dinlenik nabız, bilek sıcaklığı ve solunum hızının kendi taban çizgine göre konumu.</span></div>
-      <div class="row"><span class="t">Uyku</span><span class="d">Evre dağılımı, uyku borcu ve sirkadiyen faz — nüfus ortalamasına değil, kendi geçmişine göre.</span></div>
-      <div class="row"><span class="t">Yük ve zorlanma</span><span class="d">Banister TRIMP tabanlı günlük yük, akut–kronik denge ve gün sonu zorlanma tavanı.</span></div>
-      <div class="row"><span class="t">Kas toparlanması</span><span class="d">21 kas grubu için, hareket kalıplarından türetilen yorgunluk ve biyolojik yarı ömürlü toparlanma.</span></div>
-      <div class="row"><span class="t">Dayanıklılık</span><span class="d">Eğime göre düzeltilmiş tempo, ölçülmüş metabolik maliyet eğrisiyle düz zemin karşılığı.</span></div>
-      <div class="row"><span class="t">Kuvvet</span><span class="d">Set, tekrar ve hareket kalıbı üzerinden kas grubu bazında birikmiş yük.</span></div>
-      <div class="row"><span class="t">Tahlil ve belgeler</span><span class="d">PDF tahlil raporunu cihazda okur: 50 biyobelirteç, 202 eş anlamlı. Belgeler şifreli olarak cihazda kalır.</span></div>
-      <div class="row"><span class="t">Hekim raporu</span><span class="d">Ölçümlerini ve tahlil seyrini yorumsuz, tek sayfa halinde dışa aktarır.</span></div>
-      <div class="row"><span class="t">Döngü farkındalığı</span><span class="d">Adet döngüsü kaydı varsa taban çizgisi karşılaştırmalarına bağlam olarak girer.</span></div>
-      <div class="row"><span class="t">Çevre</span><span class="d">Sıcak ortam adaptasyonu ve gün ışığı maruziyetinin yük yorumuna etkisi.</span></div>
+    <div class="ladder">
+      <article class="claim">
+        <div class="claim-top"><span class="badge b-rec">Tavsiye</span><span class="grade">Konsensüs<br>bildirisi</span></div>
+        <h3>Bu gece 45 dakika daha uzun uyu</h3>
+        <p class="said">Son günlerde 2,4 saat uyku borcu birikti. Borcu tek gecede değil, birkaç geceye yayarak kapatmak daha gerçekçi.</p>
+        <div class="meter"><div class="track"><span class="fill" style="width:92%"></span></div>
+          <div class="mrow"><span>Güven</span><b>0,92</b></div></div>
+        <div class="refs"><p class="ref"><cite>Watson NF, Badr MS, Belenky G, ve ark. (2015)</cite> — AASM ve Sleep Research Society ortak bildirisi.
+          <span class="not"><b>Ne göstermiyor</b> Bir bireyin ihtiyacını vermez. Yetişkin nüfus için bir aralık bildirir; aralığın dışında uyuyan herkesin yetersiz uyuduğu anlamına gelmez.</span></p></div>
+      </article>
+      <article class="claim">
+        <div class="claim-top"><span class="badge b-sug">Öneri</span><span class="grade">Kaynak kapsamıyla<br>sınırlı</span></div>
+        <h3>Toparlanma 38 — bugünü hafif tutmayı düşünebilirsin</h3>
+        <p class="said">Gece biyometrilerin taban çizginin belirgin biçimde altında. Bu tek gecelik bir sapma olabilir; birden çok gün süren bir eğilim daha anlamlıdır.</p>
+        <div class="meter"><div class="track"><span class="fill" style="width:88%"></span></div>
+          <div class="mrow"><span>Güven</span><b>0,88</b></div></div>
+        <div class="refs"><p class="ref"><cite>Plews DJ, Laursen PB, Stanley J, ve ark. (2013)</cite> — Sports Medicine.
+          <span class="not"><b>Ne göstermiyor</b> Tek bir günün HRV değerinden o günün antrenman kapasitesini çıkarmayı desteklemez; savunduğu şey haftalık ortalamaların takibidir.</span></p>
+          <p class="flag">Kaynağı tek geceye değil haftalık ortalamaya işaret ettiği için bu cümle tavsiye seviyesine yükseltilmedi.</p></div>
+      </article>
+      <article class="claim">
+        <div class="claim-top"><span class="badge b-obs">Gözlem</span><span class="grade">Literatür<br>çelişkili</span></div>
+        <h3>Akut yükün kronik ortalamanın %38 üstünde</h3>
+        <p class="said">Oran 1,38. Bu ölçütün sakatlıkla ilişkisi tartışmalı: akut değer kronik değerin içinde yer aldığı için, gerçek bir ilişki olmasa bile korelasyon üretebiliyor.</p>
+        <div class="meter"><div class="track"><span class="fill" style="width:93%"></span></div>
+          <div class="mrow"><span>Güven</span><b>0,93</b></div></div>
+        <div class="refs"><p class="ref"><cite>Gabbett TJ (2016)</cite> ↔ <cite>Lolli L, Batterham AM, ve ark. (2019)</cite> — Br J Sports Med.
+          <span class="not"><b>Ne göstermiyor</b> İlki belirli bir oranın güvenli olduğunu göstermez; ikincisi yük takibinin işe yaramadığını söylemez, yalnızca oranın matematiğinin sahte korelasyon ürettiğini gösterir.</span></p>
+          <p class="flag">Bu konuda literatür hemfikir değil. Zenithium sayıyı gösterir, üzerine talimat vermez.</p></div>
+      </article>
+    </div>
+
+    <div class="showcase flip" style="margin-top:clamp(34px,5vw,60px)">
+      <div class="art"><div class="device" role="img" aria-label="Karar izi ekranı: hangi ölçüm, hangi hesap, hangi kaynak, kaynağın neyi göstermediği ve uygulanabilirlik.">
+  <div class="frame"><div class="island"></div><div class="screen">
+    <div class="sbar"><span>07:14</span><span class="r">Zenithium<span class="bat"></span></span></div>
+    <div class="appwrap">
+      <div class="app-h"><span class="t">Neden?</span><span class="d">Karar izi</span></div>
+      <div class="app-card">
+        <div class="chain">
+          <div class="step"><span class="no">01</span><div><span class="k">Senin verin</span>
+            <p class="t">Gece HRV <b>41 ms</b> · 14 gecelik ortalama <b>60,4 ms</b> · 412 örnek</p></div></div>
+          <div class="step"><span class="no">02</span><div><span class="k">Hesap</span>
+            <p class="t">RecoveryEngine → z = <b>−1,52</b> · DataQualityEngine → <b>A</b></p></div></div>
+          <div class="step"><span class="no">03</span><div><span class="k">Literatür</span>
+            <p class="t"><b>Plews ve ark. (2013)</b> · Sports Medicine · derleme</p></div></div>
+          <div class="step"><span class="no">04</span><div><span class="k">Ne göstermiyor</span>
+            <p class="t">Tek bir günün HRV değerinden o günün kapasitesini çıkarmayı desteklemez.</p></div></div>
+          <div class="step"><span class="no">05</span><div><span class="k">Uygulanabilirlik</span>
+            <p class="t">Bulgu elit dayanıklılık sporcularında gösterildi; güven <b>×0,93</b>.</p></div></div>
+        </div>
+      </div>
+      <div class="app-card" style="padding:9px 12px">
+        <span class="app-lab">Güven 0,88 · sebepler</span>
+        <p class="why" style="margin-top:4px">Popülasyon farkı · kaynak kapsamı</p>
+      </div></div>
+  </div></div>
+</div></div>
+      <div class="prose">
+        <h3>Her cümlenin altında bir "neden" var.</h3>
+        <p>Bir kartın üstüne dokunduğunda zincirin tamamı açılır: hangi ölçümden, hangi pencereden, kaç örnekten çıktığı; hangi motorun hangi eşiğe baktığı; hangi çalışmaya dayandığı ve o çalışmanın <em>neyi göstermediği</em>.</p>
+        <p>En altta iki satır daha vardır. Biri güvenin neden düşürüldüğünü tek tek sayar. Diğeri, fikrin neyle değişeceğini söyler — çünkü kendini yanlışlayacak koşulu söyleyemeyen bir sistem öneri değil kehanet üretir.</p>
+        <div class="notes">
+          <div class="note"><span class="g">◆</span><span><span class="t">Popülasyon farkı gizlenmez.</span> <span class="d">Bulgu elit erkek sporcularda gösterildiyse ve sen değilsen, güven düşer ve sebebi yazılır.</span></span></div>
+          <div class="note"><span class="g">◆</span><span><span class="t">Aynı girdi, aynı çıktı.</span> <span class="d">Cevaplar bir dil modelinden değil, izlenebilir bir hesaptan gelir; her seferinde tekrarlanır.</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gun">
+    <div class="sec-head">
+      <span class="eyebrow">Gün</span>
+      <h2>Saat kaçta iyi olduğun, kaç saat uyuduğun kadar önemli.</h2>
+      <p>Uyku ortandan ve ışık maruziyetinden kurulan bireysel faz, günün hangi saatinin sana ait olduğunu söyler. Yanına, o gün ne kadar yüklenebileceğinin tavanı gelir.</p>
+    </div>
+    <div class="showcase" style="grid-template-columns:1fr">
+      <div style="display:grid;gap:clamp(18px,3vw,26px);grid-template-columns:1fr">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Sirkadiyen yay</span><span class="panel-note">faz −1,4 sa</span></div>
+          <div class="panel-body"><canvas id="c-circ" role="img"
+            aria-label="Yirmi dört saatlik uyanıklık eğrisi; en düşük nokta 04:36 civarında, tepe noktası 16:30 civarında."></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Akut ve kronik yük · 28 gün</span><span class="panel-note">oran 1,38</span></div>
+          <div class="panel-body"><canvas id="c-load" role="img"
+            aria-label="Yirmi sekiz günlük akut yük eğrisi ve kronik taban çizgisi; akut yük kronik ortalamanın yüzde otuz sekiz üstünde."></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kas">
+    <div class="sec-head">
+      <span class="eyebrow">Kas</span>
+      <h2>Yorgunluk tek bir sayı değil, yirmi bir ayrı sayı.</h2>
+      <p>Kaydettiğin her kuvvet seansı hareket kalıplarına ayrıştırılır ve ilgili kas gruplarına yorgunluk yazar. Her grup kendi biyolojik yarı ömrüyle toparlanır — göğsün hazırken bacağın hâlâ borçlu olabilir.</p>
+    </div>
+    <div class="showcase">
+      <div class="art"><div class="device" role="img" aria-label="Kas ekranı: yirmi bir kas grubunun hazırlık yüzdeleri, hazır olanlar ve hâlâ toparlananlar ayrı listelerde.">
+  <div class="frame"><div class="island"></div><div class="screen">
+    <div class="sbar"><span>07:14</span><span class="r">Zenithium<span class="bat"></span></span></div>
+    <div class="appwrap">
+      <div class="app-h"><span class="t">Kas</span><span class="d">21 grup</span></div>
+      <div class="app-card">
+        <span class="app-lab">Çalışmaya hazır</span>
+        <div class="rows" style="margin-top:9px">
+          <div class="rw"><span class="n">Göğüs</span><span class="p">%92</span><span class="bar"><i style="width:92%;background:var(--ready)"></i></span></div>
+          <div class="rw"><span class="n">Sırt</span><span class="p">%88</span><span class="bar"><i style="width:88%;background:var(--ready)"></i></span></div>
+          <div class="rw"><span class="n">Karın</span><span class="p">%81</span><span class="bar"><i style="width:81%;background:var(--ready)"></i></span></div>
+        </div>
+      </div>
+      <div class="app-card">
+        <span class="app-lab">Toparlanıyor</span>
+        <div class="rows" style="margin-top:9px">
+          <div class="rw"><span class="n">Omuz</span><span class="p">%71</span><span class="bar"><i style="width:71%;background:var(--ready)"></i></span></div>
+          <div class="rw"><span class="n">Kalça</span><span class="p">%64</span><span class="bar"><i style="width:64%;background:var(--moderate)"></i></span></div>
+          <div class="rw"><span class="n">Baldır</span><span class="p">%58</span><span class="bar"><i style="width:58%;background:var(--moderate)"></i></span></div>
+          <div class="rw"><span class="n">Arka bacak</span><span class="p">%47</span><span class="bar"><i style="width:47%;background:var(--moderate)"></i></span></div>
+          <div class="rw"><span class="n">Ön bacak</span><span class="p">%34</span><span class="bar"><i style="width:34%;background:var(--recovering)"></i></span></div>
+        </div>
+      </div>
+      <div class="app-card" style="padding:9px 12px">
+        <p class="why">Ön bacak salı günkü seanstan 34 saat sonra hâlâ borçlu. Yarı ömrü 42 saat.</p>
+      </div></div>
+  </div></div>
+</div></div>
+      <div class="prose">
+        <h3>Bir seans, on iki ayrı hesap.</h3>
+        <p>Bir çömelme hareketini kaydettiğinde bu, ön bacak, arka bacak, kalça ve gövde için ayrı ayrı yorgunluk yazar. Her kas grubunun toparlanma yarı ömrü farklıdır; küçük gruplar hızlı, büyük gruplar yavaş döner.</p>
+        <p>Sonuç, ertesi gün neyi çalışabileceğinin listesidir. Ağrı kaydı girdiğinde ilgili grup listeden düşer ve bunu neden yaptığını söyler.</p>
+        <div class="notes">
+          <div class="note"><span class="g">◆</span><span><span class="t">Ön ve arka görünüm.</span> <span class="d">Yirmi bir grup gövdenin iki yüzünde ayrı ayrı gösterilir.</span></span></div>
+          <div class="note"><span class="g">◆</span><span><span class="t">Saatten de kaydedilir.</span> <span class="d">Kuvvet seansını Apple Watch'tan başlatıp telefona dokunmadan bitirebilirsin.</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tahlil">
+    <div class="sec-head">
+      <span class="eyebrow">Tahlil ve belgeler</span>
+      <h2>Kan tahlilin telefonundan çıkmadan okunur.</h2>
+      <p>Laboratuvarından aldığın PDF'i içeri aktar. Metin katmanı yoksa optik karakter tanıma devreye girer; Türkçe karakterlerin taramada bozulduğu yaygın hataları tanır ve düzeltir.</p>
+    </div>
+    <div class="showcase flip">
+      <div class="art"><div class="device" role="img" aria-label="Tahlil ekranı: demir paneli değerleri, referans aralıkları, ve referans dışı bir değer için hekime yönlendirme.">
+  <div class="frame"><div class="island"></div><div class="screen">
+    <div class="sbar"><span>07:14</span><span class="r">Zenithium<span class="bat"></span></span></div>
+    <div class="appwrap">
+      <div class="app-h"><span class="t">Tahlil</span><span class="d">14 Ağu</span></div>
+      <div class="app-card">
+        <span class="app-lab">Demir paneli</span>
+        <div style="margin-top:6px">
+          <div class="labrow"><span class="n">Ferritin</span><span class="v">18 ng/mL</span>
+            <span class="r">referans 30–400</span></div>
+          <div class="labrow"><span class="n">Transferrin sat.</span><span class="v">%21</span>
+            <span class="r">referans 20–50</span></div>
+          <div class="labrow"><span class="n">Hemoglobin</span><span class="v">13,8 g/dL</span>
+            <span class="r">referans 13,5–17,5</span></div>
+        </div>
+      </div>
+      <div class="app-card" style="border-color:var(--recovering)">
+        <div class="top" style="display:flex;justify-content:space-between;align-items:center">
+          <span class="app-lab" style="color:var(--recovering)">Referans dışı</span>
+          <span class="pill" style="color:var(--recovering)">Hekim</span>
+        </div>
+        <p class="why" style="margin-top:6px;color:var(--dim)">Ferritin 18 ng/mL — laboratuvarın referans aralığının altında. <b style="color:var(--text);font-weight:500">Bu değeri hekimine göster. Zenithium ne anlama geldiğini söyleyemez.</b></p>
+      </div>
+      <div class="app-card" style="padding:9px 12px">
+        <span class="app-lab">Zamanlama</span>
+        <p class="why" style="margin-top:4px">Kreatin kinaz bir antrenmandan 18 saat sonra alınmış; bu pencerede antrenmandan etkilenir.</p>
+      </div></div>
+  </div></div>
+</div></div>
+      <div class="prose">
+        <h3>Değeri saklar, yorumunu hekime bırakır.</h3>
+        <p>Zenithium bir değerin nerede durduğunu, nasıl hareket ettiğini, ne kadar eski olduğunu ve antrenmandan ne kadar sonra alındığını söyler. Referans aralığının dışına çıkmış bir değere verebileceği tek cevap vardır: <em>bunu hekimine göster.</em></p>
+        <div class="notes">
+          <div class="note"><span class="g">◆</span><span><span class="t">Panel eksikliği.</span> <span class="d">Ferritin var ama transferrin satürasyonu yoksa, tek başına eksik bir tablo çizdiğini söyler.</span></span></div>
+          <div class="note"><span class="g">◆</span><span><span class="t">Zamanlama uyarısı.</span> <span class="d">Kreatin kinaz gibi antrenmandan etkilenen değerlerde, ölçümün seanstan kaç saat sonra alındığını hatırlatır.</span></span></div>
+          <div class="note"><span class="g">◆</span><span><span class="t">Hekim raporu.</span> <span class="d">Ölçümlerini ve tahlil seyrini yorumsuz, tek sayfa halinde dışa aktarır.</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="saat">
+    <div class="sec-head">
+      <span class="eyebrow">Apple Watch</span>
+      <h2>Sabah bileğinde, gün boyu cebinde.</h2>
+    </div>
+    <div class="showcase">
+      <div class="art"><div class="watch" role="img" aria-label="Apple Watch ekranında toparlanma skoru 38.">
+  <div class="band top"></div>
+  <div class="case"><div class="wscreen">
+    <span class="wlab">Toparlanma</span>
+    <span class="wnum">38</span>
+    <span class="wsay">Toparlanma önceliği. HRV taban bandının altında.</span>
+  </div></div>
+  <div class="band"></div>
+</div></div>
+      <div class="prose">
+        <h3>Saat yalnızca gösterge değil.</h3>
+        <p>Toparlanma skorunu ve gerekçesini bilekten okursun. Kuvvet seansını saatten başlatır, setlerini orada kaydeder, telefona hiç dokunmadan bitirirsin — kayıt, bağlantı geri geldiğinde eksiksiz aktarılır.</p>
+        <p>Kilit ekranı ve ana ekran widget'ları aynı sayıyı taşır; hepsi aynı uygulama grubundaki kopyayı okur, yeniden hesaplamaz.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="motorlar">
+    <div class="sec-head">
+      <span class="eyebrow">Ne hesaplıyor</span>
+      <h2>Yirmi sekiz motor, tek bir cihazda.</h2>
+      <p>Hepsi saf hesap: aynı girdi her zaman aynı çıktıyı verir. Sunucuya soru sorulmadığı için sonuç uçakta da, kapsama alanı dışında da aynı çıkar.</p>
+    </div>
+    <div class="grid3">
+      <div class="cell"><span class="t">Toparlanma</span><span class="d">Gece HRV, dinlenik nabız, bilek sıcaklığı ve solunum hızının kendi taban çizgine göre konumu.</span></div>
+      <div class="cell"><span class="t">Uyku</span><span class="d">Evre dağılımı, biriken uyku borcu ve uyku ortasının haftalar boyunca nereye kaydığı.</span></div>
+      <div class="cell"><span class="t">Zorlanma</span><span class="d">Banister TRIMP tabanlı günlük yük ve toparlanmana göre belirlenen gün sonu tavanı.</span></div>
+      <div class="cell"><span class="t">Antrenman yükü</span><span class="d">Akut blok, kronik taban ve ikisinin oranı — oranın tartışmalı olduğu notuyla birlikte.</span></div>
+      <div class="cell"><span class="t">Kas toparlanması</span><span class="d">21 kas grubu için hareket kalıplarından türetilen yorgunluk ve yarı ömürlü toparlanma.</span></div>
+      <div class="cell"><span class="t">Sirkadiyen ritim</span><span class="d">Uyku ortası ve ışık maruziyetinden kurulan bireysel faz; günün hangi saatinin sana ait olduğu.</span></div>
+      <div class="cell"><span class="t">Dayanıklılık</span><span class="d">Eğime göre düzeltilmiş tempo — ölçülmüş metabolik maliyet eğrisiyle düz zemin karşılığı.</span></div>
+      <div class="cell"><span class="t">Kuvvet</span><span class="d">Set, tekrar ve hareket kalıbı üzerinden kas grubu bazında birikmiş mekanik yük.</span></div>
+      <div class="cell"><span class="t">Tahlil</span><span class="d">PDF raporu cihazda okur: 50 biyobelirteç, 202 eş anlamlı, optik karakter düzeltmesi.</span></div>
+      <div class="cell"><span class="t">Yaşam belirtileri</span><span class="d">Dokuz ayrı işaretin taban çizgisinden sapması ve sapmanın kaç gündür sürdüğü.</span></div>
+      <div class="cell"><span class="t">Döngü</span><span class="d">Adet döngüsü kaydı varsa taban çizgisi karşılaştırmalarına bağlam olarak girer.</span></div>
+      <div class="cell"><span class="t">Çevre</span><span class="d">Sıcak ortam adaptasyonu ve gün ışığı maruziyetinin yük yorumuna etkisi.</span></div>
     </div>
   </section>
 
   <section id="gizlilik">
     <div class="sec-head">
-      <div class="eyebrow">Gizlilik</div>
-      <h2>Doğrulanabilir bir iddia, pazarlama cümlesi değil.</h2>
+      <span class="eyebrow">Gizlilik</span>
+      <h2>Doğrulanabilir bir kısıt, pazarlama cümlesi değil.</h2>
+      <p>Depoda ağ çağrısı yapan tek bir satır yok ve bunu her derleme öncesi çalışan bir denetim betiği zorluyor. Uygulamanın ağ bağlantı yetkisi hiç istenmedi; bu yüzden internete bağlanması teknik olarak mümkün değil.</p>
     </div>
-    <div class="privacy">
-      <p>Zenithium'un hesabı, sunucusu ve ağ izni yoktur. Okuduğu her şey Apple Sağlık'ta ve bu cihazdaki kendi deposunda kalır. Bu bir söz değil, mimari bir kısıt: depoda ağ çağrısı yapan tek bir satır yok ve bunu her derleme öncesi çalışan bir denetim betiği zorluyor.</p>
-      <ul class="plist">
-        <li><span class="c">✓</span><span>Hesap yok, giriş yok, parola yok</span></li>
-        <li><span class="c">✓</span><span>Hiçbir türde ağ isteği yok — çevrimdışı da aynı çalışır</span></li>
-        <li><span class="c">✓</span><span>Analitik, çökme raporlama, reklam kimliği veya üçüncü taraf kod yok</span></li>
-        <li><span class="c">✓</span><span>Sağlıktan türeyen veriler iCloud yedeğinin dışında tutulur</span></li>
-        <li><span class="c">✓</span><span>Tahlil belgeleri cihaz kilitliyken açılamayan dosya koruması altında saklanır</span></li>
-        <li><span class="c">✓</span><span>Uygulamayı silersen hesapları da onunla gider; Sağlık verin yerinde kalır</span></li>
-      </ul>
+    <div class="claimlist">
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Hesap yok, giriş yok, parola yok.</span> <span class="d">Uygulamayı indirip açarsın; kaydolacak bir yer yoktur.</span></span></div>
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Uçak modunda tam olarak aynı çalışır.</span> <span class="d">Ölçebilirsin — hiçbir özellik bağlantı beklemiyor.</span></span></div>
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Üçüncü taraf tek satır kod içermez.</span> <span class="d">Analitik, çökme raporlama ve reklam kimliği dahil.</span></span></div>
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Sağlıktan türeyen veriler yedeğin dışında.</span> <span class="d">App Store 5.1.3 gereği yerel veritabanı şifresiz iCloud yedeklemesine girmez.</span></span></div>
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Belgeler cihaz kilitliyken açılamaz.</span> <span class="d">Tahlil PDF'leri tam dosya koruması altında saklanır.</span></span></div>
+      <div class="item"><span class="g yes">✓</span><span><span class="t">Silersen gider.</span> <span class="d">Uygulamayı kaldırdığında hesaplar da onunla gider; Apple Sağlık verin yerinde kalır.</span></span></div>
     </div>
   </section>
 
   <section id="sinirlar">
     <div class="sec-head">
-      <div class="eyebrow">Sınırlar</div>
+      <span class="eyebrow">Sınırlar</span>
       <h2>Bilerek yapmadıkları.</h2>
-      <p>Bunlar eksik özellik değil, verilmiş kararlar. Bir ölçüm aletinin ne ölçmediğini bilmek, ne ölçtüğünü bilmek kadar önemlidir.</p>
+      <p>Bunlar eksik özellik değil, verilmiş kararlar. Bir ölçüm aletinin neyi ölçmediğini bilmek, neyi ölçtüğünü bilmek kadar önemlidir.</p>
     </div>
-    <div class="refusals">
-      <div class="refusal"><span class="x">—</span><span><span class="t">Teşhis koymaz.</span> <span class="d">Tıbbi cihaz değildir. Bir tahlil değeri referans aralığının dışındaysa verebileceği tek cevap vardır: bunu hekimine göster.</span></span></div>
-      <div class="refusal"><span class="x">—</span><span><span class="t">Kalori, makro veya kilo takibi yoktur.</span> <span class="d">Hedef koymaz, kısıtlama önermez, tartıya bakmaz.</span></span></div>
-      <div class="refusal"><span class="x">—</span><span><span class="t">Takviye önermez.</span> <span class="d">Kullandığını söylersen kaydeder; başlamanı asla önermez.</span></span></div>
-      <div class="refusal"><span class="x">—</span><span><span class="t">Sohbet eden bir dil modeli içermez.</span> <span class="d">Cevaplar bir modelden değil, izlenebilir bir hesaptan gelir. Karşılığında her cevap tekrarlanabilir ve kaynak gösterir.</span></span></div>
-      <div class="refusal"><span class="x">—</span><span><span class="t">Sosyal akışı, sıralaması, rozeti yoktur.</span> <span class="d">Kimseyle karşılaştırılmazsın; tek referansın kendi geçmişin.</span></span></div>
+    <div class="claimlist">
+      <div class="item"><span class="g no">—</span><span><span class="t">Teşhis koymaz.</span> <span class="d">Tıbbi cihaz değildir. Bir değerin referans aralığının dışında olduğunu görürse söyleyeceği tek şey vardır: bunu hekimine göster.</span></span></div>
+      <div class="item"><span class="g no">—</span><span><span class="t">Kalori, makro veya kilo takibi yoktur.</span> <span class="d">Hedef koymaz, kısıtlama önermez, tartıya bakmaz.</span></span></div>
+      <div class="item"><span class="g no">—</span><span><span class="t">Takviye önermez.</span> <span class="d">Kullandığını söylersen kaydeder; başlamanı asla önermez.</span></span></div>
+      <div class="item"><span class="g no">—</span><span><span class="t">Sohbet eden bir dil modeli içermez.</span> <span class="d">Karşılığında her cevap tekrarlanabilir ve kaynağını gösterebilir.</span></span></div>
+      <div class="item"><span class="g no">—</span><span><span class="t">Sosyal akış, sıralama, rozet yoktur.</span> <span class="d">Kimseyle karşılaştırılmazsın; tek referansın kendi geçmişin.</span></span></div>
     </div>
   </section>
 
@@ -291,12 +720,175 @@
 
 <footer class="wrap">
   <div class="flinks">
-    <a class="flink" href="privacy.html">Gizlilik Politikası</a>
-    <a class="flink" href="support.html">Destek</a>
-    <a class="flink" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
+    <a class="btn" href="index.html">Ana Sayfa</a>
+    <a class="btn" href="privacy.html">Gizlilik Politikası</a>
+    <a class="btn" href="support.html">Destek</a>
+    <a class="btn" href="https://github.com/projectcagla/zenithium/blob/main/docs/EVIDENCE.md">Kanıt Tablosu (16 Kaynak)</a>
+    <a class="btn" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
   </div>
   <p class="fine">Zenithium bir spor ve iyi yaşam aracıdır. Tıbbi cihaz değildir, teşhis koymaz ve sağlığının yerinde olup olmadığını söyleyemez. Bir şikâyetin varsa hekimine danış — buradaki hiçbir şey o konuşmanın yerine geçmez.</p>
 </footer>
+<script>
+(() => {
+  "use strict";
+  const v = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = () => ({ grid:v("--hairline-soft"), axis:v("--hairline"), faint:v("--faint"),
+    dim:v("--dim"), text:v("--text"), accent:v("--accent"), ready:v("--ready"),
+    moderate:v("--moderate"), low:v("--recovering"), surface:v("--surface") });
+
+  /* Cihaz pikseline göre ölçekler; aksi hâlde Retina'da her çizgi bulanık çıkar. */
+  function fit(cv, h) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = cv.clientWidth || 300;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    if (!cv.dataset.ring) cv.style.height = h + "px";
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    return { ctx, w, h };
+  }
+  const lerp = (a,b,t) => a + (b-a)*t;
+  function txt(ctx, s, x, y, col, align, size) {
+    ctx.fillStyle = col; ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.font = (size || 10) + 'px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(s, x, y);
+  }
+  function hlines(ctx, x, y, w, h, n, c) {
+    ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
+    for (let i = 0; i <= n; i++) { const yy = Math.round(y + h*i/n) + .5;
+      ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x+w, yy); ctx.stroke(); }
+  }
+
+  /* ── toparlanma halkası (cihaz ekranında) ── */
+  function ring(cv) {
+    const c = C(), size = 96, { ctx } = fit(cv, size);
+    cv.style.width = size + "px"; cv.style.height = size + "px";
+    const val = +cv.dataset.ring, tone = c[cv.dataset.tone] || c.accent;
+    const cx = size/2, cy = size/2, r = size/2 - 8;
+    ctx.lineWidth = 7; ctx.lineCap = "round";
+    ctx.strokeStyle = c.axis;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.2832); ctx.stroke();
+    const a0 = -Math.PI/2;
+    ctx.strokeStyle = tone;
+    ctx.beginPath(); ctx.arc(cx, cy, r, a0, a0 + 6.2832*(val/100)); ctx.stroke();
+    ctx.fillStyle = c.text; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = '600 27px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText(val, cx, cy + 1);
+  }
+
+  /* ── hipnogram (hem cihazda hem büyük panelde) ── */
+  const LANES = ["Uyanık","REM","Hafif","Derin"];
+  const NIGHT = [[0,8],[2,22],[3,52],[2,14],[1,28],[3,34],[2,18],[1,36],[3,22],[2,26],[1,44],[0,6],[2,30],[1,25]];
+  function hypno(cv, small) {
+    const c = C(), H = small ? 74 : 210, { ctx, w, h } = fit(cv, H);
+    const L = small ? 34 : 58, R = small ? 4 : 14, T = small ? 4 : 14, B = small ? 14 : 26;
+    const pw = w-L-R, ph = h-T-B, lh = ph/4;
+    const total = NIGHT.reduce((s,x) => s+x[1], 0);
+    const tone = [c.moderate, c.accent, c.dim, c.ready];
+    LANES.forEach((n,i) => { const y = T + lh*i;
+      ctx.strokeStyle = c.grid; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(L, Math.round(y)+.5); ctx.lineTo(L+pw, Math.round(y)+.5); ctx.stroke();
+      txt(ctx, n, L-6, y+lh/2, c.faint, "right", small ? 7 : 10); });
+    let x = L;
+    NIGHT.forEach(([lane, m]) => { const bw = pw*m/total, y = T + lh*lane;
+      ctx.fillStyle = tone[lane] + (lane===3 ? "cc" : lane===0 ? "aa" : "88");
+      ctx.fillRect(x, y+lh*.22, Math.max(bw-1,1), lh*.56); x += bw; });
+    ctx.strokeStyle = c.axis;
+    ctx.beginPath(); ctx.moveTo(L, T+ph+.5); ctx.lineTo(L+pw, T+ph+.5); ctx.stroke();
+    const ticks = small ? ["23:40","07:00"] : ["23:40","01:30","03:20","05:10","07:00"];
+    ticks.forEach((t,i) => txt(ctx, t, L + pw*i/(ticks.length-1), h-(small?5:9),
+      c.faint, i===0 ? "left" : i===ticks.length-1 ? "right" : "center", small ? 7 : 9));
+  }
+
+  /* ── gece HRV izi ve taban bandı ── */
+  const HRV = [58,61,57,63,60,64,59,62,66,61,58,55,50,41], BASE = 60.4, SD = 3.6;
+  function hrv(cv) {
+    const c = C(), { ctx, w, h } = fit(cv, 300);
+    const L = 46, R = 62, T = 20, B = 30, pw = w-L-R, ph = h-T-B;
+    const lo = 32, hi = 72, Y = x => T + ph*(1-(x-lo)/(hi-lo)), X = i => L + pw*i/(HRV.length-1);
+    hlines(ctx, L, T, pw, ph, 4, c);
+    for (let i=0;i<=4;i++) txt(ctx, Math.round(lerp(hi,lo,i/4)), L-10, T+ph*i/4, c.faint, "right");
+    txt(ctx, "ms", L-10, T-11, c.faint, "right", 9);
+    ctx.fillStyle = c.accent + "1c";
+    ctx.fillRect(L, Y(BASE+SD), pw, Y(BASE-SD)-Y(BASE+SD));
+    ctx.strokeStyle = c.accent + "55"; ctx.setLineDash([3,3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(L, Y(BASE)); ctx.lineTo(L+pw, Y(BASE)); ctx.stroke(); ctx.setLineDash([]);
+    txt(ctx, "taban ±1σ", L+pw+8, Y(BASE), c.faint, "left", 9);
+    ctx.strokeStyle = c.dim; ctx.lineWidth = 1.7; ctx.lineJoin = "round";
+    ctx.beginPath(); HRV.forEach((x,i) => i ? ctx.lineTo(X(i),Y(x)) : ctx.moveTo(X(i),Y(x))); ctx.stroke();
+    HRV.forEach((x,i) => { const last = i===HRV.length-1;
+      ctx.beginPath(); ctx.arc(X(i), Y(x), last?4.5:2.2, 0, 6.2832);
+      ctx.fillStyle = last ? c.low : c.dim; ctx.fill(); });
+    const lx = X(HRV.length-1), ly = Y(41);
+    ctx.strokeStyle = c.low; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(lx, ly+9); ctx.lineTo(lx, ly+20); ctx.stroke();
+    txt(ctx, "41 ms", lx+4, ly+24, c.low, "right", 10);
+    ctx.strokeStyle = c.axis;
+    ctx.beginPath(); ctx.moveTo(L, T+ph+.5); ctx.lineTo(L+pw, T+ph+.5); ctx.stroke();
+    txt(ctx, "14 gece önce", L, h-10, c.faint, "left", 9);
+    txt(ctx, "dün gece", L+pw, h-10, c.faint, "right", 9);
+  }
+
+  /* ── sirkadiyen yay ── */
+  function circ(cv) {
+    const c = C(), { ctx, w, h } = fit(cv, 200);
+    const L = 44, R = 16, T = 22, B = 26, pw = w-L-R, ph = h-T-B;
+    const f = t => .5 - .5*Math.cos(2*Math.PI*(t-4.6)/24);
+    hlines(ctx, L, T, pw, ph, 2, c);
+    const g = ctx.createLinearGradient(0, T, 0, T+ph);
+    g.addColorStop(0, c.accent+"32"); g.addColorStop(1, c.accent+"00");
+    ctx.beginPath(); ctx.moveTo(L, T+ph);
+    for (let i=0;i<=240;i++) ctx.lineTo(L+pw*i/240, T+ph*(1-f(24*i/240)));
+    ctx.lineTo(L+pw, T+ph); ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath();
+    for (let i=0;i<=240;i++){ const x=L+pw*i/240, y=T+ph*(1-f(24*i/240)); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.strokeStyle = c.accent; ctx.lineWidth = 1.8; ctx.stroke();
+    [[4.6,"en düşük",c.low],[16.5,"tepe",c.ready]].forEach(([t,s,col]) => {
+      const x = L+pw*t/24, y = T+ph*(1-f(t));
+      ctx.strokeStyle = col+"66"; ctx.setLineDash([2,3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,T+ph); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(x,y,3.5,0,6.2832); ctx.fillStyle = col; ctx.fill();
+      txt(ctx, s, x, y-12, col, "center", 9); });
+    ctx.strokeStyle = c.axis;
+    ctx.beginPath(); ctx.moveTo(L,T+ph+.5); ctx.lineTo(L+pw,T+ph+.5); ctx.stroke();
+    ["00","06","12","18","24"].forEach((t,i) => txt(ctx, t, L+pw*i/4, h-9, c.faint,
+      i===0?"left":i===4?"right":"center", 9));
+    txt(ctx, "uyanıklık", L-9, T+4, c.faint, "right", 9);
+  }
+
+  /* ── akut ve kronik yük ── */
+  const AC = [31,34,29,38,42,40,36,44,48,45,41,39,46,52,55,51,47,53,58,61,57,54,60,66,71,68,64,72];
+  function load(cv) {
+    const c = C(), { ctx, w, h } = fit(cv, 200);
+    const L = 44, R = 62, T = 18, B = 28, pw = w-L-R, ph = h-T-B;
+    const lo = 20, hi = 80, Y = x => T+ph*(1-(x-lo)/(hi-lo)), X = i => L+pw*i/(AC.length-1);
+    const ch = []; let e = AC[0]; AC.forEach(x => { e += (x-e)*(2/29); ch.push(e); });
+    hlines(ctx, L, T, pw, ph, 3, c);
+    for (let i=0;i<=3;i++) txt(ctx, Math.round(lerp(hi,lo,i/3)), L-10, T+ph*i/3, c.faint, "right");
+    ctx.beginPath(); ch.forEach((x,i) => i?ctx.lineTo(X(i),Y(x)):ctx.moveTo(X(i),Y(x)));
+    ctx.strokeStyle = c.dim; ctx.lineWidth = 1.4; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+    txt(ctx, "kronik", L+pw+8, Y(ch[ch.length-1]), c.faint, "left", 9);
+    ctx.beginPath(); AC.forEach((x,i) => i?ctx.lineTo(X(i),Y(x)):ctx.moveTo(X(i),Y(x)));
+    ctx.strokeStyle = c.moderate; ctx.lineWidth = 1.9; ctx.lineJoin = "round"; ctx.stroke();
+    const li = AC.length-1;
+    ctx.beginPath(); ctx.arc(X(li), Y(AC[li]), 4, 0, 6.2832); ctx.fillStyle = c.moderate; ctx.fill();
+    txt(ctx, "akut", L+pw+8, Y(AC[li]), c.moderate, "left", 9);
+    ctx.strokeStyle = c.axis;
+    ctx.beginPath(); ctx.moveTo(L,T+ph+.5); ctx.lineTo(L+pw,T+ph+.5); ctx.stroke();
+    txt(ctx, "28 gün önce", L, h-9, c.faint, "left", 9);
+    txt(ctx, "bugün", L+pw, h-9, c.faint, "right", 9);
+  }
+
+  function paint() {
+    document.querySelectorAll("canvas[data-ring]").forEach(ring);
+    document.querySelectorAll("canvas[data-hypno]").forEach(cv => hypno(cv, true));
+    const big = { "#c-hypno": cv => hypno(cv, false), "#c-hrv": hrv, "#c-circ": circ, "#c-load": load };
+    Object.entries(big).forEach(([sel, fn]) => { const el = document.querySelector(sel); if (el) fn(el); });
+  }
+  paint();
+  addEventListener("load", paint);           // web fontları yerleştikten sonra bir kez daha
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(paint, 140); });
+})();
+</script>
 
 </body>
 </html>
