@@ -70,6 +70,7 @@ enum PainEngine {
             let follows = difference >= minimumLoadDifference
                 && difference / control >= minimumRelativeDifference
 
+            let imbalance = lateralityImbalance(entries: muscleEntries, muscle: muscle)
             return PainInsight(
                 muscle: muscle,
                 entryCount: muscleEntries.count,
@@ -77,7 +78,8 @@ enum PainEngine {
                 loadBefore: before,
                 loadOtherwise: control,
                 followsLoad: follows,
-                hasSevereEntry: hasSevere
+                hasSevereEntry: hasSevere,
+                lateralityImbalance: imbalance
             )
         }
         .sorted { lhs, rhs in

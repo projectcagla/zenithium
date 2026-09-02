@@ -121,6 +121,21 @@ final class RacePlanViewModel {
         rebuild()
     }
 
+    /// Sets a pace-based target on flat ground (seconds per kilometre).
+    func setTargetFlatPace(_ paceSecondsPerKm: Double) {
+        guard let course else { return }
+        guard let plan = RacePlanEngine.plan(course: course, target: .flatPace(paceSecondsPerKm)) else {
+            return
+        }
+        targetFinishSeconds = plan.targetFinishSeconds
+        state = .loaded(
+            Content(
+                plan: plan,
+                suggestion: model.flatMap { RacePlanEngine.suggestedFinish(course: course, model: $0) }
+            )
+        )
+    }
+
     func clear() {
         course = nil
         model = nil

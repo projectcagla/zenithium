@@ -36,4 +36,17 @@ struct MigrationPlanTests {
         let container = try ModelContainerFactory.makeInMemory()
         #expect(container.schema.entities.count >= 12)
     }
+
+    @Test("BiometricDayRecord accurately flags older engine versions for backfill")
+    func backfillDetection() {
+        let record = BiometricDayRecord(
+            dayStart: Date(),
+            timeZoneIdentifier: "UTC",
+            computedAt: Date(),
+            engineVersion: 1
+        )
+        #expect(record.needsBackfill(currentEngineVersion: 2))
+        #expect(!record.needsBackfill(currentEngineVersion: 1))
+        #expect(!record.needsBackfill(currentEngineVersion: 0))
+    }
 }

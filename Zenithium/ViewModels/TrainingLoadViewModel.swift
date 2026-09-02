@@ -35,6 +35,10 @@ final class TrainingLoadViewModel {
         let summary: String
         let monotonySummary: String?
 
+        /// The maximum training load that keeps the acute:chronic workload ratio inside
+        /// the productive zone (≤ 1.30) today.
+        let sweetSpotCeiling: Double?
+
         var band: LoadBand? { output.band }
 
         /// The ratio line shares the load axis, so it is scaled onto it. Without this the
@@ -96,13 +100,15 @@ final class TrainingLoadViewModel {
                 ? []
                 : zip(series, ratios).dropFirst(warmUp).map { RatioPoint(dayStart: $0.dayStart, ratio: $1) }
 
+            let ceiling = TrainingLoadEngine.loadCeiling(forInstantRatio: 1.30, from: output)
             state = .loaded(
                 Content(
                     output: output,
                     series: series,
                     ratioPoints: ratioPoints,
                     summary: TrainingLoadEngine.summary(for: output),
-                    monotonySummary: TrainingLoadEngine.monotonySummary(for: output)
+                    monotonySummary: TrainingLoadEngine.monotonySummary(for: output),
+                    sweetSpotCeiling: ceiling
                 )
             )
         } catch {

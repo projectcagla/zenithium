@@ -127,17 +127,45 @@ struct PainInsight: Sendable, Equatable, Hashable, Identifiable {
     /// Whether any entry crossed the clinician threshold.
     let hasSevereEntry: Bool
 
+    /// Left/right asymmetry observation when both sides are logged.
+    let lateralityImbalance: String?
+
     var id: MuscleGroup { muscle }
+
+    init(
+        muscle: MuscleGroup,
+        entryCount: Int,
+        meanSeverity: Double,
+        loadBefore: Double,
+        loadOtherwise: Double,
+        followsLoad: Bool,
+        hasSevereEntry: Bool,
+        lateralityImbalance: String? = nil
+    ) {
+        self.muscle = muscle
+        self.entryCount = entryCount
+        self.meanSeverity = meanSeverity
+        self.loadBefore = loadBefore
+        self.loadOtherwise = loadOtherwise
+        self.followsLoad = followsLoad
+        self.hasSevereEntry = hasSevereEntry
+        self.lateralityImbalance = lateralityImbalance
+    }
 
     /// The sentence. Load context when it is useful, and a clinician prompt when it is not.
     var summary: String {
+        let base: String
         if hasSevereEntry {
-            return "\(muscle.displayName) için 7 ve üzeri şiddet kaydettin. Zenithium bunun ne olduğunu söyleyemez — bir hekime göster."
+            base = "\(muscle.displayName) için 7 ve üzeri şiddet kaydettin. Zenithium bunun ne olduğunu söyleyemez — bir hekime göster."
+        } else if followsLoad {
+            let difference = loadBefore - loadOtherwise
+            base = "\(muscle.displayName): kayıt tuttuğun günlerin öncesindeki 48 saatte ortalama yükün \(ZenithiumFormat.metric(difference, digits: 1)) daha yüksekti."
+        } else {
+            base = "\(muscle.displayName): \(entryCount) kayıt, ortalama şiddet \(ZenithiumFormat.metric(meanSeverity, digits: 1)). Kayıtların yük ile belirgin bir örüntü göstermiyor."
         }
-        guard followsLoad else {
-            return "\(muscle.displayName): \(entryCount) kayıt, ortalama şiddet \(ZenithiumFormat.metric(meanSeverity, digits: 1)). Kayıtların yük ile belirgin bir örüntü göstermiyor."
+        if let lateralityImbalance {
+            return "\(base) \(lateralityImbalance)"
         }
-        let difference = loadBefore - loadOtherwise
-        return "\(muscle.displayName): kayıt tuttuğun günlerin öncesindeki 48 saatte ortalama yükün \(ZenithiumFormat.metric(difference, digits: 1)) daha yüksekti."
+        return base
     }
 }
