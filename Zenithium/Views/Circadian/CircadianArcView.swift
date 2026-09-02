@@ -19,7 +19,11 @@ struct CircadianArcView: View {
     /// Marked when the caller wants the compact form — major markers only (§5.5).
     var majorMarkersOnly = false
 
+    /// Whether to display the 5-row marker legend beneath the curve.
+    var showLegend = true
+
     @ScaledMetric(relativeTo: .body) private var curveHeight: CGFloat = 80
+    @ScaledMetric(relativeTo: .body) private var stripHeight: CGFloat = 36
 
     private var markers: [CircadianMarker] {
         majorMarkersOnly ? arc.markers.filter { $0.event.isMajor } : arc.markers
@@ -33,13 +37,15 @@ struct CircadianArcView: View {
                     markerDots(in: proxy.size)
                 }
             }
-            .frame(height: curveHeight)
+            .frame(height: showLegend ? curveHeight : stripHeight)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Gün boyunca uyanıklık")
             .accessibilityValue(curveAccessibilityValue)
 
-            markerLegend
-                .fixedSize(horizontal: false, vertical: true)
+            if showLegend {
+                markerLegend
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -173,5 +179,29 @@ struct CircadianArcView: View {
             value += ". Bugün toparlanma düşük olduğu için eğri basıklaştırıldı."
         }
         return value
+    }
+}
+
+/// Sirkadiyen Ritim Detay Ekranı — 5 işaret dökümü burada bağımsız olarak incelenir.
+struct CircadianDetailView: View {
+
+    let arc: CircadianArc
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.sectionSpacing) {
+                SectionBlock(
+                    title: "24 Saatlik Uyanıklık Eğrisi",
+                    subtitle: "Sirkadiyen biyolojine ve ana uyku saatine göre modellenmiş seyir"
+                ) {
+                    CircadianArcView(arc: arc, showLegend: true)
+                }
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.vertical, ZenithiumSpacing.sectionSpacing)
+        }
+        .background(ZenithiumColor.background.ignoresSafeArea())
+        .navigationTitle("Sirkadiyen Ritim")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

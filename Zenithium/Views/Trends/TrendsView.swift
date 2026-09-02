@@ -26,7 +26,7 @@ struct TrendsView: View {
                         loadedBody(content)
                     }
                 }
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
                 .padding(.bottom, ZenithiumSpacing.xxl)
                 .padding(.top, ZenithiumSpacing.s)
             }
@@ -81,49 +81,118 @@ struct TrendsView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: TrendsViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            SectionCard {
+        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+            // 1. KADEME (KAHRAMAN): Tam Genişlik Kartsız Grafik (Üstte Seçili Değer & Tarih)
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                Text(content.metric.displayName.uppercased())
+                    .zenithiumEyebrow()
+
                 TrendChart(content: content)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            SectionCard(title: "Bu pencerede") {
-                MetricTileGrid {
-                    if let average = content.average {
-                        MetricTile(
-                            label: "Ortalama",
-                            value: ZenithiumFormat.metric(average, digits: content.metric.fractionDigits),
-                            unit: content.metric.unitSymbol,
-                            accessibilityLabelText: "Ortalama \(content.metric.displayName)",
-                            accessibilityValueText: "\(ZenithiumFormat.metric(average, digits: content.metric.fractionDigits)) \(content.metric.unitSymbol)"
-                        )
+            // TEK L2 KART: Değişim Özeti
+            changeSummaryCard(content)
+        }
+    }
+
+    private func changeSummaryCard(_ content: TrendsViewModel.Content) -> some View {
+        let trendDirection = trendSlopeDirection(content)
+
+        return SectionCard(
+            title: "Değişim Özeti",
+            subtitle: "\(content.range.displayName) içindeki seyir"
+        ) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                        Text("Ortalama")
+                            .zenithiumCaption()
+                        if let average = content.average {
+                            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                                Text(ZenithiumFormat.metric(average, digits: content.metric.fractionDigits))
+                                    .metricNumeral()
+                                Text(content.metric.unitSymbol)
+                                    .metricUnit()
+                            }
+                        } else {
+                            Text("—").metricNumeral()
+                        }
                     }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: ZenithiumSpacing.xxs) {
+                        Text("Eğilim")
+                            .zenithiumCaption()
+                        HStack(spacing: ZenithiumSpacing.xs) {
+                            Image(systemName: trendDirection.symbol)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(trendDirection.color)
+                            Text(trendDirection.text)
+                                .sectionTitle()
+                                .foregroundStyle(trendDirection.color)
+                        }
+                    }
+                }
+
+                Divider().overlay(ZenithiumColor.hairlineSoft)
+
+                HStack(spacing: ZenithiumSpacing.none) {
                     if let minimum = content.minimum {
-                        MetricTile(
-                            label: "En düşük",
+                        summaryMiniStat(
+                            label: "En Düşük",
                             value: ZenithiumFormat.metric(minimum, digits: content.metric.fractionDigits),
-                            unit: content.metric.unitSymbol,
-                            accessibilityLabelText: "En düşük \(content.metric.displayName)",
-                            accessibilityValueText: "\(ZenithiumFormat.metric(minimum, digits: content.metric.fractionDigits)) \(content.metric.unitSymbol)"
+                            unit: content.metric.unitSymbol
                         )
                     }
+                    Spacer()
                     if let maximum = content.maximum {
-                        MetricTile(
-                            label: "En yüksek",
+                        summaryMiniStat(
+                            label: "En Yüksek",
                             value: ZenithiumFormat.metric(maximum, digits: content.metric.fractionDigits),
-                            unit: content.metric.unitSymbol,
-                            accessibilityLabelText: "En yüksek \(content.metric.displayName)",
-                            accessibilityValueText: "\(ZenithiumFormat.metric(maximum, digits: content.metric.fractionDigits)) \(content.metric.unitSymbol)"
+                            unit: content.metric.unitSymbol
                         )
                     }
-                    MetricTile(
-                        label: "Gün",
+                    Spacer()
+                    summaryMiniStat(
+                        label: "Veri Günü",
                         value: "\(content.points.count)",
-                        caption: "veri olan",
-                        accessibilityLabelText: "Veri olan günler",
-                        accessibilityValueText: "\(content.points.count)"
+                        unit: "gün"
                     )
                 }
             }
+        }
+    }
+
+    private func summaryMiniStat(label: String, value: String, unit: String) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+            Text(label)
+                .zenithiumCaption()
+            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                Text(value)
+                    .sectionTitle()
+                    .monospacedDigit()
+                Text(unit)
+                    .zenithiumCaption()
+            }
+        }
+    }
+
+    private func trendSlopeDirection(_ content: TrendsViewModel.Content) -> (symbol: String, color: Color, text: String) {
+        guard content.points.count >= 2,
+              let first = content.points.first?.value,
+              let last = content.points.last?.value else {
+            return ("arrow.right", ZenithiumColor.textTertiary, "Yatay")
+        }
+        let delta = last - first
+        let threshold = abs(first) * 0.03
+        if delta > threshold {
+            return ("arrow.up.right", ZenithiumColor.green, "Yukarı")
+        } else if delta < -threshold {
+            return ("arrow.down.right", ZenithiumColor.yellow, "Aşağı")
+        } else {
+            return ("arrow.right", ZenithiumColor.textSecondary, "Dengeli")
         }
     }
 }

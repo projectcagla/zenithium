@@ -17,88 +17,145 @@ import SwiftUI
 
 enum ZenithiumFont {
 
-    // MARK: - 1. Metin (Human / Editorial Text - SF Pro Default)
+    // MARK: - 11 Tipografi Token'ı (Şartname Yasa 3 Açık Punto Rampası)
 
-    /// Ekran ana başlığı.
-    static let title = Font.system(.largeTitle, design: .default).weight(.semibold)
-
-    /// Bölüm ve kart başlıkları.
-    static let sectionTitle = Font.system(.headline, design: .default).weight(.semibold)
-
-    /// Ekranın hüküm cümlesi — günün kararı ve aksiyon direktifi.
-    static let verdict = Font.system(.title3, design: .default).weight(.semibold)
-
-    /// Bir satırın veya alt bölümün başlığı.
-    static let headline = Font.system(.subheadline, design: .default).weight(.semibold)
-
-    /// Standart gövde metni.
-    static let body = Font.system(.body, design: .default)
-
-    /// Destekleyici metin ve açıklamalar.
-    static let callout = Font.system(.callout, design: .default)
-
-    /// Alan altındaki dipnot ve rehberlik cümleleri.
-    static let footnote = Font.system(.footnote, design: .default)
-
-    /// İkincil yardımcı metin.
-    static let caption = Font.system(.caption, design: .default)
-
-    // MARK: - 2. Sayılar (Instrument / Counter Numbers - Tabular & Expanded)
-
-    /// Tek başına duran büyük sayaç sayısı.
-    static let displayValue = Font.system(.largeTitle, design: .default).weight(.bold)
-        .width(.expanded)
+    /// Kahraman sayı: 64pt, .semibold, tracking -1.5, tabular (relativeTo: .largeTitle)
+    static let heroNumeral = Font.system(size: 64, weight: .semibold, design: .default)
         .monospacedDigit()
 
-    /// Bir kartın veya metrik karosunun ana değeri.
-    static let metricValue = Font.system(.title2, design: .default).weight(.semibold)
-        .width(.expanded)
+    /// Kahraman birim: 17pt, .medium, ikincil renk (relativeTo: .headline)
+    static let heroUnit = Font.system(size: 17, weight: .medium, design: .default)
+
+    /// Ekran başlığı: 28pt, .bold, tracking -0.5 (relativeTo: .title)
+    static let screenTitle = Font.system(size: 28, weight: .bold, design: .default)
+
+    /// Bölüm başlığı: 17pt, .semibold (relativeTo: .headline)
+    static let sectionTitle = Font.system(size: 17, weight: .semibold, design: .default)
+
+    /// Metrik sayısı: 30pt, .medium, tracking -0.5, tabular (relativeTo: .title2)
+    static let metricNumeral = Font.system(size: 30, weight: .medium, design: .default)
         .monospacedDigit()
 
-    /// Veri satırlarındaki ve tablolardaki sayısal değer.
-    static let dataValue = Font.system(.callout, design: .default).weight(.semibold)
-        .monospacedDigit()
+    /// Metrik birimi: 12pt, .medium, üçüncül renk (relativeTo: .caption)
+    static let metricUnit = Font.system(size: 12, weight: .medium, design: .default)
+
+    /// Gövde metni: 16pt, .regular (relativeTo: .body)
+    static let body = Font.system(size: 16, weight: .regular, design: .default)
+
+    /// İkincil metin: 14pt, .regular, ikincil renk (relativeTo: .subheadline)
+    static let secondary = Font.system(size: 14, weight: .regular, design: .default)
+
+    /// Etiket: 12pt, .medium (relativeTo: .caption)
+    static let label = Font.system(size: 12, weight: .medium, design: .default)
+
+    /// Bölüm üstü teknik etiket (eyebrow): 11pt, .semibold, BÜYÜK HARF, tracking +0.8, monospaced, üçüncül (relativeTo: .caption2)
+    static let eyebrow = Font.system(size: 11, weight: .semibold, design: .monospaced)
+
+    /// Açıklama ve dipnot metni: 12pt, .regular, üçüncül renk (relativeTo: .caption)
+    static let caption = Font.system(size: 12, weight: .regular, design: .default)
+
+    // MARK: - Eski İsimlerle Geriye Dönük Uyumluluk Takma Adları
+
+    static let title = screenTitle
+    static let verdict = sectionTitle
+    static let headline = sectionTitle
+    static let callout = secondary
+    static let footnote = caption
+    static let displayValue = heroNumeral
+    static let metricValue = metricNumeral
+    static let dataValue = Font.system(size: 14, weight: .semibold, design: .default).monospacedDigit()
+    static let unit = metricUnit
+    static let caption2 = label
 
     /// Yayın içindeki ana okuma sayısı.
     static func arcValue(size: CGFloat) -> Font {
         .system(size: size, weight: .bold, design: .default)
-            .width(.expanded)
             .monospacedDigit()
     }
 
-    /// Sayıların ardındaki birimler (ms, bpm, sa, %).
-    static let unit = Font.system(.caption, design: .monospaced).weight(.medium)
+    // MARK: - Dynamic Type Ölçekleme Yardımcısı (ViewModifier)
 
-    // MARK: - 3. Etiketler & Metadata (Technical Metadata & Eyebrow)
+    struct Scaled: ViewModifier {
+        @ScaledMetric var size: CGFloat
+        let weight: Font.Weight
+        let design: Font.Design
 
-    /// Bölüm üstü teknik etiket (EYEBROW).
-    static let eyebrow = Font.system(.caption2, design: .monospaced).weight(.bold)
+        init(size: CGFloat, relativeTo: Font.TextStyle, weight: Font.Weight = .regular, design: Font.Design = .default) {
+            self._size = ScaledMetric(wrappedValue: size, relativeTo: relativeTo)
+            self.weight = weight
+            self.design = design
+        }
 
-    /// Form ve metrik alan etiketleri.
-    static let label = Font.system(.subheadline, design: .default).weight(.medium)
-
-    /// Rozet ve sistem durumu gibi teknik mikro-etiketler.
-    static let caption2 = Font.system(.caption2, design: .monospaced).weight(.medium)
+        func body(content: Content) -> some View {
+            content.font(.system(size: size, weight: weight, design: design))
+        }
+    }
 }
 
 extension View {
 
+    func heroNumeral() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 64, relativeTo: .largeTitle, weight: .semibold, design: .default))
+            .tracking(-1.5)
+            .monospacedDigit()
+    }
+
+    func heroUnit() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 17, relativeTo: .headline, weight: .medium, design: .default))
+            .foregroundStyle(ZenithiumColor.textSecondary)
+    }
+
+    func screenTitle() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 28, relativeTo: .title, weight: .bold, design: .default))
+            .tracking(-0.5)
+    }
+
+    func sectionTitle() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 17, relativeTo: .headline, weight: .semibold, design: .default))
+            .foregroundStyle(ZenithiumColor.textPrimary)
+    }
+
+    func metricNumeral() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 30, relativeTo: .title2, weight: .medium, design: .default))
+            .tracking(-0.5)
+            .monospacedDigit()
+    }
+
+    func metricUnit() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 12, relativeTo: .caption, weight: .medium, design: .default))
+            .foregroundStyle(ZenithiumColor.textTertiary)
+    }
+
     func zenithiumBody() -> some View {
-        font(ZenithiumFont.body)
+        modifier(ZenithiumFont.Scaled(size: 16, relativeTo: .body, weight: .regular, design: .default))
             .foregroundStyle(ZenithiumColor.textPrimary)
     }
 
     func zenithiumSecondary() -> some View {
-        font(ZenithiumFont.callout)
+        modifier(ZenithiumFont.Scaled(size: 14, relativeTo: .subheadline, weight: .regular, design: .default))
             .foregroundStyle(ZenithiumColor.textSecondary)
     }
 
-    /// Bölüm üstü etiketi: küçük, harf aralıklı, vurgu renginde.
+    func zenithiumLabel() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 12, relativeTo: .caption, weight: .medium, design: .default))
+            .foregroundStyle(ZenithiumColor.textSecondary)
+    }
+
+    func zenithiumCallout() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 15, relativeTo: .callout, weight: .regular, design: .default))
+            .foregroundStyle(ZenithiumColor.textSecondary)
+    }
+
     func zenithiumEyebrow() -> some View {
-        font(ZenithiumFont.eyebrow)
+        modifier(ZenithiumFont.Scaled(size: 11, relativeTo: .caption2, weight: .semibold, design: .monospaced))
             .textCase(.uppercase)
-            .kerning(1.6)
-            .foregroundStyle(ZenithiumColor.accent)
+            .tracking(0.8)
+            .foregroundStyle(ZenithiumColor.textTertiary)
+    }
+
+    func zenithiumCaption() -> some View {
+        modifier(ZenithiumFont.Scaled(size: 12, relativeTo: .caption, weight: .regular, design: .default))
+            .foregroundStyle(ZenithiumColor.textTertiary)
     }
 }
 

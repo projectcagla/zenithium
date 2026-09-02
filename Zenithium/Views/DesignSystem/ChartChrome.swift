@@ -44,35 +44,20 @@ extension View {
         self
             .chartYAxis {
                 AxisMarks(position: .leading) { _ in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline)
-                    AxisTick().foregroundStyle(ZenithiumColor.hairline)
-                    // Monospaced digits so the labels form a straight edge. Proportional
-                    // figures make an axis look bent even when the values are fine.
-                    AxisValueLabel(anchor: .trailing)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
+                    AxisGridLine().foregroundStyle(ZenithiumColor.hairlineSoft)
+                    AxisValueLabel(anchor: .leading)
+                        .foregroundStyle(ZenithiumColor.textTertiary.opacity(0.85))
                         .font(ZenithiumFont.caption.monospacedDigit())
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: desiredXCount)) { _ in
-                    // Fainter than the horizontal lines: reading a value off a chart is a
-                    // vertical movement, so the horizontal grid is the one doing the work.
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline.opacity(0.6))
-                    AxisTick().foregroundStyle(ZenithiumColor.hairline.opacity(0.6))
-                    if dateAxis == .dayAndMonth {
-                        AxisValueLabel(anchor: .top, collisionResolution: .greedy)
-                            .foregroundStyle(ZenithiumColor.textTertiary)
-                            .font(ZenithiumFont.caption)
-                    } else {
-                        AxisValueLabel(anchor: .top, collisionResolution: .greedy)
-                            .foregroundStyle(ZenithiumColor.textTertiary)
-                            .font(ZenithiumFont.caption)
-                    }
+                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+                    AxisGridLine().foregroundStyle(ZenithiumColor.hairlineSoft.opacity(0.5))
+                    AxisTick().foregroundStyle(ZenithiumColor.hairlineSoft.opacity(0.5))
+                    AxisValueLabel(anchor: .top, collisionResolution: .greedy)
+                        .foregroundStyle(ZenithiumColor.textTertiary)
+                        .font(ZenithiumFont.caption)
                 }
-            }
-            .chartPlotStyle { plot in
-                // Grafik alanı ile eksen etiketleri arasına gerçek bir boşluk bırak
-                plot.padding(.leading, 8)
             }
     }
 }

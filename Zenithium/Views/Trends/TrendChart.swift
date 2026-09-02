@@ -107,19 +107,15 @@ struct TrendChart: View {
             let point = scrubbedPoint ?? content.points.last
             if let point {
                 Text(ZenithiumFormat.metric(point.value, digits: content.metric.fractionDigits))
-                    .font(ZenithiumFont.metricValue)
-                    .foregroundStyle(ZenithiumColor.textPrimary)
-                    .monospacedDigit()
+                    .metricNumeral()
                     .minimumScaleFactor(0.8)
                 if !content.metric.unitSymbol.isEmpty {
                     Text(content.metric.unitSymbol)
-                        .font(ZenithiumFont.unit)
-                        .foregroundStyle(ZenithiumColor.textSecondary)
+                        .metricUnit()
                 }
                 Spacer(minLength: 8)
                 Text(point.date.formatted(date: .abbreviated, time: .omitted))
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .zenithiumCaption()
             }
         }
         .fixedSize(horizontal: false, vertical: true)

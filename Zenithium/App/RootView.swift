@@ -306,6 +306,13 @@ struct RootView: View {
 
     private func loadOnboardingState() async {
         guard hasCompletedOnboarding == nil else { return }
+        if ProcessInfo.processInfo.arguments.contains("-mockData") || ProcessInfo.processInfo.arguments.contains("-skipOnboarding") {
+            hasCompletedOnboarding = true
+            if ProcessInfo.processInfo.arguments.contains("-tabSleep") {
+                selectedTab = .sleep
+            }
+            return
+        }
         let profile = try? await dependencies.store.profile()
         // A store that cannot be read is not a reason to skip onboarding — showing it again
         // is recoverable, silently entering the app without a profile is not.

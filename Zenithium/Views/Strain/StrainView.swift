@@ -23,7 +23,7 @@ struct StrainView: View {
                 ) { content in
                     loadedBody(content)
                 }
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
                 .padding(.bottom, ZenithiumSpacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -57,21 +57,23 @@ struct StrainView: View {
     private func historySection(_ content: StrainViewModel.Content) -> some View {
         if !content.history.isEmpty {
             let recent = Array(content.history.sorted(by: { $0.dayStart > $1.dayStart }).prefix(7))
-            SectionCard(title: "Son Günlerin Antrenman ve Yük Seyri", subtitle: "Önceki günlerin zorlanma ve antrenman yükü dökümü") {
+            SectionBlock(
+                title: "Son Günlerin Antrenman ve Yük Seyri",
+                subtitle: "Önceki günlerin zorlanma ve antrenman yükü dökümü",
+                showTopDivider: true
+            ) {
                 VStack(spacing: ZenithiumSpacing.m) {
                     ForEach(recent, id: \.dayStart) { (record: BiometricDaySnapshot) in
                         HStack(alignment: .center) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(record.dayStart, format: .dateTime.day().month(.abbreviated).weekday(.short))
-                                    .font(ZenithiumFont.body)
-                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                                    .sectionTitle()
                                 Text("TRIMP Yükü: \(ZenithiumFormat.metric(record.trimp, digits: 0))")
-                                    .font(ZenithiumFont.caption)
-                                    .foregroundStyle(ZenithiumColor.textSecondary)
+                                    .zenithiumCaption()
                             }
                             Spacer()
                             Text(ZenithiumFormat.strain(record.dayStrain))
-                                .font(ZenithiumFont.metricValue)
+                                .metricNumeral()
                                 .foregroundStyle(ZenithiumColor.accent)
                         }
                         if record.dayStart != recent.last?.dayStart {
@@ -84,16 +86,15 @@ struct StrainView: View {
     }
 
     /// Faz 13 — where the day's load came from.
-    ///
-    /// This card is what makes "8.2" mean something to someone who did not train. It is also
-    /// useful to someone who did: a stressful Tuesday and an easy run score alike, and only
-    /// the split tells them apart.
     private func stressSection(_ stress: StressDay) -> some View {
-        SectionCard(title: "Fizyolojik Yük Dağılımı") {
+        SectionBlock(
+            title: "Fizyolojik Yük Dağılımı",
+            subtitle: "Antrenman ve gün içi stres dengesi",
+            showTopDivider: true
+        ) {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 Text(stress.summary)
-                    .font(ZenithiumFont.callout)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .zenithiumCallout()
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let share = stress.trainingShare {
@@ -189,7 +190,11 @@ struct StrainView: View {
     }
 
     private func detailSection(_ content: StrainViewModel.Content) -> some View {
-        SectionCard(title: "Bu nasıl ölçüldü") {
+        SectionBlock(
+            title: "Bu Nasıl Ölçüldü",
+            subtitle: "TRIMP ve fizyolojik parametreler",
+            showTopDivider: true
+        ) {
             MetricTileGrid {
                 MetricTile(
                     label: "TRIMP",

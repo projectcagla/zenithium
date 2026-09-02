@@ -38,18 +38,10 @@ struct SectionCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        .padding(ZenithiumSpacing.l)
+        .padding(ZenithiumSpacing.cardPadding)
         .background {
-            // İki duraklı dikey gradyan: kart üstten hafifçe aydınlanır, altta zemine
-            // karışır. Düz bir yüzeyden daha az yassı, bir malzemeden daha az gürültülü.
             RoundedRectangle(cornerRadius: ZenithiumRadius.xLarge, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [ZenithiumColor.surfaceElevated, ZenithiumColor.surface],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .fill(ZenithiumColor.surface)
         }
         .overlay {
             RoundedRectangle(cornerRadius: ZenithiumRadius.xLarge, style: .continuous)

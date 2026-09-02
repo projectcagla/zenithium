@@ -207,9 +207,11 @@
 		3B1C899466CD597297F637F6 /* ArcGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */; };
 		F2F5BA91B934E4601F1487A0 /* BandChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718510BBF482B4FDD5978E8A /* BandChip.swift */; };
 		384DE120BBC4B6B004AE26F0 /* ChartChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */; };
+		50DFE5FC357D7A160798FB16 /* EvidenceChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */; };
 		DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA1A72F6E5706BF29E88A39 /* HubView.swift */; };
 		C8D276BC07F9C7389309A3E0 /* LensMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82682898DF4767A6A29146B7 /* LensMark.swift */; };
 		29776997640096ACCD6E971D /* MetricTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809ABE7D002871C62126334F /* MetricTile.swift */; };
+		1EBD7329A9084CE904905DDD /* SectionBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466B7BAF114478556049BE2 /* SectionBlock.swift */; };
 		E8D49E82912D621F5D20674A /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2714C24CD095E1349C36D7E2 /* SectionCard.swift */; };
 		09E567C00BDA6BAEB4CBF501 /* SeriesChartDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */; };
 		BD89A1C99D1072064805E0AD /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EC6F04EEB0B7FDABBE7228 /* SkeletonView.swift */; };
@@ -243,6 +245,7 @@
 		9A02090057B3715C311FD791 /* DisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BFB12DE163090BF3420DD7 /* DisclaimerView.swift */; };
 		5D9734F588D4D970967295A7 /* PrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8404DA0E24FCB100386614B /* PrivacyView.swift */; };
 		70B91FE4BE2C2C2D98A0BDE7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F220505F3B223C8CDFF5530 /* SettingsView.swift */; };
+		B21186AC5F06B61F38CCAD47 /* HypnogramView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E231A18352F7EC5534750786 /* HypnogramView.swift */; };
 		02106CADF9616D45FB1337FF /* SleepStageBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5273C2D4FE8A56EBAB6EBF /* SleepStageBarView.swift */; };
 		C8BE55B84564561B28C3753D /* SleepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA12CA33A698A9903C527D1 /* SleepView.swift */; };
 		550F10B7CA9AE9482F00754B /* StrainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B110FEA523E88828C9FA84 /* StrainView.swift */; };
@@ -776,9 +779,11 @@
 		9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArcGauge.swift; sourceTree = "<group>"; };
 		718510BBF482B4FDD5978E8A /* BandChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandChip.swift; sourceTree = "<group>"; };
 		B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartChrome.swift; sourceTree = "<group>"; };
+		7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvidenceChainView.swift; sourceTree = "<group>"; };
 		CEA1A72F6E5706BF29E88A39 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		82682898DF4767A6A29146B7 /* LensMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensMark.swift; sourceTree = "<group>"; };
 		809ABE7D002871C62126334F /* MetricTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricTile.swift; sourceTree = "<group>"; };
+		D466B7BAF114478556049BE2 /* SectionBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionBlock.swift; sourceTree = "<group>"; };
 		2714C24CD095E1349C36D7E2 /* SectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCard.swift; sourceTree = "<group>"; };
 		BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesChartDescriptor.swift; sourceTree = "<group>"; };
 		61EC6F04EEB0B7FDABBE7228 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
@@ -812,6 +817,7 @@
 		B5BFB12DE163090BF3420DD7 /* DisclaimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisclaimerView.swift; sourceTree = "<group>"; };
 		C8404DA0E24FCB100386614B /* PrivacyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyView.swift; sourceTree = "<group>"; };
 		4F220505F3B223C8CDFF5530 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		E231A18352F7EC5534750786 /* HypnogramView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HypnogramView.swift; sourceTree = "<group>"; };
 		5D5273C2D4FE8A56EBAB6EBF /* SleepStageBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepStageBarView.swift; sourceTree = "<group>"; };
 		9FA12CA33A698A9903C527D1 /* SleepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepView.swift; sourceTree = "<group>"; };
 		B9B110FEA523E88828C9FA84 /* StrainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrainView.swift; sourceTree = "<group>"; };
@@ -1394,9 +1400,11 @@
 				9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */,
 				718510BBF482B4FDD5978E8A /* BandChip.swift */,
 				B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */,
+				7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */,
 				CEA1A72F6E5706BF29E88A39 /* HubView.swift */,
 				82682898DF4767A6A29146B7 /* LensMark.swift */,
 				809ABE7D002871C62126334F /* MetricTile.swift */,
+				D466B7BAF114478556049BE2 /* SectionBlock.swift */,
 				2714C24CD095E1349C36D7E2 /* SectionCard.swift */,
 				BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */,
 				61EC6F04EEB0B7FDABBE7228 /* SkeletonView.swift */,
@@ -1514,6 +1522,7 @@
 		7E41AA1CAB7686746972BD11 /* Sleep */ = {
 			isa = PBXGroup;
 			children = (
+				E231A18352F7EC5534750786 /* HypnogramView.swift */,
 				5D5273C2D4FE8A56EBAB6EBF /* SleepStageBarView.swift */,
 				9FA12CA33A698A9903C527D1 /* SleepView.swift */,
 			);
@@ -2100,9 +2109,11 @@
 				3B1C899466CD597297F637F6 /* ArcGauge.swift in Sources */,
 				F2F5BA91B934E4601F1487A0 /* BandChip.swift in Sources */,
 				384DE120BBC4B6B004AE26F0 /* ChartChrome.swift in Sources */,
+				50DFE5FC357D7A160798FB16 /* EvidenceChainView.swift in Sources */,
 				DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */,
 				C8D276BC07F9C7389309A3E0 /* LensMark.swift in Sources */,
 				29776997640096ACCD6E971D /* MetricTile.swift in Sources */,
+				1EBD7329A9084CE904905DDD /* SectionBlock.swift in Sources */,
 				E8D49E82912D621F5D20674A /* SectionCard.swift in Sources */,
 				09E567C00BDA6BAEB4CBF501 /* SeriesChartDescriptor.swift in Sources */,
 				BD89A1C99D1072064805E0AD /* SkeletonView.swift in Sources */,
@@ -2136,6 +2147,7 @@
 				9A02090057B3715C311FD791 /* DisclaimerView.swift in Sources */,
 				5D9734F588D4D970967295A7 /* PrivacyView.swift in Sources */,
 				70B91FE4BE2C2C2D98A0BDE7 /* SettingsView.swift in Sources */,
+				B21186AC5F06B61F38CCAD47 /* HypnogramView.swift in Sources */,
 				02106CADF9616D45FB1337FF /* SleepStageBarView.swift in Sources */,
 				C8BE55B84564561B28C3753D /* SleepView.swift in Sources */,
 				550F10B7CA9AE9482F00754B /* StrainView.swift in Sources */,

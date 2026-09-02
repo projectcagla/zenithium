@@ -3,6 +3,11 @@
 //  Zenithium
 //
 //  The Sleep screen. Spec §5.2, §10.
+//  Redesigned to strict Design Specification:
+//  - Tier 1 Hero: Hypnogram (full width, borderless/cardless, quiet time axis, deep sleep emphasized)
+//  - Tier 2: Stages (single stacked bar — not 4 cards) and Timing (in bed / asleep / awake — quiet row)
+//  - Single L2 Card: Sleep debt and tonight's sleep target
+//  - Secondary sections: L1 SectionBlock
 //
 
 import SwiftUI
@@ -23,7 +28,7 @@ struct SleepView: View {
                 ) { content in
                     loadedBody(content)
                 }
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
                 .padding(.bottom, ZenithiumSpacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -39,55 +44,30 @@ struct SleepView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: SleepViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            headline(content)
-            needSection(content)
+        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+            // 1. KADEME (KAHRAMAN): Uyku Skoru & Tam Genişlik Hipnogram
+            hypnogramHero(content)
+
+            // 2. KADEME: Evreler (Tek Yığılmış Çubuk) ve Zamanlama (Sessiz Satır)
+            stagesAndTimingLayer(content)
+
+            // TEK L2 KART: Uyku Borcu ve Bu Gecenin Hedefi
+            debtAndNeedCard(content)
+
+            // KATMAN 3: Puanı Ne Oluşturdu (L1 SectionBlock)
             componentSection(content)
-            stageSection(content)
-            timingSection(content)
+
+            // KATMAN 4: Son Günlerin Uyku Seyri (L1 SectionBlock)
             historySection(content)
         }
         .padding(.top, ZenithiumSpacing.s)
     }
 
-    @ViewBuilder
-    private func historySection(_ content: SleepViewModel.Content) -> some View {
-        if !content.history.isEmpty {
-            let recent = Array(content.history.sorted(by: { $0.dayStart > $1.dayStart }).prefix(7))
-            SectionCard(title: "Son Günlerin Uyku Seyri", subtitle: "Önceki gecelerin skor ve süre dökümü") {
-                VStack(spacing: ZenithiumSpacing.m) {
-                    ForEach(recent, id: \.dayStart) { (record: BiometricDaySnapshot) in
-                        HStack(alignment: .center) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(record.dayStart, format: .dateTime.day().month(.abbreviated).weekday(.short))
-                                    .font(ZenithiumFont.body)
-                                    .foregroundStyle(ZenithiumColor.textPrimary)
-                                Text("\(ZenithiumFormat.duration(seconds: record.sleepDurationSeconds)) uykuda")
-                                    .font(ZenithiumFont.caption)
-                                    .foregroundStyle(ZenithiumColor.textSecondary)
-                            }
-                            Spacer()
-                            if let score = record.sleepScore {
-                                Text(ZenithiumFormat.score(score))
-                                    .font(ZenithiumFont.metricValue)
-                                    .foregroundStyle(score >= 70 ? ZenithiumColor.green : (score >= 50 ? ZenithiumColor.yellow : ZenithiumColor.red))
-                            } else {
-                                Text("—")
-                                    .font(ZenithiumFont.metricValue)
-                                    .foregroundStyle(ZenithiumColor.textTertiary)
-                            }
-                        }
-                        if record.dayStart != recent.last?.dayStart {
-                            Divider().overlay(ZenithiumColor.hairlineSoft)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // MARK: - 1. KADEME (KAHRAMAN) — Hipnogram & Uyku Skoru
 
-    private func headline(_ content: SleepViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.s) {
+    private func hypnogramHero(_ content: SleepViewModel.Content) -> some View {
+        VStack(spacing: ZenithiumSpacing.m) {
+            // Uyku Yayı / Skoru
             ScoreArc(
                 score: content.score,
                 gradient: ZenithiumColor.sleepGradient,
@@ -96,44 +76,154 @@ struct SleepView: View {
                 accessibilityLabel: "Uyku puanı",
                 accessibilityValue: "100 üzerinden \(ZenithiumFormat.score(content.score)), \(ZenithiumFormat.spokenDuration(seconds: content.record.sleepDurationSeconds)) uykuda"
             )
-            .padding(.top, ZenithiumSpacing.s)
+            .padding(.top, ZenithiumSpacing.xs)
+
+            // Altında TEK bir sakin cümle
+            Text(rationaleSentence(content))
+                .zenithiumBody()
+                .foregroundStyle(ZenithiumColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, ZenithiumSpacing.s)
+
+            // Tam Genişlik Kartsız Hipnogram
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
+                Text("GECELİK HİPNOGRAM")
+                    .zenithiumEyebrow()
+
+                HypnogramView(record: content.record)
+            }
+            .padding(.top, ZenithiumSpacing.xs)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
     }
 
-    private func needSection(_ content: SleepViewModel.Content) -> some View {
-        SectionCard(title: "İhtiyaç ve gerçekleşen") {
+    private func rationaleSentence(_ content: SleepViewModel.Content) -> String {
+        let duration = ZenithiumFormat.duration(seconds: content.record.sleepDurationSeconds)
+        let deep = ZenithiumFormat.duration(seconds: content.record.deepSeconds)
+        if content.shortfallHours < 0.2 {
+            return "\(duration) kesintisiz uyku; \(deep) derin uyku ile toparlanma tamamlandı."
+        } else {
+            return "\(duration) uyundu. Hedefin \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat altında kalındığı için toparlanma sınırlı."
+        }
+    }
+
+    // MARK: - 2. KADEME — Evreler ve Zamanlama (L1 Sessiz Şeritler)
+
+    private func stagesAndTimingLayer(_ content: SleepViewModel.Content) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            // 1. Evreler: Tek bir yığılmış çubuk
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                Text("EVRELER")
+                    .zenithiumEyebrow()
+
+                SleepStageBarView(stages: content.stages)
+            }
+
+            // 2. Zamanlama: Sessiz bir satır (yattı / uyudu / uyandı / verimlilik)
+            timingStrip(content)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func timingStrip(_ content: SleepViewModel.Content) -> some View {
+        HStack(spacing: ZenithiumSpacing.none) {
+            if let start = content.record.sleepStart {
+                timingItem(
+                    label: "Uyudun",
+                    value: start.formatted(date: .omitted, time: .shortened)
+                )
+            }
+            Spacer()
+            if let wake = content.record.wakeTime {
+                timingItem(
+                    label: "Uyandın",
+                    value: wake.formatted(date: .omitted, time: .shortened)
+                )
+            }
+            Spacer()
+            if let efficiency = content.record.sleepEfficiency {
+                timingItem(
+                    label: "Verimlilik",
+                    value: ZenithiumFormat.percent(efficiency)
+                )
+            }
+            if content.record.napSeconds > 0 {
+                Spacer()
+                timingItem(
+                    label: "Şekerleme",
+                    value: ZenithiumFormat.duration(seconds: content.record.napSeconds)
+                )
+            }
+        }
+        .padding(.vertical, ZenithiumSpacing.m)
+        .overlay(alignment: .top) { Divider().overlay(ZenithiumColor.hairlineSoft) }
+        .overlay(alignment: .bottom) { Divider().overlay(ZenithiumColor.hairlineSoft) }
+    }
+
+    private func timingItem(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+            Text(label)
+                .zenithiumCaption()
+            Text(value)
+                .sectionTitle()
+                .monospacedDigit()
+        }
+    }
+
+    // MARK: - TEK L2 KART — Uyku Borcu ve Bu Gecenin Hedefi
+
+    private func debtAndNeedCard(_ content: SleepViewModel.Content) -> some View {
+        SectionCard(
+            title: "Bu Gecenin Uyku Hedefi",
+            subtitle: needCaption(content)
+        ) {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                MetricTileGrid {
-                    MetricTile(
-                        label: "Hedef İhtiyaç",
-                        value: ZenithiumFormat.metric(content.sleep.needHours, digits: 1),
-                        unit: "sa",
-                        caption: needCaption(content),
-                        accessibilityLabelText: "Gereken uyku süresi",
-                        accessibilityValueText: "\(ZenithiumFormat.metric(content.sleep.needHours, digits: 1)) saat"
-                    )
-                    MetricTile(
-                        label: "Toplam Uyku",
-                        value: ZenithiumFormat.metric(content.sleep.asleepHours, digits: 1),
-                        unit: "sa",
-                        tint: content.shortfallHours > 0.5 ? ZenithiumColor.yellow : ZenithiumColor.green,
-                        accessibilityLabelText: "Uykuda geçen süre",
-                        accessibilityValueText: ZenithiumFormat.spokenDuration(seconds: content.record.sleepDurationSeconds)
-                    )
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                        Text("Gereken Uyku")
+                            .zenithiumCaption()
+                        HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                            Text(ZenithiumFormat.metric(content.sleep.needHours, digits: 1))
+                                .metricNumeral()
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                            Text("sa")
+                                .metricUnit()
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: ZenithiumSpacing.xxs) {
+                        Text("Dün Gece")
+                            .zenithiumCaption()
+                        HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                            Text(ZenithiumFormat.metric(content.sleep.asleepHours, digits: 1))
+                                .metricNumeral()
+                                .foregroundStyle(content.shortfallHours > 0.5 ? ZenithiumColor.yellow : ZenithiumColor.green)
+                            Text("sa")
+                                .metricUnit()
+                        }
+                    }
                 }
 
                 if content.shortfallHours > 0.1 {
-                    Text("Hedeflenen süreden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat eksik uyundu. Açık kalan süre uyku borcu modeliyle sonraki günlerin ihtiyacına aktarılır.")
-                        .font(ZenithiumFont.caption)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+                    HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 13))
+                            .foregroundStyle(ZenithiumColor.yellow)
+                        Text("Dün geceden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saatlik uyku açığı var. Bu gecenin hedefi borcu kademeli dengeleyecek şekilde güncellendi.")
+                            .zenithiumCaption()
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }
     }
 
-    /// §5.2 — the need is built from four terms, so the tile says which ones moved it.
     private func needCaption(_ content: SleepViewModel.Content) -> String {
         var parts: [String] = ["\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 1)) sa taban"]
         if content.sleep.appliedDebtHours > 0.05 {
@@ -145,20 +235,23 @@ struct SleepView: View {
         return parts.joined(separator: ", ")
     }
 
+    // MARK: - KATMAN 3 — Puanı Ne Oluşturdu (L1 SectionBlock)
+
     private func componentSection(_ content: SleepViewModel.Content) -> some View {
-        SectionCard(
-            title: "Puanı ne oluşturdu",
-            subtitle: "Her bileşen ve taşıdığı ağırlık"
+        SectionBlock(
+            title: "Puanı Ne Oluşturdu?",
+            subtitle: "Her bileşenin skora katkısı ve ağırlığı",
+            showTopDivider: true
         ) {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 ForEach(content.sleep.components, id: \.component) { component in
                     SleepComponentRow(component: component)
                 }
 
                 if content.sleep.weightsWereRenormalized {
-                    Divider().overlay(ZenithiumColor.hairline)
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
                     Text(droppedMessage(content))
-                        .font(ZenithiumFont.caption)
+                        .zenithiumCaption()
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -171,48 +264,41 @@ struct SleepView: View {
         return "\(names) dün gece ölçülemedi; kalan parçalar yine %100 edecek şekilde yeniden ağırlıklandırıldı."
     }
 
-    private func stageSection(_ content: SleepViewModel.Content) -> some View {
-        SectionCard(title: "Evreler") {
-            SleepStageBarView(stages: content.stages)
-        }
-    }
+    // MARK: - KATMAN 4 — Son Günlerin Uyku Seyri (L1 SectionBlock)
 
-    private func timingSection(_ content: SleepViewModel.Content) -> some View {
-        SectionCard(title: "Zamanlama") {
-            MetricTileGrid {
-                if let start = content.record.sleepStart {
-                    MetricTile(
-                        label: "Uyudun",
-                        value: start.formatted(date: .omitted, time: .shortened),
-                        accessibilityLabelText: "Uykuya dalış saati",
-                        accessibilityValueText: start.formatted(date: .omitted, time: .shortened)
-                    )
-                }
-                if let wake = content.record.wakeTime {
-                    MetricTile(
-                        label: "Uyandın",
-                        value: wake.formatted(date: .omitted, time: .shortened),
-                        accessibilityLabelText: "Uyanma saati",
-                        accessibilityValueText: wake.formatted(date: .omitted, time: .shortened)
-                    )
-                }
-                if let efficiency = content.record.sleepEfficiency {
-                    MetricTile(
-                        label: "Verimlilik",
-                        value: ZenithiumFormat.percent(efficiency),
-                        caption: "uyku ÷ yatakta geçen süre",
-                        accessibilityLabelText: "Uyku verimliliği",
-                        accessibilityValueText: ZenithiumFormat.percent(efficiency)
-                    )
-                }
-                if content.record.napSeconds > 0 {
-                    MetricTile(
-                        label: "Şekerlemeler",
-                        value: ZenithiumFormat.duration(seconds: content.record.napSeconds),
-                        caption: "yarına sayılıyor",
-                        accessibilityLabelText: "Şekerleme süresi",
-                        accessibilityValueText: ZenithiumFormat.spokenDuration(seconds: content.record.napSeconds)
-                    )
+    @ViewBuilder
+    private func historySection(_ content: SleepViewModel.Content) -> some View {
+        if !content.history.isEmpty {
+            let recent = Array(content.history.sorted(by: { $0.dayStart > $1.dayStart }).prefix(7))
+            SectionBlock(
+                title: "Son Günlerin Uyku Seyri",
+                subtitle: "Önceki gecelerin skor ve süre dökümü",
+                showTopDivider: true
+            ) {
+                VStack(spacing: ZenithiumSpacing.s) {
+                    ForEach(recent, id: \.dayStart) { (record: BiometricDaySnapshot) in
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(record.dayStart, format: .dateTime.day().month(.abbreviated).weekday(.short))
+                                    .sectionTitle()
+                                Text("\(ZenithiumFormat.duration(seconds: record.sleepDurationSeconds)) uykuda")
+                                    .zenithiumCaption()
+                            }
+                            Spacer()
+                            if let score = record.sleepScore {
+                                Text(ZenithiumFormat.score(score))
+                                    .metricNumeral()
+                                    .foregroundStyle(score >= 70 ? ZenithiumColor.green : (score >= 50 ? ZenithiumColor.yellow : ZenithiumColor.red))
+                            } else {
+                                Text("—")
+                                    .metricNumeral()
+                                    .foregroundStyle(ZenithiumColor.textTertiary)
+                            }
+                        }
+                        if record.dayStart != recent.last?.dayStart {
+                            Divider().overlay(ZenithiumColor.hairlineSoft)
+                        }
+                    }
                 }
             }
         }
@@ -225,18 +311,16 @@ private struct SleepComponentRow: View {
     let component: SleepComponentScore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
             HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.s) {
                 Text(component.component.displayName)
-                    .font(ZenithiumFont.label)
-                    .foregroundStyle(ZenithiumColor.textPrimary)
+                    .zenithiumLabel()
                 Spacer(minLength: 8)
                 Text(ZenithiumFormat.score(component.score))
-                    .font(ZenithiumFont.callout.monospacedDigit())
-                    .foregroundStyle(ZenithiumColor.textPrimary)
+                    .font(ZenithiumFont.metricNumeral)
                 Text("×\(ZenithiumFormat.metric(component.weight, digits: 2))")
-                    .font(ZenithiumFont.caption.monospacedDigit())
-                    .foregroundStyle(ZenithiumColor.textTertiary)
+                    .zenithiumCaption()
+                    .monospacedDigit()
             }
 
             GeometryReader { proxy in
@@ -247,11 +331,10 @@ private struct SleepComponentRow: View {
                         .frame(width: proxy.size.width * MathSupport.clamp(component.score / 100, 0, 1))
                 }
             }
-            .frame(height: 6)
+            .frame(height: 5)
 
             Text(component.component.explanation)
-                .font(ZenithiumFont.caption)
-                .foregroundStyle(ZenithiumColor.textTertiary)
+                .zenithiumCaption()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(component.component.displayName)

@@ -3,9 +3,12 @@
 //  Zenithium
 //
 //  The Today screen — "how recovered am I". Spec §1, §10.
-//
-//  Every number rendered here arrives pre-computed on the view model's `Content` (§9). The
-//  view chooses layout and wording; it never does arithmetic on a score.
+//  Redesigned to strict Design Specification:
+//  - Exactly ONE Tier 1 hero (Recovery score Arc + 64pt heroNumeral + single rationale)
+//  - Tier 2 supporting metrics strip (HRV, RHR, Sleep, Temp in quiet L1 strip)
+//  - Exactly ONE L2 card in first fold (Daily recommendation / prescription)
+//  - Circadian 5-row list moved to CircadianDetailView, thin 24h strip remains
+//  - All secondary sections are L1 SectionBlock
 //
 
 import SwiftUI
@@ -26,7 +29,7 @@ struct TodayView: View {
                 ) { content in
                     loadedBody(content)
                 }
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
                 .padding(.bottom, ZenithiumSpacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -42,177 +45,288 @@ struct TodayView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: TodayViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.xl) {
-            // KATMAN 1 — KARAR: Bugün ne yapmalıyım?
-            decisionHero(content)
+        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+            // 1. KADEME (KAHRAMAN): Toparlanma Skoru + Tek Cümle Gerekçe
+            recoveryHero(content)
 
-            // KATMAN 2 — KANITI: Neden? & Ne kadar eminsin?
-            evidenceLayer(content)
+            // 2. KADEME: Dört Destekleyici Ölçüm (KART DEĞİL, Tek Satırlık Sessiz Şerit)
+            supportingMetricsStrip(content)
 
-            // KATMAN 2.5 — BİLİMSEL ÖNERİLER & KANIT LİSTESİ (Faz 34)
-            if !viewModel.recommendations.isEmpty {
-                RecommendationListView(recommendations: viewModel.recommendations)
+            // TEK L2 KART: Günün Önerisi (Güç rozeti + gerekçe + tavan + güven çubuğu)
+            prescriptionCard(content)
+
+            // SİRKADİYEN RİTİM: 24 Saatlik İnce Şerit (5 satırlık liste kaldırıldı, detay ekranına bağlı)
+            if let circadian = content.circadian {
+                circadianStripSection(circadian)
             }
 
-            // KATMAN 3 — DÜN GECE: Ham ölçümler ve sınırlar
-            overnightLayer(content)
+            // DÜN GECE: Ham Biyometrik Ölçümler (L1 SectionBlock)
+            overnightSection(content)
 
-            if let circadian = content.circadian {
-                circadianSection(circadian)
+            // KANIT İZİ: Belirleyiciler & Deterministik Karar İzi (L1 SectionBlock)
+            evidenceSection(content)
+
+            // BİLİMSEL ÖNERİLER (L1 SectionBlock)
+            if !viewModel.recommendations.isEmpty {
+                recommendationsSection
             }
 
             disclaimerFooter
         }
         .padding(.top, ZenithiumSpacing.s)
-        .animation(.easeOut(duration: 0.25), value: viewModel.briefing)
-        .animation(.easeOut(duration: 0.25), value: viewModel.athleticDecision)
-        .animation(.easeOut(duration: 0.25), value: viewModel.prescription)
-        .animation(.easeOut(duration: 0.25), value: viewModel.recommendations)
+        .animation(.snappy, value: viewModel.briefing)
+        .animation(.snappy, value: viewModel.athleticDecision)
+        .animation(.snappy, value: viewModel.prescription)
+        .animation(.snappy, value: viewModel.recommendations)
     }
 
-    // MARK: - KATMAN 1 — KARAR (Günün Hükmü - Kart Değil, Ekranın Başı)
+    // MARK: - 1. KADEME (KAHRAMAN) — Toparlanma Skoru
 
-    private func decisionHero(_ content: TodayViewModel.Content) -> some View {
+    private func recoveryHero(_ content: TodayViewModel.Content) -> some View {
+        let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
+        let rationale = viewModel.athleticDecision?.value.primaryRationale ?? content.guidance
+
+        return VStack(spacing: ZenithiumSpacing.m) {
+            // Büyük Açık Yay (Hero Numeral 64pt)
+            RecoveryArc(
+                score: content.score,
+                band: content.band,
+                confidence: confidence
+            )
+            .padding(.top, ZenithiumSpacing.xs)
+
+            // Band Sembolü + Band Adı (Renk körlüğü için sembol + metin)
+            HStack(spacing: ZenithiumSpacing.xs) {
+                Circle()
+                    .fill(ZenithiumColor.color(for: content.band))
+                    .frame(width: 8, height: 8)
+                Text(content.band.displayName)
+                    .sectionTitle()
+                    .foregroundStyle(ZenithiumColor.color(for: content.band))
+                Text("•")
+                    .zenithiumCaption()
+                Text("%\(Int(content.score.rounded()))")
+                    .zenithiumCaption()
+                    .monospacedDigit()
+            }
+            .accessibilityElement(children: .combine)
+
+            // Altında TEK bir cümle: neden bu skor
+            Text(rationale)
+                .zenithiumBody()
+                .foregroundStyle(ZenithiumColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, ZenithiumSpacing.s)
+
+            if confidence < 0.70 {
+                HStack(alignment: .center, spacing: ZenithiumSpacing.xs) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(ZenithiumColor.yellow)
+                    Text("Taban çizgisi kalibrasyonda (%\(Int(confidence * 100)) güven düzeyi).")
+                        .zenithiumCaption()
+                }
+                .padding(.top, 2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+    }
+
+    // MARK: - 2. KADEME — Dört Destekleyici Ölçüm Şeridi (L1 Sessiz Şerit)
+
+    private func supportingMetricsStrip(_ content: TodayViewModel.Content) -> some View {
+        HStack(alignment: .top, spacing: ZenithiumSpacing.none) {
+            supportingMetricItem(
+                label: "HRV",
+                value: content.record.heartRateVariability.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
+                unit: "ms",
+                arrow: hrvArrow(content)
+            )
+            Spacer()
+            supportingMetricItem(
+                label: "İstirahat",
+                value: content.record.restingHeartRate.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
+                unit: "bpm",
+                arrow: rhrArrow(content)
+            )
+            Spacer()
+            supportingMetricItem(
+                label: "Uyku",
+                value: content.record.sleepScore.map { ZenithiumFormat.score($0) } ?? "—",
+                unit: "%",
+                arrow: sleepArrow(content)
+            )
+            Spacer()
+            supportingMetricItem(
+                label: "Sıcaklık",
+                value: content.record.wristTemperatureDelta.map {
+                    let converted = content.profile.unitPreference.temperatureDelta(fromCelsius: $0)
+                    return ZenithiumFormat.signed(converted, digits: 1)
+                } ?? "—",
+                unit: content.profile.unitPreference.temperatureDeltaSymbol,
+                arrow: tempArrow(content)
+            )
+        }
+        .padding(.vertical, ZenithiumSpacing.m)
+        .overlay(alignment: .top) { Divider().overlay(ZenithiumColor.hairlineSoft) }
+        .overlay(alignment: .bottom) { Divider().overlay(ZenithiumColor.hairlineSoft) }
+    }
+
+    private func supportingMetricItem(
+        label: String,
+        value: String,
+        unit: String,
+        arrow: (symbol: String, color: Color)?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+            Text(label)
+                .zenithiumCaption()
+                .lineLimit(1)
+            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                Text(value)
+                    .metricNumeral()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(unit)
+                    .metricUnit()
+                if let arrow {
+                    Image(systemName: arrow.symbol)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(arrow.color)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+    }
+
+    private func hrvArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {
+        guard let driver = content.recovery.drivers.first(where: { $0.driver == .heartRateVariability }) else { return nil }
+        return (driver.isPositive ? "arrow.up" : "arrow.down", driver.isPositive ? ZenithiumColor.green : ZenithiumColor.red)
+    }
+
+    private func rhrArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {
+        guard let driver = content.recovery.drivers.first(where: { $0.driver == .restingHeartRate }) else { return nil }
+        return (driver.isPositive ? "arrow.down" : "arrow.up", driver.isPositive ? ZenithiumColor.green : ZenithiumColor.red)
+    }
+
+    private func sleepArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {
+        guard let driver = content.recovery.drivers.first(where: { $0.driver == .sleep }) else { return nil }
+        return (driver.isPositive ? "arrow.up" : "arrow.down", driver.isPositive ? ZenithiumColor.green : ZenithiumColor.red)
+    }
+
+    private func tempArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {
+        guard let driver = content.recovery.drivers.first(where: { $0.driver == .temperature }) else { return nil }
+        return (driver.isPositive ? "arrow.right" : "arrow.down", driver.isPositive ? ZenithiumColor.green : ZenithiumColor.yellow)
+    }
+
+    // MARK: - TEK L2 KART — Günün Önerisi
+
+    private func prescriptionCard(_ content: TodayViewModel.Content) -> some View {
         let decision = viewModel.athleticDecision?.value
         let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
         let action = decision?.action ?? defaultAction(for: content.score, ceiling: content.ceiling)
 
-        return VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-            // Üst Başlık & Güven Rozeti
-            HStack(alignment: .center) {
-                Text("BUGÜNÜN HÜKMÜ")
-                    .zenithiumEyebrow()
-
-                Spacer()
-
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(confidenceColor(confidence))
-                        .frame(width: 6, height: 6)
-                    Text("%\(Int(confidence * 100)) Güven")
-                        .font(ZenithiumFont.caption2)
-                        .foregroundStyle(ZenithiumColor.textSecondary)
-                }
-                .padding(.horizontal, ZenithiumSpacing.s)
-                .padding(.vertical, 3)
-                .background(ZenithiumColor.surfaceElevated)
-                .clipShape(Capsule())
-            }
-
-            // Ana Eylem ve Hedef
-            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(actionTitle(action))
-                        .font(ZenithiumFont.verdict)
-                        .foregroundStyle(actionColor(action))
-
-                    Text(decision?.headline ?? content.headline)
-                        .font(ZenithiumFont.body)
-                        .foregroundStyle(ZenithiumColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer(minLength: 12)
-
-                // Skor / Tavan
-                VStack(alignment: .trailing, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(ZenithiumFormat.score(content.score))
-                            .font(ZenithiumFont.displayValue)
-                            .foregroundStyle(ZenithiumColor.color(for: content.band))
-                        Text("%")
-                            .font(ZenithiumFont.unit)
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                    }
-                    .contentTransition(.numericText())
-
-                    BandChip(band: content.band)
-                }
-            }
-
-            // Düşük Güven / Kalibrasyon Bildirimi
-            if confidence < 0.70 {
-                HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(ZenithiumColor.yellow)
-                    Text("Taban çizgisi oturana kadar karar genişletilmiş toleransla hesaplanıyor (%\(Int(confidence * 100)) güven düzeyi).")
-                        .font(ZenithiumFont.caption)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.top, 2)
-            }
-
-            Divider()
-                .overlay(ZenithiumColor.hairline)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, ZenithiumSpacing.xs)
-    }
-
-    // MARK: - KATMAN 2 — KANITI (Gerekçe, Sürücüler & Epistemik İz)
-
-    private func evidenceLayer(_ content: TodayViewModel.Content) -> some View {
-        SectionCard(
-            title: "Neden Bu Karar?",
-            subtitle: "Fizyolojik gerekçe, belirleyiciler ve kanıt izi"
+        return SectionCard(
+            title: "Günün Önerisi",
+            subtitle: actionTitle(action)
         ) {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
-                // 1. Gerekçe Paragrafı
-                Text(viewModel.athleticDecision?.value.primaryRationale ?? content.guidance)
-                    .font(ZenithiumFont.body)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                // 2. En Baskın Biyometrik Sürücüler
-                DriverBreakdownView(
-                    drivers: content.recovery.drivers,
-                    missing: content.recovery.missingDrivers,
-                    weightsWereRenormalized: content.recovery.weightsWereRenormalized,
-                    unitPreference: content.profile.unitPreference
-                )
-
-                // 3. Hedef Yük Tavanı
-                if let ceiling = content.ceiling {
-                    Divider().overlay(ZenithiumColor.hairlineSoft)
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("Bugünün hedef fizyolojik yük tavanı")
-                            .font(ZenithiumFont.label)
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                        Spacer(minLength: 8)
-                        Text(ZenithiumFormat.strain(ceiling))
-                            .font(ZenithiumFont.metricValue)
-                            .foregroundStyle(ZenithiumColor.accent)
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                // Eylem ve Yük Tavanı
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
+                        Text(decision?.headline ?? content.headline)
+                            .zenithiumBody()
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Bugünün hedef zorlanması")
-                    .accessibilityValue("21 üzerinden \(ZenithiumFormat.strain(ceiling))")
+
+                    if let ceiling = content.ceiling {
+                        Spacer(minLength: 12)
+                        VStack(alignment: .trailing, spacing: ZenithiumSpacing.none) {
+                            Text("TAVAN")
+                                .zenithiumEyebrow()
+                            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                                Text(ZenithiumFormat.strain(ceiling))
+                                    .metricNumeral()
+                                    .foregroundStyle(ZenithiumColor.accent)
+                                Text("/21")
+                                    .metricUnit()
+                            }
+                        }
+                    }
                 }
 
-                // 4. Günün Egzersiz Reçetesi
+                // Egzersiz Reçetesi
                 if let prescription = viewModel.prescription {
                     Divider().overlay(ZenithiumColor.hairlineSoft)
                     PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
                 }
 
-                // 5. Deterministik Karar İzi
-                if let decision = viewModel.athleticDecision {
-                    Divider().overlay(ZenithiumColor.hairlineSoft)
-                    DecisionTraceCard(result: decision)
+                // Güven Çubuğu
+                Divider().overlay(ZenithiumColor.hairlineSoft)
+                HStack(spacing: ZenithiumSpacing.s) {
+                    Text("Karar Güveni")
+                        .zenithiumCaption()
+                    Spacer()
+                    Text("%\(Int((confidence * 100).rounded()))")
+                        .zenithiumCaption()
+                        .monospacedDigit()
                 }
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(ZenithiumColor.hairline)
+                            .frame(height: 4)
+                        Capsule()
+                            .fill(confidenceColor(confidence))
+                            .frame(width: max(8, geo.size.width * CGFloat(confidence)), height: 4)
+                    }
+                }
+                .frame(height: 4)
             }
         }
     }
 
-    // MARK: - KATMAN 3 — DÜN GECE (Ham Ölçümler)
+    // MARK: - SİRKADİYEN RİTİM (24 Saatlik İnce Şerit)
 
-    private func overnightLayer(_ content: TodayViewModel.Content) -> some View {
-        SectionCard(
-            title: "Dün Gece",
-            subtitle: "Ham biyometrik ölçümler"
-        ) {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+    private func circadianStripSection(_ arc: CircadianArc) -> some View {
+        SectionBlock(title: "Sirkadiyen Ritim", showTopDivider: true) {
+            NavigationLink {
+                CircadianDetailView(arc: arc)
+            } label: {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                    CircadianArcView(arc: arc, showLegend: false)
+
+                    HStack {
+                        if let next = nextCircadianMarker(in: arc) {
+                            Text("Sonraki döngü: \(next.event.displayName) (\(next.date.formatted(date: .omitted, time: .shortened)))")
+                                .zenithiumCaption()
+                        } else {
+                            Text("24 saatlik uyanıklık ve melatonin döngüsü")
+                                .zenithiumCaption()
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(ZenithiumColor.textTertiary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func nextCircadianMarker(in arc: CircadianArc) -> CircadianMarker? {
+        let now = Date()
+        return arc.markers.first { $0.date > now } ?? arc.markers.first
+    }
+
+    // MARK: - DÜN GECE (Ham Ölçümler - L1 SectionBlock)
+
+    private func overnightSection(_ content: TodayViewModel.Content) -> some View {
+        SectionBlock(title: "Dün Gece", subtitle: "Ham biyometrik ölçümler", showTopDivider: true) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 MetricTileGrid {
                     if let hrv = content.record.heartRateVariability {
                         MetricTile(
@@ -280,21 +394,41 @@ struct TodayView: View {
         }
     }
 
-    private func circadianSection(_ arc: CircadianArc) -> some View {
-        SectionCard(
-            title: "Günün",
-            subtitle: "Gün boyunca uyanıklık, uykuna göre demirlenmiş"
+    // MARK: - KARAR KANITI (L1 SectionBlock)
+
+    private func evidenceSection(_ content: TodayViewModel.Content) -> some View {
+        SectionBlock(
+            title: "Karar Kanıtı",
+            subtitle: "Fizyolojik belirleyiciler ve deterministik iz",
+            showTopDivider: true
         ) {
-            // İçerik tabanlı yükseklik: CircadianArcView içindeki eğri @ScaledMetric ile
-            // ölçeklenir, altındaki 5 işaret ise kutuyu taşırmadan dinamik olarak sarar.
-            CircadianArcView(arc: arc)
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                DriverBreakdownView(
+                    drivers: content.recovery.drivers,
+                    missing: content.recovery.missingDrivers,
+                    weightsWereRenormalized: content.recovery.weightsWereRenormalized,
+                    unitPreference: content.profile.unitPreference
+                )
+
+                if let decision = viewModel.athleticDecision {
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+                    DecisionTraceCard(result: decision)
+                }
+            }
+        }
+    }
+
+    // MARK: - BİLİMSEL ÖNERİLER (L1 SectionBlock)
+
+    private var recommendationsSection: some View {
+        SectionBlock(title: "Bilimsel Öneriler", showTopDivider: true) {
+            RecommendationListView(recommendations: viewModel.recommendations)
         }
     }
 
     private var disclaimerFooter: some View {
         Text(SafetyCopy.disclaimerFooter)
-            .font(ZenithiumFont.caption)
-            .foregroundStyle(ZenithiumColor.textTertiary)
+            .zenithiumCaption()
             .frame(maxWidth: .infinity)
             .multilineTextAlignment(.center)
             .padding(.top, ZenithiumSpacing.xs)

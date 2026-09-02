@@ -46,6 +46,21 @@ enum ZenithiumSpacing {
 
     /// 32pt — around a screen's leading and trailing content, and above a first heading.
     static let xxl: CGFloat = 32
+
+    /// 48pt — largest rhythm gap on the 4pt grid.
+    static let xxxl: CGFloat = 48
+
+    // MARK: - Şartname Yasa 5 Semantik Boşlukları (4pt Izgarası)
+    /// Bölümler arası: 32pt
+    static let sectionSpacing: CGFloat = 32
+    /// Bölüm başlığı → içerik: 12pt
+    static let sectionHeaderToContent: CGFloat = 12
+    /// Kart içi dolgu: 20pt
+    static let cardPadding: CGFloat = 20
+    /// Satırlar arası: 12pt
+    static let rowSpacing: CGFloat = 12
+    /// Ekran kenarı: 20pt
+    static let screenEdge: CGFloat = 20
 }
 
 /// The corner-radius scale, sized to sit concentrically inside the spacing scale.

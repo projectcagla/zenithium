@@ -59,6 +59,9 @@ final class AppDependencies {
 
     /// The live graph: the shared App Group store and real HealthKit.
     static func live() throws -> AppDependencies {
+        if ProcessInfo.processInfo.arguments.contains("-mockData") {
+            return try preview(configuration: .complete)
+        }
         let container = try SharedPersistenceFactory.makeAppContainer()
         return AppDependencies(
             modelContainer: container,

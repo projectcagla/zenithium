@@ -2,9 +2,10 @@
 //  BloodworkView.swift
 //  Zenithium
 //
-//  The Bloodwork screen. Spec §12 governs this file completely: reference ranges and trends
-//  only. Nothing here interprets a value, flags one, or suggests anything about it. There is
-//  no "good"/"bad" colour, no arrow that means improvement, and no advice.
+//  The Bloodwork screen. Spec §12 & Design Specification.
+//  Kahraman: Sakin bir liste (L1, kartsız). Renk YALNIZCA referans dışı değerde.
+//  Normal değerler sessiz gri. Her satırda: belirteç adı, değer, birim, referans aralığı, son test tarihi.
+//  Tek L2: Aksiyon gerektiren bulgular özeti (varsa — yoksa tek bir sessiz L1 satır).
 //
 
 import SwiftUI
@@ -18,8 +19,7 @@ struct BloodworkView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: ZenithiumSpacing.l) {
-                    disclaimerCard
+                VStack(spacing: ZenithiumSpacing.sectionSpacing) {
                     ViewStateContainer(
                         state: viewModel.state,
                         loadingLabel: "Sonuçlar yükleniyor",
@@ -28,14 +28,16 @@ struct BloodworkView: View {
                     ) { content in
                         loadedBody(content)
                     }
+
+                    disclaimerText
                 }
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
                 .padding(.bottom, ZenithiumSpacing.xxl)
                 .padding(.top, ZenithiumSpacing.s)
             }
             .scrollBounceBehavior(.basedOnSize)
             .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Kan değerleri")
+            .navigationTitle("Kan Değerleri")
             .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -69,261 +71,217 @@ struct BloodworkView: View {
         .task { await viewModel.onAppear() }
     }
 
-    private var disclaimerCard: some View {
-        SectionCard {
-            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .accessibilityHidden(true)
-                Text(SafetyCopy.bloodworkDisclaimer)
-                    .font(ZenithiumFont.callout)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var disclaimerText: some View {
+        HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 13))
+                .foregroundStyle(ZenithiumColor.textTertiary)
+                .accessibilityHidden(true)
+            Text(SafetyCopy.bloodworkDisclaimer)
+                .zenithiumCaption()
+                .foregroundStyle(ZenithiumColor.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .accessibilityElement(children: .combine)
+        .padding(.top, ZenithiumSpacing.m)
     }
 
     @ViewBuilder
     private func loadedBody(_ content: BloodworkViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            if !content.observations.isEmpty {
-                observationsCard(content.observations)
-            }
+        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+            // TEK L2 KART: Aksiyon Gerektiren Bulgular Özeti
+            actionableFindingsSection(content.observations)
 
-            // Grouped by panel where the catalogue knows the marker, so the screen is
-            // organised the way a laboratory report is. Anything the catalogue does not
-            // recognise still appears, under its own heading rather than under a guess.
-            // Yol haritası v4, C3.
+            // KAHRAMAN: Sakin Tahlil Listesi (L1 SectionBlock)
             ForEach(content.panels) { group in
-                panelSection(title: group.panel.displayName, series: group.series)
+                panelBlock(title: group.panel.displayName, series: group.series)
             }
 
             let ungrouped = content.series.filter { $0.marker.panel == nil }
             if !ungrouped.isEmpty {
-                panelSection(title: "Diğer", series: ungrouped)
+                panelBlock(title: "Diğer Belirteçler", series: ungrouped)
             }
         }
     }
+
+    // MARK: - TEK L2 KART / SESSİZ L1 SATIR: Aksiyon Gerektiren Bulgular
 
     @ViewBuilder
-    private func panelSection(title: String, series: [BloodworkViewModel.MarkerSeries]) -> some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
-            Text(title)
-                .font(ZenithiumFont.eyebrow)
-                .foregroundStyle(ZenithiumColor.textTertiary)
-                .textCase(.uppercase)
-                .padding(.leading, ZenithiumSpacing.xs)
-                .accessibilityAddTraits(.isHeader)
+    private func actionableFindingsSection(_ observations: [LabObservation]) -> some View {
+        let actionable = observations.filter(\.requiresClinician)
 
-            ForEach(series) { entry in
-                NavigationLink {
-                    BloodMarkerDetailView(series: entry, viewModel: viewModel)
-                } label: {
-                    MarkerSummaryCard(series: entry)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    /// What the panel says about itself.
-    ///
-    /// §12 in one view: nothing here names a condition or suggests a treatment. Values
-    /// outside a reference band get one response and only one — the clinician prompt — and
-    /// it is attached to the row itself rather than buried in a footer, so the two can
-    /// never be read apart.
-    private func observationsCard(_ observations: [LabObservation]) -> some View {
-        SectionCard(title: "Panelin hakkında", subtitle: "Gözlem — teşhis değil") {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
-                ForEach(observations) { observation in
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                        HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
-                            Image(systemName: symbol(for: observation.kind))
-                                .font(.system(size: 13))
-                                .foregroundStyle(tint(for: observation))
-                                .frame(width: 16)
-                                .accessibilityHidden(true)
-                            Text(observation.message)
-                                .font(ZenithiumFont.callout)
-                                .foregroundStyle(ZenithiumColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        if observation.requiresClinician {
-                            Text(SafetyCopy.clinicianPrompt)
-                                .font(ZenithiumFont.footnote)
-                                .foregroundStyle(ZenithiumColor.textTertiary)
-                                .padding(.leading, ZenithiumSpacing.xl)
+        if !actionable.isEmpty {
+            SectionCard(
+                title: "Aksiyon Gerektiren Bulgular",
+                subtitle: "Referans aralığı dışı gözlemler — teşhis değil"
+            ) {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                    ForEach(actionable) { observation in
+                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                            HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(ZenithiumColor.yellow)
+                                    .accessibilityHidden(true)
+                                Text(observation.message)
+                                    .zenithiumBody()
+                                    .foregroundStyle(ZenithiumColor.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            if observation.requiresClinician {
+                                Text(SafetyCopy.clinicianPrompt)
+                                    .zenithiumCaption()
+                                    .foregroundStyle(ZenithiumColor.textSecondary)
+                                    .padding(.leading, 22)
+                            }
                         }
                     }
-                    .accessibilityElement(children: .combine)
+                }
+            }
+        } else {
+            // Hiç referans dışı bulgu yoksa tek bir sessiz L1 satırı
+            HStack(spacing: ZenithiumSpacing.s) {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 14))
+                    .foregroundStyle(ZenithiumColor.green)
+                    .accessibilityHidden(true)
+                Text("Tüm belirteçler referans aralığında")
+                    .zenithiumBody()
+                    .foregroundStyle(ZenithiumColor.textSecondary)
+                Spacer()
+            }
+            .padding(.vertical, ZenithiumSpacing.xs)
+            .padding(.horizontal, ZenithiumSpacing.xs)
+        }
+    }
+
+    // MARK: - KAHRAMAN: Sakin Liste Panelleri (L1)
+
+    private func panelBlock(title: String, series: [BloodworkViewModel.MarkerSeries]) -> some View {
+        SectionBlock(
+            title: title,
+            subtitle: "\(series.count) belirteç",
+            showTopDivider: true
+        ) {
+            VStack(spacing: ZenithiumSpacing.none) {
+                ForEach(series) { entry in
+                    NavigationLink {
+                        BloodMarkerDetailView(series: entry, viewModel: viewModel)
+                    } label: {
+                        MarkerSummaryRow(series: entry)
+                    }
+                    .buttonStyle(.plain)
+
+                    if entry.id != series.last?.id {
+                        Divider().overlay(ZenithiumColor.hairlineSoft)
+                    }
                 }
             }
         }
-    }
-
-    private func symbol(for kind: LabObservationKind) -> String {
-        switch kind {
-        case .outsideReference: return "exclamationmark.circle"
-        case .outsideOptimal: return "circle.lefthalf.filled"
-        case .movement: return "arrow.up.arrow.down"
-        case .aging: return "clock"
-        case .panelGap: return "square.dashed"
-        case .timingCaveat: return "figure.run"
-        case .context: return "text.book.closed"
-        }
-    }
-
-    private func tint(for observation: LabObservation) -> Color {
-        observation.requiresClinician ? ZenithiumColor.yellow : ZenithiumColor.textTertiary
     }
 }
 
-/// One marker's latest value with its range position. A position, not a verdict (§12).
-struct MarkerSummaryCard: View {
+/// One marker row in the serene list.
+/// Spec: Calm row. Color ONLY on out-of-reference values (red/yellow). Normal values quiet gray.
+/// Columns: marker name, value, unit, reference range, last test date.
+private struct MarkerSummaryRow: View {
 
     let series: BloodworkViewModel.MarkerSeries
 
+    private var isOutOfRange: Bool {
+        guard let latest = series.latest, latest.referenceRange.isBounded else { return false }
+        return !latest.referenceRange.contains(latest.value)
+    }
+
+    private var valueColor: Color {
+        if isOutOfRange {
+            return ZenithiumColor.yellow
+        }
+        return ZenithiumColor.textPrimary
+    }
+
     var body: some View {
-        SectionCard {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.s) {
-                    Text(series.marker.displayName)
-                        .font(ZenithiumFont.sectionTitle)
-                        .foregroundStyle(ZenithiumColor.textPrimary)
-                    Spacer(minLength: 8)
+        HStack(alignment: .center, spacing: ZenithiumSpacing.m) {
+            // Sol Taraf: Belirteç Adı + Referans Aralığı ve Tarih
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                Text(series.marker.displayName)
+                    .zenithiumLabel()
+                    .foregroundStyle(ZenithiumColor.textPrimary)
+
+                HStack(spacing: ZenithiumSpacing.xs) {
                     if let latest = series.latest {
-                        Text(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits))
-                            .font(ZenithiumFont.metricValue)
-                            .foregroundStyle(ZenithiumColor.textPrimary)
-                        Text(latest.unitSymbol)
-                            .font(ZenithiumFont.unit)
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                    }
-                }
-
-                if let latest = series.latest {
-                    RangeBar(entry: latest)
-
-                    // How fast, over the whole history rather than between the last two
-                    // draws — and still only a number (§12). Yol haritası v4, C3.
-                    if let rate = series.annualRate {
-                        Text("Yılda \(ZenithiumFormat.signed(rate, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
-                            .font(ZenithiumFont.caption.monospacedDigit())
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                            .accessibilityLabel("Yıllık değişim hızı")
-                            .accessibilityValue("\(ZenithiumFormat.signed(rate, digits: series.marker.fractionDigits)) \(latest.unitSymbol) yılda")
-                    }
-
-                    HStack(spacing: ZenithiumSpacing.s) {
-                        Text(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))
-                            .font(ZenithiumFont.caption)
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-
-                        if let change = series.changeSincePrevious, series.entries.count >= 2 {
-                            // A number and a direction. Not a judgement (§12).
-                            Text("\(ZenithiumFormat.signed(change, digits: series.marker.fractionDigits)) önceki ölçüme göre")
-                                .font(ZenithiumFont.caption.monospacedDigit())
-                                .foregroundStyle(ZenithiumColor.textTertiary)
+                        let range = latest.referenceRange
+                        if let minVal = range.minimum, let maxVal = range.maximum {
+                            Text("Ref: \(ZenithiumFormat.metric(minVal, digits: series.marker.fractionDigits))–\(ZenithiumFormat.metric(maxVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
+                                .zenithiumCaption()
+                                .monospacedDigit()
+                        } else if let minVal = range.minimum {
+                            Text("Ref: >\(ZenithiumFormat.metric(minVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
+                                .zenithiumCaption()
+                                .monospacedDigit()
+                        } else if let maxVal = range.maximum {
+                            Text("Ref: <\(ZenithiumFormat.metric(maxVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
+                                .zenithiumCaption()
+                                .monospacedDigit()
                         }
-
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .imageScale(.small)
-                            .foregroundStyle(ZenithiumColor.textTertiary)
-                            .accessibilityHidden(true)
+                        Text("·")
+                            .zenithiumCaption()
+                        Text(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))
+                            .zenithiumCaption()
+                    } else {
+                        Text("Kayıt yok")
+                            .zenithiumCaption()
                     }
                 }
             }
+
+            Spacer(minLength: 8)
+
+            // Sağ Taraf: Değer ve Birim (Referans dışı ise kehribar/kırmızı renkli)
+            if let latest = series.latest {
+                VStack(alignment: .trailing, spacing: ZenithiumSpacing.xxs) {
+                    HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                        Text(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits))
+                            .sectionTitle()
+                            .foregroundStyle(valueColor)
+                            .monospacedDigit()
+                        Text(latest.unitSymbol)
+                            .metricUnit()
+                            .foregroundStyle(isOutOfRange ? valueColor : ZenithiumColor.textSecondary)
+                    }
+
+                    if isOutOfRange {
+                        HStack(spacing: 2) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(valueColor)
+                            Text("Aralık Dışı")
+                                .zenithiumEyebrow()
+                                .foregroundStyle(valueColor)
+                        }
+                    }
+                }
+            }
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(ZenithiumColor.textTertiary)
+                .accessibilityHidden(true)
         }
+        .padding(.vertical, ZenithiumSpacing.s)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(series.marker.accessibilityName)
         .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Tüm geçmişi açar")
     }
 
     private var accessibilityValue: String {
         guard let latest = series.latest else { return "Sonuç yok" }
-        var value = "\(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits)) \(latest.unitSymbol), drawn \(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))"
-        let range = latest.referenceRange
-        if let minimum = range.minimum, let maximum = range.maximum {
-            value += ". Reference range \(ZenithiumFormat.metric(minimum, digits: series.marker.fractionDigits)) to \(ZenithiumFormat.metric(maximum, digits: series.marker.fractionDigits))"
+        var val = "\(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits)) \(latest.unitSymbol)"
+        if isOutOfRange {
+            val += ", referans aralığı dışında"
         }
-        return value
-    }
-}
-
-/// The value's position across the reference range, with the optimal band marked.
-///
-/// The bar is deliberately monochrome: colouring it by position would be an interpretation,
-/// which §12 forbids.
-struct RangeBar: View {
-
-    let entry: BloodMarkerSnapshot
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(ZenithiumColor.hairline)
-
-                    if let optimal = optimalFraction {
-                        Capsule()
-                            .fill(ZenithiumColor.textSecondary.opacity(0.30))
-                            .frame(
-                                width: max(proxy.size.width * (optimal.upper - optimal.lower), 2)
-                            )
-                            .offset(x: proxy.size.width * optimal.lower)
-                    }
-
-                    if let position = entry.positionInReferenceRange {
-                        Circle()
-                            .fill(ZenithiumColor.textPrimary)
-                            .frame(width: 10, height: 10)
-                            .offset(x: proxy.size.width * position - 5)
-                    }
-                }
-            }
-            .frame(height: 10)
-
-            HStack {
-                if let minimum = entry.referenceRange.minimum {
-                    Text(ZenithiumFormat.metric(minimum, digits: 0))
-                        .font(ZenithiumFont.caption.monospacedDigit())
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                }
-                Spacer(minLength: 0)
-                Text(SafetyCopy.bloodworkRangeCaption)
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Spacer(minLength: 0)
-                if let maximum = entry.referenceRange.maximum {
-                    Text(ZenithiumFormat.metric(maximum, digits: 0))
-                        .font(ZenithiumFont.caption.monospacedDigit())
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                }
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    /// Where the optimal band sits inside the reference range, as 0…1 fractions.
-    private var optimalFraction: (lower: Double, upper: Double)? {
-        let reference = entry.referenceRange
-        let optimal = entry.optimalRange
-        guard let refMin = reference.minimum,
-              let refMax = reference.maximum,
-              refMax > refMin,
-              let optMin = optimal.minimum,
-              let optMax = optimal.maximum else { return nil }
-        let span = refMax - refMin
-        let lower = MathSupport.clamp((optMin - refMin) / span, 0, 1)
-        let upper = MathSupport.clamp((optMax - refMin) / span, 0, 1)
-        guard upper > lower else { return nil }
-        return (lower, upper)
+        val += ", test tarihi \(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))"
+        return val
     }
 }
