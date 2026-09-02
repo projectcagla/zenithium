@@ -152,7 +152,7 @@ def check_entries(references, problems):
             fail(problems, f"{identifier}: doesNotShow boş.")
 
         if entry["grade"] not in GRADE_LABELS:
-            fail(problems, f"{identifier}: tanınmayan kanıt derecesi — {entry["grade"]}")
+            fail(problems, f"{identifier}: tanınmayan kanıt derecesi — {entry['grade']}")
 
         for other in entry["contradicts"]:
             if other not in references:
