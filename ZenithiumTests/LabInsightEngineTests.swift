@@ -178,6 +178,32 @@ struct LabInsightEngineTests {
         #expect(!observations.contains { if case .timingCaveat = $0.kind { return true } else { return false } })
     }
 
+    @Test("Son 48 saatte antrenman varken duyarlı belirteçlerde antrenman bağlamlı uyarı üretilir", arguments: [
+        ("creatineKinase", 950.0, "U/L"),
+        ("ast", 65.0, "U/L"),
+        ("highSensitivityCRP", 4.5, "mg/L"),
+        ("alt", 58.0, "U/L")
+    ])
+    func trainingSensitiveBiomarkersProduceCaveatWithRecentSessions(key: String, value: Double, unit: String) throws {
+        let drawDate = day(2026, 5, 20)
+        let sessionDate = drawDate.addingTimeInterval(-36 * 3600)
+        let observations = LabInsightEngine.observations(
+            markers: [marker(key, value, unit: unit, drawnAt: drawDate)],
+            sex: .male,
+            sessionDates: [sessionDate],
+            now: day(2026, 5, 22),
+            calendar: calendar
+        )
+        let caveat = try #require(observations.first { if case .timingCaveat = $0.kind { return true } else { return false } })
+        guard case .timingCaveat(let hours) = caveat.kind else {
+            Issue.record("Zamanlama uyarısı bekleniyordu")
+            return
+        }
+        #expect(hours == 36)
+        #expect(caveat.message.contains("36 saat sonra"))
+        #expect(caveat.message.contains("antrenmandan etkilenir"))
+    }
+
     // MARK: - Panels
 
     @Test("Eksik panel ortağı bildirilir")

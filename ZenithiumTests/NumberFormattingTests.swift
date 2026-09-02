@@ -34,6 +34,19 @@ struct NumberFormattingTests {
         #expect(ZenithiumFormat.metric(value, digits: digits) == expected)
     }
 
+    @Test("MathSupport.decimal sıfır dolgusunu koruyor", arguments: [
+        (1.05, 2, "1,05"),
+        (1.50, 2, "1,50"),
+        (0.05, 2, "0,05"),
+        (-0.05, 2, "-0,05"),
+        (1.5, 1, "1,5"),
+        (7.0, 1, "7,0"),
+        (100.0, 0, "100")
+    ])
+    func mathSupportDecimalPadsZeroes(value: Double, digits: Int, expected: String) {
+        #expect(MathSupport.decimal(value, digits: digits) == expected)
+    }
+
     @Test("Zorlanma tek ondalıkla ve virgülle yazılıyor")
     func strainIsWrittenWithAComma() {
         #expect(ZenithiumFormat.strain(12.34) == "12,3")
