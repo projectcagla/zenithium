@@ -149,6 +149,27 @@ enum DecisionEngine {
         )
         stepCounter += 1
 
+        if let sleep = input.sleepScore {
+            evidence.append(
+                EvidenceNode(
+                    sourceCategory: "Uyku",
+                    summary: "Uyku Skoru: \(Int(sleep))",
+                    weight: 0.20,
+                    timestamp: Date()
+                )
+            )
+            steps.append(
+                TraceStep(
+                    stepNumber: stepCounter,
+                    engineName: "SleepScoreEngine",
+                    inputDescription: "Gecelik uyku süresi ve mimarisi",
+                    outputDescription: "Uyku Skoru: \(Int(sleep))",
+                    physiologicalImpact: "Toparlanmayı destekleyen uyku kalitesi ve restoratif süre değerlendirildi."
+                )
+            )
+            stepCounter += 1
+        }
+
         // Step 3: Training Load & ACWR Gating
         if let acwr = input.acwr {
             let loadBand = LoadBand.band(forRatio: acwr)

@@ -13,6 +13,7 @@ struct ScientificBoundary: Sendable, Equatable, Identifiable {
     let engineName: String
     let physiologicalModel: String
     let primaryCitation: String
+    let referenceIDs: [String]
     let documentedLimitations: [String]
     let nonCausalityDisclaimer: String
 
@@ -21,6 +22,7 @@ struct ScientificBoundary: Sendable, Equatable, Identifiable {
         engineName: String,
         physiologicalModel: String,
         primaryCitation: String,
+        referenceIDs: [String] = [],
         documentedLimitations: [String],
         nonCausalityDisclaimer: String
     ) {
@@ -28,6 +30,7 @@ struct ScientificBoundary: Sendable, Equatable, Identifiable {
         self.engineName = engineName
         self.physiologicalModel = physiologicalModel
         self.primaryCitation = primaryCitation
+        self.referenceIDs = referenceIDs
         self.documentedLimitations = documentedLimitations
         self.nonCausalityDisclaimer = nonCausalityDisclaimer
     }
@@ -41,6 +44,7 @@ enum ScientificBoundaryRegistry {
             engineName: "RecoveryEngine",
             physiologicalModel: "Multi-biometric exponential moving z-score with individualized baselines (HRV, RHR, Temp, Sleep)",
             primaryCitation: "Plews et al. (2013), 'Training adaptation and heart rate variability in elite endurance athletes'",
+            referenceIDs: ["PLEWS-2013", "BUCHHEIT-2014"],
             documentedLimitations: [
                 "Requires minimum 4 nights of nocturnal HRV data for non-population scoring",
                 "Cannot differentiate psychological acute stress from physical training fatigue",
@@ -53,6 +57,14 @@ enum ScientificBoundaryRegistry {
             engineName: "TrainingLoadEngine",
             physiologicalModel: "Exponentially weighted Banister impulse-response model (Acute: 7d, Chronic: 28d, ACWR)",
             primaryCitation: "Banister EW (1991), 'Modeling Elite Athletic Performance'; Gabbett TJ (2016), 'The training—injury prevention paradox'",
+            referenceIDs: [
+                "BANISTER-1991",
+                "FOSTER-1998",
+                "IMPELLIZZERI-2019",
+                "GABBETT-2016",
+                "HULIN-2016",
+                "LOLLI-2019"
+            ],
             documentedLimitations: [
                 "Non-cardio sessions (e.g. isometric strength) underestimate metabolic strain via HR alone",
                 "Requires continuous RPE logging for non-wearable strength sessions",
@@ -65,6 +77,11 @@ enum ScientificBoundaryRegistry {
             engineName: "SleepScoreEngine",
             physiologicalModel: "Multi-component sleep architecture (Duration, Efficiency, Restorative % (Deep+REM), Midpoint Consistency)",
             primaryCitation: "Hirshkowitz et al. (2015), 'National Sleep Foundation sleep time duration recommendations'",
+            referenceIDs: [
+                "WATSON-2015",
+                "HIRSHKOWITZ-2015",
+                "ROENNEBERG-2003"
+            ],
             documentedLimitations: [
                 "Optical PPG sleep staging has ~75-85% concordance with polysomnography (PSG)",
                 "Unstaged sleep data renormalizes without Restorative component"
@@ -76,6 +93,7 @@ enum ScientificBoundaryRegistry {
             engineName: "FatigueEngine",
             physiologicalModel: "Muscle-specific exponential fatigue superposition with sleep-score recovery half-life modulation",
             primaryCitation: "Morton RH (1997), 'Modeling training and overtraining'; Muscle fiber mass-class decay rates",
+            referenceIDs: ["MORTON-1997"],
             documentedLimitations: [
                 "Involvement matrix is an anatomical model approximation per movement pattern",
                 "Does not account for nutritional glycogen repletion rates directly"
@@ -87,6 +105,7 @@ enum ScientificBoundaryRegistry {
             engineName: "VitalsEngine",
             physiologicalModel: "Multi-signal co-moving anomaly detection (HRV, RHR, Respiratory Rate, Wrist Temp)",
             primaryCitation: "Smarr et al. (2020), 'Feasibility of continuous physiological monitoring for early infection detection'",
+            referenceIDs: ["SMARR-2020"],
             documentedLimitations: [
                 "Co-movement indicates systemic physiological shift, not specific etiology",
                 "Sensitive to environmental heat, alcohol intake, travel, and altitude"
@@ -102,7 +121,7 @@ enum ScientificBoundaryRegistry {
                 "Only affects confidence and measurement error terms; does not diagnose medical conditions",
                 "Requires recent lab/ECG records within validity horizons; stale records gracefully expire to neutral"
             ],
-            nonCausalityDisclaimer: "Klinik bağlam bir teşhis veya tıbbi iddia içermez; yalnızca biyometrik yük ve toparlanma ölçümlerinin güvenilirlik derecesini ayarlar."
+            nonCausalityDisclaimer: "Klinik bağlam bir teşhis değildir ve tıbbi iddia içermez; yalnızca biyometrik yük ve toparlanma ölçümlerinin güvenilirlik derecesini ayarlar."
         )
     ]
 

@@ -38,6 +38,20 @@ enum SafetyCopy {
     /// The one-line version shown as a footer under scores.
     static let disclaimerFooter = "Yalnızca antrenman yönlendirmesi. Tıbbi cihaz değildir."
 
+    // MARK: - Per-claim disclaimers (Faz 34)
+
+    /// A disclaimer sized to the subject of the claim.
+    static func disclaimer(for tier: DisclaimerTier) -> String? {
+        switch tier {
+        case .none:
+            return nil
+        case .training:
+            return "Yalnızca antrenman yönlendirmesi. Tıbbi tavsiye değildir."
+        case .health:
+            return "Bu bir tıbbi teşhis değildir. Bir şikâyetin varsa hekimine danış."
+        }
+    }
+
     // MARK: - Privacy
 
     static let privacyTitle = "Verin burada kalır"

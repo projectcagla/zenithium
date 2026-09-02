@@ -1,76 +1,302 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenithium</title>
-    <style>
-        :root {
-            --bg: #090A0F;
-            --surface: #141721;
-            --border: #232838;
-            --text-primary: #F0F2F8;
-            --text-secondary: #9BA3B8;
-            --accent: #38BDF8;
-        }
-        body {
-            margin: 0;
-            padding: 48px 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 80vh;
-        }
-        .container {
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-        }
-        h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-            letter-spacing: -0.5px;
-        }
-        p {
-            color: var(--text-secondary);
-            font-size: 15px;
-            margin-bottom: 32px;
-        }
-        .links {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .btn {
-            display: block;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 500;
-            transition: border-color 0.2s;
-        }
-        .btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Zenithium — Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan bir ölçüm aleti. Hesap yok, ağ çağrısı yok, her karar kaynağını gösterir.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Zenithium">
+<meta property="og:description" content="Kararın arkasında ne olduğunu görebildiğin bir ölçüm aleti.">
+<meta property="og:type" content="website">
+<title>Zenithium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..110,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;450;600&display=swap">
+<style>
+  :root{
+    --ink:#07090E; --surface:#0D111A; --surface-2:#111725;
+    --hairline:#1F2836; --hairline-soft:#151C28;
+    --text:#E9EDF5; --text-dim:#8C96AB; --text-faint:#59627A;
+    --accent:#3ED0BE; --ready:#3FCF8E; --moderate:#F0B23F; --recovering:#EF5560;
+    --font-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --font-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --measure:64ch; --gutter:clamp(20px,5vw,40px);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--ink); color:var(--text);
+    font-family:var(--font-body); font-size:16px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px; margin:0 auto; padding:0 var(--gutter);}
+  h1,h2,h3{font-family:var(--font-display); margin:0; text-wrap:balance; font-variation-settings:"wdth" 92;}
+  a{color:var(--accent); text-decoration:none;}
+  a:hover{text-decoration:underline; text-underline-offset:3px;}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
+  .eyebrow{
+    font-family:var(--font-mono); font-size:.68rem; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--text-faint);
+  }
+  .num{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+
+  /* ── masthead ─────────────────────────────────────── */
+  header{border-bottom:1px solid var(--hairline);}
+  .masthead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:20px 0; flex-wrap:wrap;}
+  .mark{font-family:var(--font-display); font-weight:700; font-size:1.05rem; letter-spacing:.02em; font-variation-settings:"wdth" 88;}
+  .mark span{color:var(--accent);}
+  nav{display:flex; gap:22px; font-family:var(--font-mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;}
+  nav a{color:var(--text-dim);}
+  nav a:hover{color:var(--accent);}
+
+  /* ── hero ─────────────────────────────────────────── */
+  .hero{padding:clamp(56px,10vw,104px) 0 clamp(40px,6vw,64px); display:grid; gap:26px; max-width:var(--measure);}
+  .hero h1{font-size:clamp(2.6rem,7vw,4.4rem); font-weight:800; line-height:1.02; letter-spacing:-.02em; font-variation-settings:"wdth" 85;}
+  .hero .lede{font-size:clamp(1.05rem,2.2vw,1.28rem); color:var(--text-dim); line-height:1.55;}
+  .hero .lede strong{color:var(--text); font-weight:600;}
+
+  .constraints{
+    display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--hairline);
+    border-bottom:1px solid var(--hairline); margin-top:8px;
+  }
+  .constraints div{
+    flex:1 1 128px; padding:14px 18px 14px 0; display:grid; gap:2px;
+  }
+  .constraints .v{font-family:var(--font-mono); font-size:1.5rem; font-weight:600; color:var(--accent); line-height:1;}
+  .constraints .k{font-family:var(--font-mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint);}
+
+  /* ── sections ─────────────────────────────────────── */
+  section{padding:clamp(52px,8vw,88px) 0; border-top:1px solid var(--hairline-soft);}
+  .sec-head{display:grid; gap:14px; max-width:var(--measure); margin-bottom:38px;}
+  .sec-head h2{font-size:clamp(1.6rem,3.4vw,2.1rem); font-weight:700; letter-spacing:-.01em; line-height:1.15;}
+  .sec-head p{margin:0; color:var(--text-dim);}
+
+  /* ── the claim ladder ─────────────────────────────── */
+  .ladder{display:grid; gap:1px; background:var(--hairline); border:1px solid var(--hairline);}
+  @media(min-width:900px){ .ladder{grid-template-columns:repeat(3,1fr);} }
+  .claim{background:var(--surface); padding:24px 22px 26px; display:grid; gap:16px; align-content:start;}
+  .claim-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .badge{
+    font-family:var(--font-mono); font-size:.64rem; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; padding:4px 8px; border:1px solid currentColor; border-radius:3px;
+  }
+  .b-rec{color:var(--ready);} .b-sug{color:var(--moderate);} .b-obs{color:var(--text-dim);}
+  .grade{font-family:var(--font-mono); font-size:.66rem; color:var(--text-faint); letter-spacing:.06em;}
+  .claim h3{font-size:1.12rem; font-weight:600; line-height:1.35; font-variation-settings:"wdth" 96;}
+  .claim .body{font-size:.92rem; color:var(--text-dim); margin:0;}
+
+  .meter{display:grid; gap:6px;}
+  .meter-track{height:3px; background:var(--hairline); position:relative; overflow:hidden;}
+  .meter-fill{position:absolute; inset:0 auto 0 0; background:var(--accent);}
+  .meter-row{display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:.66rem; color:var(--text-faint); letter-spacing:.06em;}
+  .meter-row .val{color:var(--text-dim); font-variant-numeric:tabular-nums;}
+
+  .refs{display:grid; gap:9px; border-top:1px solid var(--hairline-soft); padding-top:14px;}
+  .ref{font-size:.8rem; line-height:1.45; color:var(--text-dim);}
+  .ref cite{font-style:normal; color:var(--text);}
+  .ref .not{display:block; color:var(--text-faint); margin-top:3px;}
+  .ref .not b{font-weight:600; color:var(--text-faint); font-family:var(--font-mono); font-size:.66rem; letter-spacing:.08em; text-transform:uppercase;}
+  .flag{font-family:var(--font-mono); font-size:.68rem; letter-spacing:.04em; color:var(--moderate);}
+
+  /* ── engine index ─────────────────────────────────── */
+  .index{display:grid; gap:1px; background:var(--hairline-soft); border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);}
+  @media(min-width:760px){ .index{grid-template-columns:repeat(2,1fr);} }
+  .row{background:var(--ink); padding:18px 0; display:grid; grid-template-columns:1fr; gap:4px;}
+  @media(min-width:760px){ .row{padding:18px 24px 18px 0;} .index .row:nth-child(even){padding-left:24px;} }
+  .row .t{font-family:var(--font-display); font-weight:600; font-size:1rem; font-variation-settings:"wdth" 94;}
+  .row .d{font-size:.88rem; color:var(--text-dim);}
+
+  /* ── refusals ─────────────────────────────────────── */
+  .refusals{display:grid; gap:0; max-width:var(--measure);}
+  .refusal{display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start; padding:16px 0; border-bottom:1px solid var(--hairline-soft);}
+  .refusal:first-child{border-top:1px solid var(--hairline-soft);}
+  .refusal .x{font-family:var(--font-mono); color:var(--recovering); font-size:.9rem; line-height:1.7;}
+  .refusal .t{font-weight:600;}
+  .refusal .d{color:var(--text-dim); font-size:.92rem;}
+
+  /* ── privacy ──────────────────────────────────────── */
+  .privacy{border:1px solid var(--hairline); background:var(--surface); padding:clamp(24px,4vw,36px);}
+  .privacy p{max-width:var(--measure); color:var(--text-dim);}
+  .privacy p:first-of-type{margin-top:0;}
+  .plist{list-style:none; margin:22px 0 0; padding:0; display:grid; gap:10px;}
+  .plist li{display:grid; grid-template-columns:auto 1fr; gap:12px; font-size:.92rem; color:var(--text-dim);}
+  .plist .c{color:var(--ready); font-family:var(--font-mono); font-size:.85rem;}
+
+  /* ── footer ───────────────────────────────────────── */
+  footer{border-top:1px solid var(--hairline); padding:40px 0 56px; display:grid; gap:24px;}
+  .flinks{display:flex; flex-wrap:wrap; gap:12px;}
+  .flink{
+    border:1px solid var(--hairline); background:var(--surface); padding:12px 18px;
+    color:var(--text); font-family:var(--font-mono); font-size:.76rem; letter-spacing:.06em;
+    text-transform:uppercase; border-radius:3px;
+  }
+  .flink:hover{border-color:var(--accent); color:var(--accent); text-decoration:none;}
+  .fine{color:var(--text-faint); font-size:.82rem; max-width:var(--measure);}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important;}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Zenithium</h1>
-        <p>Cihaz İçi Biyometrik Karar ve Atletik Ölçüm Aleti</p>
-        <div class="links">
-            <a href="privacy.html" class="btn">Gizlilik Politikası / Privacy Policy</a>
-            <a href="support.html" class="btn">Destek ve İletişim / Support</a>
-        </div>
+<header>
+  <div class="wrap masthead">
+    <div class="mark">ZENITH<span>IUM</span></div>
+    <nav>
+      <a href="#karar">Karar</a>
+      <a href="#olcum">Ölçüm</a>
+      <a href="#gizlilik">Gizlilik</a>
+      <a href="#sinirlar">Sınırlar</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">iOS 18 · watchOS 11 · Türkçe</div>
+    <h1>Kararın arkasında ne olduğunu görebildiğin bir ölçüm aleti.</h1>
+    <p class="lede">Zenithium, Apple Watch'ının <strong>zaten kaydettiği</strong> veriden antrenman kararı üretir. Farkı, kararın kendisi değil: her cümlenin altında hangi ölçümden çıktığı, hangi çalışmaya dayandığı, o çalışmanın <strong>neyi göstermediği</strong> ve fikrini neyin değiştireceği yazar.</p>
+    <div class="constraints">
+      <div><span class="v">0</span><span class="k">Hesap</span></div>
+      <div><span class="v">0</span><span class="k">Ağ çağrısı</span></div>
+      <div><span class="v">0</span><span class="k">Üçüncü parti</span></div>
+      <div><span class="v">0</span><span class="k">Analitik</span></div>
+      <div><span class="v">28</span><span class="k">Hesap motoru</span></div>
     </div>
+  </div>
+
+  <section id="karar">
+    <div class="sec-head">
+      <div class="eyebrow">Kanıt kadar konuşur</div>
+      <h2>Zayıf kanıt emir kipi kuramaz.</h2>
+      <p>Bir cümlenin ne kadar iddialı olabileceği, arkasındaki çalışmanın tasarımından ve ölçümün güvenilirliğinden <em>türetilir</em>. Aşağıda aynı sabahın üç ayrı okuması var — hiçbiri diğerinden daha az doğru değil, üçü farklı sağlamlıkta kanıta yaslanıyor.</p>
+    </div>
+
+    <div class="ladder">
+
+      <article class="claim">
+        <div class="claim-top">
+          <span class="badge b-rec">Tavsiye</span>
+          <span class="grade">Derleme / konsensüs</span>
+        </div>
+        <h3>Bu gece 45 dakika daha uzun uyu</h3>
+        <p class="body">Son günlerde 2,4 saat uyku borcu birikti. Borcu tek gecede değil birkaç geceye yayarak kapatmak daha gerçekçi.</p>
+        <div class="meter">
+          <div class="meter-track"><div class="meter-fill" style="width:92%"></div></div>
+          <div class="meter-row"><span>Güven</span><span class="val">0,92</span></div>
+        </div>
+        <div class="refs">
+          <div class="ref">
+            <cite>Watson NF, Badr MS, Belenky G, ve ark. (2015)</cite> — <span class="num">AASM</span> ve Sleep Research Society ortak bildirisi.
+            <span class="not"><b>Ne göstermiyor</b> Bir bireyin ihtiyacını vermez. Yetişkin nüfus için bir aralık bildirir; aralığın dışında uyuyan herkesin yetersiz uyuduğu anlamına gelmez.</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="claim">
+        <div class="claim-top">
+          <span class="badge b-sug">Öneri</span>
+          <span class="grade">Kaynak kapsamıyla sınırlı</span>
+        </div>
+        <h3>Toparlanma 38 — bugünü hafif tutmayı düşünebilirsin</h3>
+        <p class="body">Gece biyometrilerin taban çizginin belirgin biçimde altında. Bu tek gecelik bir sapma olabilir; birden çok gün süren bir eğilim daha anlamlıdır.</p>
+        <div class="meter">
+          <div class="meter-track"><div class="meter-fill" style="width:88%"></div></div>
+          <div class="meter-row"><span>Güven</span><span class="val">0,88</span></div>
+        </div>
+        <div class="refs">
+          <div class="ref">
+            <cite>Plews DJ, Laursen PB, Stanley J, ve ark. (2013)</cite> — <span class="num">Sports Medicine</span>.
+            <span class="not"><b>Ne göstermiyor</b> Tek bir günün HRV değerinden o günün antrenman kapasitesini çıkarmayı desteklemez; savunduğu şey haftalık ortalamaların takibidir.</span>
+          </div>
+          <div class="ref flag">Kaynağı tek geceye değil haftalık ortalamaya işaret ettiği için bu cümle tavsiye seviyesine yükseltilmedi.</div>
+        </div>
+      </article>
+
+      <article class="claim">
+        <div class="claim-top">
+          <span class="badge b-obs">Gözlem</span>
+          <span class="grade">Literatür çelişkili</span>
+        </div>
+        <h3>Akut yükün kronik ortalamanın %38 üstünde</h3>
+        <p class="body">Oran 1,4. Bu ölçütün sakatlıkla ilişkisi tartışmalı: akut değer kronik değerin içinde yer aldığı için, gerçek bir ilişki olmasa bile korelasyon üretebiliyor.</p>
+        <div class="meter">
+          <div class="meter-track"><div class="meter-fill" style="width:93%"></div></div>
+          <div class="meter-row"><span>Güven</span><span class="val">0,93</span></div>
+        </div>
+        <div class="refs">
+          <div class="ref">
+            <cite>Gabbett TJ (2016)</cite> ↔ <cite>Lolli L, Batterham AM, ve ark. (2019)</cite> — <span class="num">Br J Sports Med</span>.
+            <span class="not"><b>Ne göstermiyor</b> İlki belirli bir oranın güvenli olduğunu göstermez; ikincisi yük takibinin işe yaramadığını söylemez, yalnızca oranın matematiğinin sahte korelasyon ürettiğini gösterir.</span>
+          </div>
+          <div class="ref flag">Bu konuda literatür hemfikir değil. Zenithium sayıyı gösterir, üzerine talimat vermez.</div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="olcum">
+    <div class="sec-head">
+      <div class="eyebrow">Ne ölçüyor</div>
+      <h2>Yirmi sekiz motor, tek bir cihazda.</h2>
+      <p>Hepsi saf hesap: aynı girdi her zaman aynı çıktıyı verir. Sunucuya soru sorulmadığı için sonuç uçakta da, kapsama alanı dışında da aynı.</p>
+    </div>
+    <div class="index">
+      <div class="row"><span class="t">Toparlanma</span><span class="d">Gece HRV, dinlenik nabız, bilek sıcaklığı ve solunum hızının kendi taban çizgine göre konumu.</span></div>
+      <div class="row"><span class="t">Uyku</span><span class="d">Evre dağılımı, uyku borcu ve sirkadiyen faz — nüfus ortalamasına değil, kendi geçmişine göre.</span></div>
+      <div class="row"><span class="t">Yük ve zorlanma</span><span class="d">Banister TRIMP tabanlı günlük yük, akut–kronik denge ve gün sonu zorlanma tavanı.</span></div>
+      <div class="row"><span class="t">Kas toparlanması</span><span class="d">21 kas grubu için, hareket kalıplarından türetilen yorgunluk ve biyolojik yarı ömürlü toparlanma.</span></div>
+      <div class="row"><span class="t">Dayanıklılık</span><span class="d">Eğime göre düzeltilmiş tempo, ölçülmüş metabolik maliyet eğrisiyle düz zemin karşılığı.</span></div>
+      <div class="row"><span class="t">Kuvvet</span><span class="d">Set, tekrar ve hareket kalıbı üzerinden kas grubu bazında birikmiş yük.</span></div>
+      <div class="row"><span class="t">Tahlil ve belgeler</span><span class="d">PDF tahlil raporunu cihazda okur: 50 biyobelirteç, 202 eş anlamlı. Belgeler şifreli olarak cihazda kalır.</span></div>
+      <div class="row"><span class="t">Hekim raporu</span><span class="d">Ölçümlerini ve tahlil seyrini yorumsuz, tek sayfa halinde dışa aktarır.</span></div>
+      <div class="row"><span class="t">Döngü farkındalığı</span><span class="d">Adet döngüsü kaydı varsa taban çizgisi karşılaştırmalarına bağlam olarak girer.</span></div>
+      <div class="row"><span class="t">Çevre</span><span class="d">Sıcak ortam adaptasyonu ve gün ışığı maruziyetinin yük yorumuna etkisi.</span></div>
+    </div>
+  </section>
+
+  <section id="gizlilik">
+    <div class="sec-head">
+      <div class="eyebrow">Gizlilik</div>
+      <h2>Doğrulanabilir bir iddia, pazarlama cümlesi değil.</h2>
+    </div>
+    <div class="privacy">
+      <p>Zenithium'un hesabı, sunucusu ve ağ izni yoktur. Okuduğu her şey Apple Sağlık'ta ve bu cihazdaki kendi deposunda kalır. Bu bir söz değil, mimari bir kısıt: depoda ağ çağrısı yapan tek bir satır yok ve bunu her derleme öncesi çalışan bir denetim betiği zorluyor.</p>
+      <ul class="plist">
+        <li><span class="c">✓</span><span>Hesap yok, giriş yok, parola yok</span></li>
+        <li><span class="c">✓</span><span>Hiçbir türde ağ isteği yok — çevrimdışı da aynı çalışır</span></li>
+        <li><span class="c">✓</span><span>Analitik, çökme raporlama, reklam kimliği veya üçüncü taraf kod yok</span></li>
+        <li><span class="c">✓</span><span>Sağlıktan türeyen veriler iCloud yedeğinin dışında tutulur</span></li>
+        <li><span class="c">✓</span><span>Tahlil belgeleri cihaz kilitliyken açılamayan dosya koruması altında saklanır</span></li>
+        <li><span class="c">✓</span><span>Uygulamayı silersen hesapları da onunla gider; Sağlık verin yerinde kalır</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="sinirlar">
+    <div class="sec-head">
+      <div class="eyebrow">Sınırlar</div>
+      <h2>Bilerek yapmadıkları.</h2>
+      <p>Bunlar eksik özellik değil, verilmiş kararlar. Bir ölçüm aletinin ne ölçmediğini bilmek, ne ölçtüğünü bilmek kadar önemlidir.</p>
+    </div>
+    <div class="refusals">
+      <div class="refusal"><span class="x">—</span><span><span class="t">Teşhis koymaz.</span> <span class="d">Tıbbi cihaz değildir. Bir tahlil değeri referans aralığının dışındaysa verebileceği tek cevap vardır: bunu hekimine göster.</span></span></div>
+      <div class="refusal"><span class="x">—</span><span><span class="t">Kalori, makro veya kilo takibi yoktur.</span> <span class="d">Hedef koymaz, kısıtlama önermez, tartıya bakmaz.</span></span></div>
+      <div class="refusal"><span class="x">—</span><span><span class="t">Takviye önermez.</span> <span class="d">Kullandığını söylersen kaydeder; başlamanı asla önermez.</span></span></div>
+      <div class="refusal"><span class="x">—</span><span><span class="t">Sohbet eden bir dil modeli içermez.</span> <span class="d">Cevaplar bir modelden değil, izlenebilir bir hesaptan gelir. Karşılığında her cevap tekrarlanabilir ve kaynak gösterir.</span></span></div>
+      <div class="refusal"><span class="x">—</span><span><span class="t">Sosyal akışı, sıralaması, rozeti yoktur.</span> <span class="d">Kimseyle karşılaştırılmazsın; tek referansın kendi geçmişin.</span></span></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div class="flinks">
+    <a class="flink" href="privacy.html">Gizlilik Politikası</a>
+    <a class="flink" href="support.html">Destek</a>
+    <a class="flink" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
+  </div>
+  <p class="fine">Zenithium bir spor ve iyi yaşam aracıdır. Tıbbi cihaz değildir, teşhis koymaz ve sağlığının yerinde olup olmadığını söyleyemez. Bir şikâyetin varsa hekimine danış — buradaki hiçbir şey o konuşmanın yerine geçmez.</p>
+</footer>
+
 </body>
 </html>

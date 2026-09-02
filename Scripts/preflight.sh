@@ -24,6 +24,7 @@ run "Xcode projesi"             python3 Scripts/generate-project.py
 # After generating, not before: this reads what was just written. The project shipped in
 # v0.1 was one Xcode refused to open at all, and nothing in the repository disagreed with
 # itself about it — XcodeGen quotes correctly, so only the checked-in file was broken.
+run "Bilimsel kaynaklar"      python3 Scripts/check-citations.py
 run "Proje dosyası çözümlemesi" python3 Scripts/check-pbxproj.py
 
 printf '\n'

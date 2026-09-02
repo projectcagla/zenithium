@@ -41,10 +41,15 @@
 		7C70F35642D10C705FD067B7 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		5A26B7994851A145E775ADBE /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		E26F5A75D96571010D432058 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		31C8038E6E35652CCCA20231 /* ClaimStrength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35DE99CEC6DEF5678CAAB770 /* ClaimStrength.swift */; };
 		6A4535151282F76084EDB098 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
 		DCB9F780DA85CA05B1ED9968 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		E147753FD9994B52EEF132C0 /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		F5A3CAA343384B919F748D0D /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
+		E75B550C0B2A81D1650B44CC /* EvidenceLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F21A616E160FE99014B1DE7 /* EvidenceLibrary.swift */; };
+		B802989E92495F874BEACB24 /* PopulationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FFA4348F2FCA27760D12AC /* PopulationTransfer.swift */; };
+		ADA6A6D91475B2378F1F0720 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52150BE4C070AFF8F3F5622 /* Recommendation.swift */; };
+		136B23E236F84121568EDFB9 /* Reference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3C1F425ADAF7A50878E067 /* Reference.swift */; };
 		287A1D72B8A2F359FB68F04E /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
 		E05C2E520B1F69C7E074D623 /* JournalBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76AD9B14A94BC01BF4D9251 /* JournalBehavior.swift */; };
 		1756108A2244D4F270592B30 /* JournalBehaviorWidgetSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28038ADC8FE8CBFD0AF34D23 /* JournalBehaviorWidgetSet.swift */; };
@@ -109,6 +114,7 @@
 		136E1F3241311E78C21CF081 /* PlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F327AA123A4E4CCCE145A10 /* PlanEngine.swift */; };
 		31C5779DE296F381B82FC929 /* PrescriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C35945F4210AF14EC5D9B0 /* PrescriptionEngine.swift */; };
 		DF7F13A24E1268C1C16EF7CB /* RacePlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BB094260406361360B0B693 /* RacePlanEngine.swift */; };
+		360A771B53D8BF68DF43FE68 /* RecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3365167B7A493C249A1FB87 /* RecommendationEngine.swift */; };
 		2CFEC4B8535E565AE6B3DD7F /* RecoveryEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 994DADCF82FCAB1CF5CDF905 /* RecoveryEngine.swift */; };
 		2DBFD964488A7FD6BCBCC8F0 /* SessionShapeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD83FDF0C65020260B04EF84 /* SessionShapeEngine.swift */; };
 		00FE72A44967B333C5FA4D08 /* SleepDebtEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA36EC4273C249852D219A56 /* SleepDebtEngine.swift */; };
@@ -278,10 +284,15 @@
 		1D6ED25965402D27E454BE16 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		C2155E6B83DD3633EF3F54A9 /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		9A649A2DFFDDE4C6AEA94768 /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		214FB83E06A0651ACF063C94 /* ClaimStrength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35DE99CEC6DEF5678CAAB770 /* ClaimStrength.swift */; };
 		B66C3F34015378219A1D96A7 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
 		50C630B53EBE36AB48553D11 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		F8A014153D3789D6D40D3B8F /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		0142B39786A836CC1B7D1A8F /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
+		C353F1CE4EA9D18C75EF7C55 /* EvidenceLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F21A616E160FE99014B1DE7 /* EvidenceLibrary.swift */; };
+		D530B64908CC42855EEE8881 /* PopulationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FFA4348F2FCA27760D12AC /* PopulationTransfer.swift */; };
+		11C55A0C32B43BE305EA4BEC /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52150BE4C070AFF8F3F5622 /* Recommendation.swift */; };
+		8F6316EC2727FD21C2F8C7D2 /* Reference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3C1F425ADAF7A50878E067 /* Reference.swift */; };
 		9966F7565F790C3434CAE995 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
 		330791E4CFCE28734477A7BE /* JournalBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76AD9B14A94BC01BF4D9251 /* JournalBehavior.swift */; };
 		362386DCEE16346C5AA24EC8 /* JournalBehaviorWidgetSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28038ADC8FE8CBFD0AF34D23 /* JournalBehaviorWidgetSet.swift */; };
@@ -373,10 +384,15 @@
 		CB3C688CF934C83649888903 /* HyroxStation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD06F0394F0D1C021D603875 /* HyroxStation.swift */; };
 		99DE79F930D027DF5B8D2F05 /* BriefingIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */; };
 		FD1FD2F87286B6BD8A29813B /* CalibrationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */; };
+		52D2D1C67733AC71E71B042B /* ClaimStrength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35DE99CEC6DEF5678CAAB770 /* ClaimStrength.swift */; };
 		06C110D9A97FCF0C9674D5C3 /* ClinicalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */; };
 		E13A5067FDDAE524A3A014C9 /* ClinicalModifierRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */; };
 		595F6911068866F205186B0E /* DecisionTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */; };
 		6FA7EBA2A60A9CC9532D4990 /* EngineResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B95EE9BDEC984311D606CE /* EngineResult.swift */; };
+		D7BBAC6E9CBC35C4B428227E /* EvidenceLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F21A616E160FE99014B1DE7 /* EvidenceLibrary.swift */; };
+		C643D516DD127B83FD0EA329 /* PopulationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FFA4348F2FCA27760D12AC /* PopulationTransfer.swift */; };
+		870C8E9C5A74B70CC9DC0E89 /* Recommendation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52150BE4C070AFF8F3F5622 /* Recommendation.swift */; };
+		CD317D2944D1162DDC0FBDC0 /* Reference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3C1F425ADAF7A50878E067 /* Reference.swift */; };
 		D3268022850D56DA09C5AC18 /* ScientificBoundaryRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */; };
 		FD24F26B56C37D9EC3CC2145 /* JournalBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76AD9B14A94BC01BF4D9251 /* JournalBehavior.swift */; };
 		467539B012BF403039E5DCBF /* JournalBehaviorWidgetSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28038ADC8FE8CBFD0AF34D23 /* JournalBehaviorWidgetSet.swift */; };
@@ -449,6 +465,7 @@
 		FC41B059D0C955B36D142E0C /* DayRecordCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DF1620FB228B15E6EC38071 /* DayRecordCacheTests.swift */; };
 		7C8E24D29F84A635DD9F88BC /* DecisionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D558BA26DAE071F146351E6C /* DecisionEngineTests.swift */; };
 		3AB941467810822758D66528 /* EnduranceEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E8B16A71B8C14CD4C8C96C0 /* EnduranceEngineTests.swift */; };
+		119AA580955C9A3069307C90 /* EvidenceLayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7122D4FA88BC38755D3775C1 /* EvidenceLayerTests.swift */; };
 		7C0515B40B30A88DB9C49C32 /* FatigueEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247B92B65C3D5F0DE8A17C16 /* FatigueEngineTests.swift */; };
 		878E400357775B2763E05F0E /* GPXReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A201AECC604917B4F728388 /* GPXReaderTests.swift */; };
 		E3AB2BB433E42A5B384EF990 /* HeatAcclimationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71AD4940A0A3AF09F4A108BD /* HeatAcclimationEngineTests.swift */; };
@@ -471,6 +488,7 @@
 		71DA283E4301505C4DDD1D08 /* PrescriptionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674D15EC510DE49152D36E1A /* PrescriptionEngineTests.swift */; };
 		983943AA7264EAF5E6478DDF /* ProtectedDataGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E7387CF8AAA1EAC07F6E96 /* ProtectedDataGuardTests.swift */; };
 		FC80BA4222A16A7675AD6007 /* RacePlanEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A66A0D658DBEA193B661729 /* RacePlanEngineTests.swift */; };
+		2BC86214A1ED8A9A915F8731 /* RecommendationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */; };
 		67E13583426719B11AAE3DB5 /* RecoveryEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */; };
 		CA8469384441247CA100EAFC /* ReferenceNormsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */; };
 		B2993B971B97C0D25A7EBA94 /* SafetyFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */; };
@@ -584,10 +602,15 @@
 		CD06F0394F0D1C021D603875 /* HyroxStation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyroxStation.swift; sourceTree = "<group>"; };
 		8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BriefingIO.swift; sourceTree = "<group>"; };
 		0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationState.swift; sourceTree = "<group>"; };
+		35DE99CEC6DEF5678CAAB770 /* ClaimStrength.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimStrength.swift; sourceTree = "<group>"; };
 		4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalContext.swift; sourceTree = "<group>"; };
 		88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClinicalModifierRegistry.swift; sourceTree = "<group>"; };
 		63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTrace.swift; sourceTree = "<group>"; };
 		B0B95EE9BDEC984311D606CE /* EngineResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineResult.swift; sourceTree = "<group>"; };
+		4F21A616E160FE99014B1DE7 /* EvidenceLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvidenceLibrary.swift; sourceTree = "<group>"; };
+		17FFA4348F2FCA27760D12AC /* PopulationTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopulationTransfer.swift; sourceTree = "<group>"; };
+		D52150BE4C070AFF8F3F5622 /* Recommendation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommendation.swift; sourceTree = "<group>"; };
+		8E3C1F425ADAF7A50878E067 /* Reference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reference.swift; sourceTree = "<group>"; };
 		18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistry.swift; sourceTree = "<group>"; };
 		A76AD9B14A94BC01BF4D9251 /* JournalBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalBehavior.swift; sourceTree = "<group>"; };
 		28038ADC8FE8CBFD0AF34D23 /* JournalBehaviorWidgetSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalBehaviorWidgetSet.swift; sourceTree = "<group>"; };
@@ -652,6 +675,7 @@
 		9F327AA123A4E4CCCE145A10 /* PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanEngine.swift; sourceTree = "<group>"; };
 		F4C35945F4210AF14EC5D9B0 /* PrescriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrescriptionEngine.swift; sourceTree = "<group>"; };
 		3BB094260406361360B0B693 /* RacePlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RacePlanEngine.swift; sourceTree = "<group>"; };
+		E3365167B7A493C249A1FB87 /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
 		994DADCF82FCAB1CF5CDF905 /* RecoveryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEngine.swift; sourceTree = "<group>"; };
 		CD83FDF0C65020260B04EF84 /* SessionShapeEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionShapeEngine.swift; sourceTree = "<group>"; };
 		BA36EC4273C249852D219A56 /* SleepDebtEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepDebtEngine.swift; sourceTree = "<group>"; };
@@ -810,6 +834,7 @@
 		1DF1620FB228B15E6EC38071 /* DayRecordCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayRecordCacheTests.swift; sourceTree = "<group>"; };
 		D558BA26DAE071F146351E6C /* DecisionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionEngineTests.swift; sourceTree = "<group>"; };
 		5E8B16A71B8C14CD4C8C96C0 /* EnduranceEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnduranceEngineTests.swift; sourceTree = "<group>"; };
+		7122D4FA88BC38755D3775C1 /* EvidenceLayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvidenceLayerTests.swift; sourceTree = "<group>"; };
 		247B92B65C3D5F0DE8A17C16 /* FatigueEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FatigueEngineTests.swift; sourceTree = "<group>"; };
 		3A201AECC604917B4F728388 /* GPXReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPXReaderTests.swift; sourceTree = "<group>"; };
 		71AD4940A0A3AF09F4A108BD /* HeatAcclimationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatAcclimationEngineTests.swift; sourceTree = "<group>"; };
@@ -832,6 +857,7 @@
 		674D15EC510DE49152D36E1A /* PrescriptionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrescriptionEngineTests.swift; sourceTree = "<group>"; };
 		28E7387CF8AAA1EAC07F6E96 /* ProtectedDataGuardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtectedDataGuardTests.swift; sourceTree = "<group>"; };
 		2A66A0D658DBEA193B661729 /* RacePlanEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RacePlanEngineTests.swift; sourceTree = "<group>"; };
+		39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngineTests.swift; sourceTree = "<group>"; };
 		AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEngineTests.swift; sourceTree = "<group>"; };
 		96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceNormsTests.swift; sourceTree = "<group>"; };
 		F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilterTests.swift; sourceTree = "<group>"; };
@@ -985,10 +1011,15 @@
 			children = (
 				8D3D7FB5D911449AAF63D579 /* BriefingIO.swift */,
 				0CD90ACD1FB66BBC1E033BBB /* CalibrationState.swift */,
+				35DE99CEC6DEF5678CAAB770 /* ClaimStrength.swift */,
 				4E14A4E7BC5FE4F916FCFBD6 /* ClinicalContext.swift */,
 				88EA7273F9C81E66C0910508 /* ClinicalModifierRegistry.swift */,
 				63D8FC5FB8B339D3616317AB /* DecisionTrace.swift */,
 				B0B95EE9BDEC984311D606CE /* EngineResult.swift */,
+				4F21A616E160FE99014B1DE7 /* EvidenceLibrary.swift */,
+				17FFA4348F2FCA27760D12AC /* PopulationTransfer.swift */,
+				D52150BE4C070AFF8F3F5622 /* Recommendation.swift */,
+				8E3C1F425ADAF7A50878E067 /* Reference.swift */,
 				18313E4151973D3A9903737E /* ScientificBoundaryRegistry.swift */,
 			);
 			path = Intelligence;
@@ -1155,6 +1186,7 @@
 				9F327AA123A4E4CCCE145A10 /* PlanEngine.swift */,
 				F4C35945F4210AF14EC5D9B0 /* PrescriptionEngine.swift */,
 				3BB094260406361360B0B693 /* RacePlanEngine.swift */,
+				E3365167B7A493C249A1FB87 /* RecommendationEngine.swift */,
 				994DADCF82FCAB1CF5CDF905 /* RecoveryEngine.swift */,
 				CD83FDF0C65020260B04EF84 /* SessionShapeEngine.swift */,
 				BA36EC4273C249852D219A56 /* SleepDebtEngine.swift */,
@@ -1588,6 +1620,7 @@
 				1DF1620FB228B15E6EC38071 /* DayRecordCacheTests.swift */,
 				D558BA26DAE071F146351E6C /* DecisionEngineTests.swift */,
 				5E8B16A71B8C14CD4C8C96C0 /* EnduranceEngineTests.swift */,
+				7122D4FA88BC38755D3775C1 /* EvidenceLayerTests.swift */,
 				247B92B65C3D5F0DE8A17C16 /* FatigueEngineTests.swift */,
 				3A201AECC604917B4F728388 /* GPXReaderTests.swift */,
 				71AD4940A0A3AF09F4A108BD /* HeatAcclimationEngineTests.swift */,
@@ -1610,6 +1643,7 @@
 				674D15EC510DE49152D36E1A /* PrescriptionEngineTests.swift */,
 				28E7387CF8AAA1EAC07F6E96 /* ProtectedDataGuardTests.swift */,
 				2A66A0D658DBEA193B661729 /* RacePlanEngineTests.swift */,
+				39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */,
 				AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */,
 				96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */,
 				F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */,
@@ -1880,10 +1914,15 @@
 				7C70F35642D10C705FD067B7 /* HyroxStation.swift in Sources */,
 				5A26B7994851A145E775ADBE /* BriefingIO.swift in Sources */,
 				E26F5A75D96571010D432058 /* CalibrationState.swift in Sources */,
+				31C8038E6E35652CCCA20231 /* ClaimStrength.swift in Sources */,
 				6A4535151282F76084EDB098 /* ClinicalContext.swift in Sources */,
 				DCB9F780DA85CA05B1ED9968 /* ClinicalModifierRegistry.swift in Sources */,
 				E147753FD9994B52EEF132C0 /* DecisionTrace.swift in Sources */,
 				F5A3CAA343384B919F748D0D /* EngineResult.swift in Sources */,
+				E75B550C0B2A81D1650B44CC /* EvidenceLibrary.swift in Sources */,
+				B802989E92495F874BEACB24 /* PopulationTransfer.swift in Sources */,
+				ADA6A6D91475B2378F1F0720 /* Recommendation.swift in Sources */,
+				136B23E236F84121568EDFB9 /* Reference.swift in Sources */,
 				287A1D72B8A2F359FB68F04E /* ScientificBoundaryRegistry.swift in Sources */,
 				E05C2E520B1F69C7E074D623 /* JournalBehavior.swift in Sources */,
 				1756108A2244D4F270592B30 /* JournalBehaviorWidgetSet.swift in Sources */,
@@ -1948,6 +1987,7 @@
 				136E1F3241311E78C21CF081 /* PlanEngine.swift in Sources */,
 				31C5779DE296F381B82FC929 /* PrescriptionEngine.swift in Sources */,
 				DF7F13A24E1268C1C16EF7CB /* RacePlanEngine.swift in Sources */,
+				360A771B53D8BF68DF43FE68 /* RecommendationEngine.swift in Sources */,
 				2CFEC4B8535E565AE6B3DD7F /* RecoveryEngine.swift in Sources */,
 				2DBFD964488A7FD6BCBCC8F0 /* SessionShapeEngine.swift in Sources */,
 				00FE72A44967B333C5FA4D08 /* SleepDebtEngine.swift in Sources */,
@@ -2124,10 +2164,15 @@
 				1D6ED25965402D27E454BE16 /* HyroxStation.swift in Sources */,
 				C2155E6B83DD3633EF3F54A9 /* BriefingIO.swift in Sources */,
 				9A649A2DFFDDE4C6AEA94768 /* CalibrationState.swift in Sources */,
+				214FB83E06A0651ACF063C94 /* ClaimStrength.swift in Sources */,
 				B66C3F34015378219A1D96A7 /* ClinicalContext.swift in Sources */,
 				50C630B53EBE36AB48553D11 /* ClinicalModifierRegistry.swift in Sources */,
 				F8A014153D3789D6D40D3B8F /* DecisionTrace.swift in Sources */,
 				0142B39786A836CC1B7D1A8F /* EngineResult.swift in Sources */,
+				C353F1CE4EA9D18C75EF7C55 /* EvidenceLibrary.swift in Sources */,
+				D530B64908CC42855EEE8881 /* PopulationTransfer.swift in Sources */,
+				11C55A0C32B43BE305EA4BEC /* Recommendation.swift in Sources */,
+				8F6316EC2727FD21C2F8C7D2 /* Reference.swift in Sources */,
 				9966F7565F790C3434CAE995 /* ScientificBoundaryRegistry.swift in Sources */,
 				330791E4CFCE28734477A7BE /* JournalBehavior.swift in Sources */,
 				362386DCEE16346C5AA24EC8 /* JournalBehaviorWidgetSet.swift in Sources */,
@@ -2226,10 +2271,15 @@
 				CB3C688CF934C83649888903 /* HyroxStation.swift in Sources */,
 				99DE79F930D027DF5B8D2F05 /* BriefingIO.swift in Sources */,
 				FD1FD2F87286B6BD8A29813B /* CalibrationState.swift in Sources */,
+				52D2D1C67733AC71E71B042B /* ClaimStrength.swift in Sources */,
 				06C110D9A97FCF0C9674D5C3 /* ClinicalContext.swift in Sources */,
 				E13A5067FDDAE524A3A014C9 /* ClinicalModifierRegistry.swift in Sources */,
 				595F6911068866F205186B0E /* DecisionTrace.swift in Sources */,
 				6FA7EBA2A60A9CC9532D4990 /* EngineResult.swift in Sources */,
+				D7BBAC6E9CBC35C4B428227E /* EvidenceLibrary.swift in Sources */,
+				C643D516DD127B83FD0EA329 /* PopulationTransfer.swift in Sources */,
+				870C8E9C5A74B70CC9DC0E89 /* Recommendation.swift in Sources */,
+				CD317D2944D1162DDC0FBDC0 /* Reference.swift in Sources */,
 				D3268022850D56DA09C5AC18 /* ScientificBoundaryRegistry.swift in Sources */,
 				FD24F26B56C37D9EC3CC2145 /* JournalBehavior.swift in Sources */,
 				467539B012BF403039E5DCBF /* JournalBehaviorWidgetSet.swift in Sources */,
@@ -2309,6 +2359,7 @@
 				FC41B059D0C955B36D142E0C /* DayRecordCacheTests.swift in Sources */,
 				7C8E24D29F84A635DD9F88BC /* DecisionEngineTests.swift in Sources */,
 				3AB941467810822758D66528 /* EnduranceEngineTests.swift in Sources */,
+				119AA580955C9A3069307C90 /* EvidenceLayerTests.swift in Sources */,
 				7C0515B40B30A88DB9C49C32 /* FatigueEngineTests.swift in Sources */,
 				878E400357775B2763E05F0E /* GPXReaderTests.swift in Sources */,
 				E3AB2BB433E42A5B384EF990 /* HeatAcclimationEngineTests.swift in Sources */,
@@ -2331,6 +2382,7 @@
 				71DA283E4301505C4DDD1D08 /* PrescriptionEngineTests.swift in Sources */,
 				983943AA7264EAF5E6478DDF /* ProtectedDataGuardTests.swift in Sources */,
 				FC80BA4222A16A7675AD6007 /* RacePlanEngineTests.swift in Sources */,
+				2BC86214A1ED8A9A915F8731 /* RecommendationEngineTests.swift in Sources */,
 				67E13583426719B11AAE3DB5 /* RecoveryEngineTests.swift in Sources */,
 				CA8469384441247CA100EAFC /* ReferenceNormsTests.swift in Sources */,
 				B2993B971B97C0D25A7EBA94 /* SafetyFilterTests.swift in Sources */,
