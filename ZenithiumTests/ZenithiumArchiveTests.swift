@@ -190,9 +190,17 @@ struct ZenithiumArchiveTests {
     }
 
     @Test("Bugünkü ve daha eski sürümler kabul ediliyor")
-    func acceptsCurrentAndOlderFormats() throws {
+    func acceptsCurrentAndOlderFormats() {
         for version in 1...ZenithiumArchive.currentFormatVersion {
-            try ZenithiumArchive.validate(formatVersion: version)
+            #expect(throws: Never.self) {
+                try ZenithiumArchive.validate(formatVersion: version)
+            }
+        }
+        #expect(throws: ArchiveFailure.unsupportedFormatVersion(found: 0, supported: ZenithiumArchive.currentFormatVersion)) {
+            try ZenithiumArchive.validate(formatVersion: 0)
+        }
+        #expect(throws: ArchiveFailure.unsupportedFormatVersion(found: -1, supported: ZenithiumArchive.currentFormatVersion)) {
+            try ZenithiumArchive.validate(formatVersion: -1)
         }
     }
 

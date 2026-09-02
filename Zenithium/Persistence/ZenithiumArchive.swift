@@ -108,7 +108,7 @@ struct ZenithiumArchive: Codable, Sendable, Equatable {
     /// a future version added would produce a plausible-looking store missing a year of
     /// something, and the person would have no way to notice.
     static func validate(formatVersion: Int) throws {
-        guard formatVersion <= currentFormatVersion else {
+        guard formatVersion >= 1, formatVersion <= currentFormatVersion else {
             throw ArchiveFailure.unsupportedFormatVersion(
                 found: formatVersion,
                 supported: currentFormatVersion
