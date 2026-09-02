@@ -236,6 +236,8 @@
 		367E783211F637C70DC0B7EB /* StrengthSessionLoggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409C50E36C0D0C95822D447F /* StrengthSessionLoggerView.swift */; };
 		2848DB24CB79E32C58ACA85A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C56DF27B3569015AC2F5ADB6 /* OnboardingView.swift */; };
 		15F3C3CC6F36AFC289D8791F /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C95608DB1D69FF6994E255 /* PlanView.swift */; };
+		51DD8AA85E38D44572304C56 /* RecommendationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B82C00927DE75F2BEA6B8AC1 /* RecommendationCard.swift */; };
+		5AAEDB5B4C29EBE3B0CA495A /* RecommendationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3E8D477F9A1528647C6734 /* RecommendationListView.swift */; };
 		69F5DC48FE3A96EDB76CFF26 /* ReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 037BCCDC2BBA4F145B1D6661 /* ReportView.swift */; };
 		99B10CD36262A87FCA844D5A /* DataTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5C254AFC7BDBC2929C2F17 /* DataTransferView.swift */; };
 		9A02090057B3715C311FD791 /* DisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BFB12DE163090BF3420DD7 /* DisclaimerView.swift */; };
@@ -801,6 +803,8 @@
 		409C50E36C0D0C95822D447F /* StrengthSessionLoggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthSessionLoggerView.swift; sourceTree = "<group>"; };
 		C56DF27B3569015AC2F5ADB6 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		63C95608DB1D69FF6994E255 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		B82C00927DE75F2BEA6B8AC1 /* RecommendationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationCard.swift; sourceTree = "<group>"; };
+		BB3E8D477F9A1528647C6734 /* RecommendationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationListView.swift; sourceTree = "<group>"; };
 		037BCCDC2BBA4F145B1D6661 /* ReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportView.swift; sourceTree = "<group>"; };
 		4E5C254AFC7BDBC2929C2F17 /* DataTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataTransferView.swift; sourceTree = "<group>"; };
 		B5BFB12DE163090BF3420DD7 /* DisclaimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisclaimerView.swift; sourceTree = "<group>"; };
@@ -1475,6 +1479,15 @@
 			path = Plan;
 			sourceTree = "<group>";
 		};
+		D54047395ED414F905B9C851 /* Recommendations */ = {
+			isa = PBXGroup;
+			children = (
+				B82C00927DE75F2BEA6B8AC1 /* RecommendationCard.swift */,
+				BB3E8D477F9A1528647C6734 /* RecommendationListView.swift */,
+			);
+			path = Recommendations;
+			sourceTree = "<group>";
+		};
 		E6324A891DA6FC60DD435A2D /* Report */ = {
 			isa = PBXGroup;
 			children = (
@@ -1563,6 +1576,7 @@
 				0256A24FEAD2DF381329BED7 /* Muscle */,
 				3D0BBD979A3BF8850E04038E /* Onboarding */,
 				DFD533E8FF7587A0B11A8120 /* Plan */,
+				D54047395ED414F905B9C851 /* Recommendations */,
 				E6324A891DA6FC60DD435A2D /* Report */,
 				BA41CE6DE3F57D8EDA0ED0DC /* Settings */,
 				7E41AA1CAB7686746972BD11 /* Sleep */,
@@ -2109,6 +2123,8 @@
 				367E783211F637C70DC0B7EB /* StrengthSessionLoggerView.swift in Sources */,
 				2848DB24CB79E32C58ACA85A /* OnboardingView.swift in Sources */,
 				15F3C3CC6F36AFC289D8791F /* PlanView.swift in Sources */,
+				51DD8AA85E38D44572304C56 /* RecommendationCard.swift in Sources */,
+				5AAEDB5B4C29EBE3B0CA495A /* RecommendationListView.swift in Sources */,
 				69F5DC48FE3A96EDB76CFF26 /* ReportView.swift in Sources */,
 				99B10CD36262A87FCA844D5A /* DataTransferView.swift in Sources */,
 				9A02090057B3715C311FD791 /* DisclaimerView.swift in Sources */,

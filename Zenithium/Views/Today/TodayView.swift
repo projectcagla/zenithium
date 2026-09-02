@@ -49,6 +49,11 @@ struct TodayView: View {
             // KATMAN 2 — KANITI: Neden? & Ne kadar eminsin?
             evidenceLayer(content)
 
+            // KATMAN 2.5 — BİLİMSEL ÖNERİLER & KANIT LİSTESİ (Faz 34)
+            if !viewModel.recommendations.isEmpty {
+                RecommendationListView(recommendations: viewModel.recommendations)
+            }
+
             // KATMAN 3 — DÜN GECE: Ham ölçümler ve sınırlar
             overnightLayer(content)
 
@@ -62,6 +67,7 @@ struct TodayView: View {
         .animation(.easeOut(duration: 0.25), value: viewModel.briefing)
         .animation(.easeOut(duration: 0.25), value: viewModel.athleticDecision)
         .animation(.easeOut(duration: 0.25), value: viewModel.prescription)
+        .animation(.easeOut(duration: 0.25), value: viewModel.recommendations)
     }
 
     // MARK: - KATMAN 1 — KARAR (Günün Hükmü - Kart Değil, Ekranın Başı)

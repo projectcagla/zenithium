@@ -46,6 +46,9 @@ final class TodayViewModel {
     /// Epistemic decision trace synthesized by DecisionEngine (Epistemic Layer).
     private(set) var athleticDecision: EngineResult<AthleticDecision>?
 
+    /// Evidence-backed recommendations (Faz 34 Bölüm B).
+    private(set) var recommendations: [Recommendation] = []
+
     private let coordinator: any RecalculationDriving
     private let health: any HealthAuthorizing
     private let nowProvider: @Sendable () -> Date
@@ -225,11 +228,104 @@ final class TodayViewModel {
             let plan = await self.nextPlanPosition(for: result)
             let suggestion = await self.suggestion(for: result, context: context)
             let decision = await self.synthesizeDecision(for: result, context: context)
+            let recommendations = await self.synthesizeRecommendations(for: result, context: context)
             guard !Task.isCancelled else { return }
             self.planPosition = plan
             self.prescription = suggestion
             self.athleticDecision = decision
+            self.recommendations = recommendations
         }
+    }
+
+    /// Synthesizes the deterministic evidence-backed recommendations.
+    private func synthesizeRecommendations(
+        for result: RecalculationResult,
+        context: BriefingContext
+    ) async -> [Recommendation] {
+        var load: TrainingLoadOutput?
+        var daysCount = 14
+        var sleepDebtLedger: SleepDebtLedger?
+        var socialJetlag: SocialJetlag?
+        if let records {
+            let window = context.date.addingTimeInterval(-120 * 86_400)
+            if let days = try? await records.dayRecords(from: window, through: context.date) {
+                daysCount = days.count
+                load = TrainingLoadEngine.analyse(
+                    TrainingLoadInput(
+                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
+                        referenceDay: context.date
+                    )
+                )
+                sleepDebtLedger = SleepDebtEngine.ledger(
+                    days: days,
+                    needHours: 8.0,
+                    now: context.date,
+                    calendar: Calendar.autoupdatingCurrent
+                )
+                socialJetlag = SleepDebtEngine.socialJetlag(
+                    days: days,
+                    now: context.date,
+                    calendar: Calendar.autoupdatingCurrent
+                )
+            }
+        }
+
+        let calibration = CalibrationState(recordedDaysCount: max(1, daysCount))
+        let overnight = OvernightData(
+            night: DateInterval(start: result.record.dayStart.addingTimeInterval(-8 * 3600), duration: 8 * 3600),
+            heartRateVariability: result.record.heartRateVariability,
+            restingHeartRate: result.record.restingHeartRate,
+            wristTemperature: result.record.wristTemperatureDelta,
+            respiratoryRate: result.record.respiratoryRate
+        )
+
+        let sleepStart = result.record.sleepStart ?? result.record.dayStart.addingTimeInterval(-8 * 3600)
+        var sleepSegments: [SleepSegment] = []
+        if result.record.deepSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart, duration: result.record.deepSeconds), stage: .asleepDeep, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+        if result.record.remSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds), duration: result.record.remSeconds), stage: .asleepREM, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+        if result.record.coreSeconds > 0 {
+            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds + result.record.remSeconds), duration: result.record.coreSeconds), stage: .asleepCore, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
+        }
+
+        let dataQuality = DataQualityEngine.assess(
+            overnight: overnight,
+            sleepSegments: sleepSegments,
+            daySamples: [],
+            calibration: calibration
+        )
+
+        let userAge: Int? = result.profile.dateOfBirth.flatMap {
+            Calendar.autoupdatingCurrent.dateComponents([.year], from: $0, to: context.date).year
+        }
+
+        let sleepDebtHours = sleepDebtLedger?.hours
+        let socialJetlagHours = socialJetlag?.hours
+        let lastNightSleepHours = result.record.sleepDurationSeconds > 0 ? result.record.sleepDurationSeconds / 3600 : nil
+
+        let input = RecommendationInput(
+            now: context.date,
+            recoveryScore: result.recovery.score,
+            recoveryBand: result.recovery.band,
+            sleepDebtHours: sleepDebtHours,
+            lastNightSleepHours: lastNightSleepHours,
+            acuteLoad: load?.acuteLoad,
+            chronicLoad: load?.chronicLoad,
+            acwr: load?.ratio,
+            vo2MaxPercentile: nil,
+            socialJetlagHours: socialJetlagHours,
+            dataQuality: dataQuality,
+            calibration: calibration,
+            userAge: userAge,
+            userSex: result.profile.biologicalSex,
+            userStatus: .recreational,
+            lens: result.profile.trainingLens
+        )
+
+        return RecommendationEngine.recommendations(input: input)
     }
 
     /// Synthesizes the deterministic athletic decision trace.

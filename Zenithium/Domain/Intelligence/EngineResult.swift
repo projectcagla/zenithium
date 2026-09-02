@@ -19,6 +19,15 @@ enum ConfidenceRating: String, Sendable, Codable, CaseIterable {
     case moderate
     /// High-density multi-sensor verification over a mature physiological baseline.
     case high
+
+    var displayName: String {
+        switch self {
+        case .insufficient: return "Yetersiz"
+        case .low: return "Düşük"
+        case .moderate: return "Orta"
+        case .high: return "Yüksek"
+        }
+    }
 }
 
 /// A quantified confidence score between 0.0 and 1.0 with a categorical rating.
