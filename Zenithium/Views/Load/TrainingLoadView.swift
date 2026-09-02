@@ -15,6 +15,7 @@ import Charts
 
 struct TrainingLoadView: View {
 
+    @ScaledMetric private var chartHeight: CGFloat = 180
     @State var viewModel: TrainingLoadViewModel
 
     var body: some View {
@@ -177,7 +178,8 @@ struct TrainingLoadView: View {
                 }
             }
             .zenithiumChartChrome()
-            .frame(height: 180)
+            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight)
             // The daily load, described so VoiceOver can play the block as a tone rather
             // than reading only its one-line summary. Yol haritası v4, B8.
             .accessibilityChartDescriptor(

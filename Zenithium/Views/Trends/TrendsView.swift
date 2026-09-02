@@ -66,6 +66,7 @@ struct TrendsView: View {
                 }
                 .padding(.horizontal, ZenithiumSpacing.xxs)
             }
+            .scrollBounceBehavior(.basedOnSize)
             .accessibilityLabel("Ölçüm")
         }
     }
@@ -138,7 +139,9 @@ private struct MetricPill: View {
         Button(action: action) {
             Text(metric.displayName)
                 .font(ZenithiumFont.label)
-                .padding(.horizontal, ZenithiumSpacing.l)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, ZenithiumSpacing.m)
                 .padding(.vertical, ZenithiumSpacing.s)
                 .background {
                     Capsule(style: .continuous)

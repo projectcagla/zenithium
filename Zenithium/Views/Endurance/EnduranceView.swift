@@ -14,6 +14,7 @@ import Charts
 
 struct EnduranceView: View {
 
+    @ScaledMetric private var chartHeight: CGFloat = 150
     @State var viewModel: EnduranceViewModel
 
     var body: some View {
@@ -318,7 +319,8 @@ struct EnduranceView: View {
                 .foregroundStyle(ZenithiumColor.spectrumMagenta.opacity(0.7))
             }
             .zenithiumChartChrome()
-            .frame(height: 150)
+            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight)
             // Playable, so a build-up or a drop in weekly volume is audible rather than
             // only being a label. Yol haritası v4, B8.
             .accessibilityChartDescriptor(

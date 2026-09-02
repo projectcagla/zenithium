@@ -39,15 +39,16 @@ extension View {
     ///     as a hint, so a narrower chart still drops labels rather than crowding them.
     func zenithiumChartChrome(
         dateAxis: ZenithiumChartDateAxis = .dayAndMonth,
-        desiredXCount: Int = 4
+        desiredXCount: Int = 3
     ) -> some View {
         self
             .chartYAxis {
                 AxisMarks(position: .leading) { _ in
                     AxisGridLine().foregroundStyle(ZenithiumColor.hairline)
+                    AxisTick().foregroundStyle(ZenithiumColor.hairline)
                     // Monospaced digits so the labels form a straight edge. Proportional
                     // figures make an axis look bent even when the values are fine.
-                    AxisValueLabel()
+                    AxisValueLabel(anchor: .trailing)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .font(ZenithiumFont.caption.monospacedDigit())
                 }
@@ -57,16 +58,21 @@ extension View {
                     // Fainter than the horizontal lines: reading a value off a chart is a
                     // vertical movement, so the horizontal grid is the one doing the work.
                     AxisGridLine().foregroundStyle(ZenithiumColor.hairline.opacity(0.6))
+                    AxisTick().foregroundStyle(ZenithiumColor.hairline.opacity(0.6))
                     if dateAxis == .dayAndMonth {
-                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                        AxisValueLabel(anchor: .top, collisionResolution: .greedy)
                             .foregroundStyle(ZenithiumColor.textTertiary)
                             .font(ZenithiumFont.caption)
                     } else {
-                        AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits))
+                        AxisValueLabel(anchor: .top, collisionResolution: .greedy)
                             .foregroundStyle(ZenithiumColor.textTertiary)
                             .font(ZenithiumFont.caption)
                     }
                 }
+            }
+            .chartPlotStyle { plot in
+                // Grafik alanı ile eksen etiketleri arasına gerçek bir boşluk bırak
+                plot.padding(.leading, 8)
             }
     }
 }

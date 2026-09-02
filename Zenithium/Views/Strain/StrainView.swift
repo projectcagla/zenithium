@@ -125,15 +125,11 @@ struct StrainView: View {
                     }
                 }
 
-                if let longest = stress.recoveryWindows.first {
-                    Text("Günün en sakin toparlanma periyodu saat \(longest.start.formatted(date: .omitted, time: .shortened)) civarında gerçekleşti (\(Int((longest.duration / 60).rounded())) dakika).")
+                if let summary = StressEngine.recoverySummary(for: stress, calendar: .autoupdatingCurrent) {
+                    Text(summary)
                         .font(ZenithiumFont.footnote)
                         .foregroundStyle(ZenithiumColor.textTertiary)
                         .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    Text("Bugün kalp atış hızı taban dinlenme seviyesine uzun süreli bir iniş sergilemedi.")
-                        .font(ZenithiumFont.footnote)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
                 }
             }
         }

@@ -27,11 +27,14 @@ struct MetricTile: View {
             Text(label)
                 .font(ZenithiumFont.label)
                 .foregroundStyle(ZenithiumColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xs) {
                 Text(value)
                     .font(ZenithiumFont.metricValue)
                     .foregroundStyle(tint)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.8)
                 if let unit {
                     Text(unit)
                         .font(ZenithiumFont.unit)
@@ -39,16 +42,16 @@ struct MetricTile: View {
                 }
             }
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
 
             if let caption {
                 Text(caption)
                     .font(ZenithiumFont.caption)
                     .foregroundStyle(ZenithiumColor.textTertiary)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabelText ?? label)
         .accessibilityValue(accessibilityValueText ?? [value, unit].compactMap { $0 }.joined(separator: " "))

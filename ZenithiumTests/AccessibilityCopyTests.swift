@@ -73,3 +73,29 @@ struct AccessibilityCopyTests {
     // which this target does not compile — so they are checked at the source level instead,
     // by `Scripts/check-symbols.py`. That is the only pass that reaches all four targets.
 }
+
+@Suite("Series chart descriptor")
+struct SeriesChartDescriptorTests {
+
+    @Test("Sesli grafik tanımı üretimi eksiksiz ve geçerli")
+    func makeChartDescriptorGeneratesValidAXDescriptor() {
+        let now = Date(timeIntervalSince1970: 1_780_000_000)
+        let points = [
+            DescribedPoint(date: now.addingTimeInterval(-86_400), value: 65),
+            DescribedPoint(date: now, value: 72)
+        ]
+        let descriptor = SeriesChartDescriptor(
+            title: "İstirahat kalp hızı",
+            seriesName: "Nabız",
+            points: points,
+            formatValue: { "\(Int($0)) bpm" },
+            summary: "2 günlük nabız trendi"
+        )
+
+        let ax = descriptor.makeChartDescriptor()
+        #expect(ax.title == "İstirahat kalp hızı")
+        #expect(ax.summary == "2 günlük nabız trendi")
+        #expect(ax.series.count == 1)
+        #expect(ax.series.first?.dataPoints.count == 2)
+    }
+}

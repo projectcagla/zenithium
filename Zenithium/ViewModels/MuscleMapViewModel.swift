@@ -43,6 +43,9 @@ final class MuscleMapViewModel {
     /// Pain insights, refreshed whenever an entry is saved (Faz 32).
     private(set) var painInsights: [PainInsight] = []
 
+    /// Logged pain entries in the active window.
+    private(set) var painEntries: [PainEntry] = []
+
     private let coordinator: any RecalculationDriving
     private let repository: any StrengthSessionRepository
 
@@ -84,6 +87,18 @@ final class MuscleMapViewModel {
         }
     }
 
+    /// Delete a pain entry and refresh the insights.
+    func deletePain(id: UUID) async {
+        guard let painRepository else { return }
+        do {
+            try await painRepository.deletePainEntry(id: id)
+            await loadPainInsights()
+        } catch {
+            saveError = error as? ZenithiumError
+                ?? .persistenceWriteFailed(detail: error.localizedDescription)
+        }
+    }
+
     /// Compare logged entries against the load that preceded them.
     ///
     /// Silent on failure: this is a secondary read, and an error here should not take the
@@ -96,10 +111,12 @@ final class MuscleMapViewModel {
         guard let entries = try? await painRepository.painEntries(from: start, through: now),
               !entries.isEmpty,
               let days = try? await records.dayRecords(from: start, through: now) else {
+            painEntries = []
             painInsights = []
             return
         }
 
+        painEntries = entries.sorted { $0.loggedAt > $1.loggedAt }
         painInsights = PainEngine.insights(
             entries: entries,
             dailyLoads: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },

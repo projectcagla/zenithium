@@ -10,6 +10,7 @@ import Charts
 
 struct BloodMarkerDetailView: View {
 
+    @ScaledMetric private var chartHeight: CGFloat = 180
     let series: BloodworkViewModel.MarkerSeries
     let viewModel: BloodworkViewModel
 
@@ -80,7 +81,8 @@ struct BloodMarkerDetailView: View {
             }
             .chartYScale(domain: series.axisRange ?? 0...1)
             .zenithiumChartChrome(dateAxis: .monthAndYear, desiredXCount: 3)
-            .frame(height: 180)
+            // Saf çizim (Swift Charts): sabit 180pt yerine @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight)
             // A marker's shape over years is the point of this screen, so it is playable
             // rather than only summarised. Yol haritası v4, B8.
             .accessibilityChartDescriptor(

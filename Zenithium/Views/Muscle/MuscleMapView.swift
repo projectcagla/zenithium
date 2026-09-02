@@ -107,6 +107,30 @@ struct MuscleMapView: View {
                     }
                     .accessibilityElement(children: .combine)
                 }
+
+                if !viewModel.painEntries.isEmpty {
+                    VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                        ForEach(viewModel.painEntries) { entry in
+                            HStack {
+                                Text("\(entry.muscle.displayName): \(entry.severity)/10 — \(entry.quality.displayName)")
+                                    .font(ZenithiumFont.caption)
+                                    .foregroundStyle(ZenithiumColor.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer()
+                                Button(role: .destructive) {
+                                    Task { await viewModel.deletePain(id: entry.id) }
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(ZenithiumColor.textTertiary)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(entry.muscle.displayName) ağrı kaydını sil")
+                            }
+                        }
+                    }
+                }
+
                 Text("Vücut haritasında bir bölgeye uzun bas, ağrı kaydet.")
                     .font(ZenithiumFont.caption)
                     .foregroundStyle(ZenithiumColor.textTertiary)

@@ -12,6 +12,8 @@ struct HybridView: View {
 
     @State var viewModel: HybridViewModel
     @State private var isLogging = false
+    @ScaledMetric(relativeTo: .body) private var chartHeight150: CGFloat = 150
+    @ScaledMetric(relativeTo: .body) private var chartHeight140: CGFloat = 140
 
     var body: some View {
         NavigationStack {
@@ -279,7 +281,8 @@ struct HybridView: View {
                     }
                 }
             }
-            .frame(height: 150)
+            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight150)
             .accessibilityElement()
             .accessibilityLabel("Tur tur koşu bölümleri")
             .accessibilityValue(runAccessibilityValue(analysis))
@@ -322,7 +325,8 @@ struct HybridView: View {
                         .foregroundStyle(ZenithiumColor.textTertiary)
                 }
             }
-            .frame(height: 140)
+            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight140)
             .accessibilityElement()
             .accessibilityLabel("Zamanla yorgun koşu cezası")
             .accessibilityValue(

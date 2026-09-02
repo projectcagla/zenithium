@@ -13,6 +13,7 @@ struct RacePlanView: View {
 
     @State private var viewModel: RacePlanViewModel
     @State private var isPickingCourse = false
+    @ScaledMetric(relativeTo: .body) private var chartHeight: CGFloat = 150
 
     init(health: any HealthDataProviding) {
         _viewModel = State(initialValue: RacePlanViewModel(health: health))
@@ -266,7 +267,8 @@ struct RacePlanView: View {
                     }
                 }
             }
-            .frame(height: 150)
+            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
+            .frame(minHeight: chartHeight)
             .accessibilityChartDescriptor(
                 SeriesChartDescriptor(
                     title: "Yükseklik profili",

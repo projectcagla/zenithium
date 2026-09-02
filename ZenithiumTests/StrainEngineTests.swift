@@ -250,4 +250,34 @@ struct StrainEngineTests {
         expectClose(StrainEngine.sessionLoad(forVolumeLoad: 600), 100, tolerance: 1e-9, "capped at 100")
         expectClose(StrainEngine.sessionLoad(forVolumeLoad: 0), 0, tolerance: 1e-9, "zero volume")
     }
+
+    // MARK: - StressEngine.recoverySummary
+
+    @Test("Stres toparlanma özeti sakin blok olduğunda ve olmadığında doğru üretilir")
+    func stressRecoverySummaryFormats() {
+        let calendar = Calendar.autoupdatingCurrent
+        let dayStart = Date(timeIntervalSince1970: 1_780_000_000)
+
+        let withRecovery = StressDay(
+            intervals: [],
+            trainingLoad: 10,
+            nonTrainingLoad: 20,
+            recoveryWindows: [RecoveryWindow(start: dayStart.addingTimeInterval(3600), end: dayStart.addingTimeInterval(6000), heartRate: 55)],
+            secondsByBand: [:]
+        )
+        let summaryWith = StressEngine.recoverySummary(for: withRecovery, calendar: calendar)
+        #expect(summaryWith != nil)
+        #expect(summaryWith?.contains("Günün en sakin bloğu") == true)
+        #expect(summaryWith?.contains("40 dakika sürdü") == true)
+
+        let withoutRecovery = StressDay(
+            intervals: [],
+            trainingLoad: 10,
+            nonTrainingLoad: 20,
+            recoveryWindows: [],
+            secondsByBand: [:]
+        )
+        let summaryWithout = StressEngine.recoverySummary(for: withoutRecovery, calendar: calendar)
+        #expect(summaryWithout == "Bugün nabzın dinlenik seviyeye uzun süre inmedi.")
+    }
 }

@@ -21,11 +21,13 @@ struct SectionCard<Content: View>: View {
                         Text(title)
                             .font(ZenithiumFont.sectionTitle)
                             .foregroundStyle(ZenithiumColor.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     if let subtitle {
                         Text(subtitle)
                             .font(ZenithiumFont.caption)
                             .foregroundStyle(ZenithiumColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 // One heading per card, so VoiceOver's rotor lists the sections.
@@ -35,6 +37,7 @@ struct SectionCard<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
         .padding(ZenithiumSpacing.l)
         .background {
             // İki duraklı dikey gradyan: kart üstten hafifçe aydınlanır, altta zemine

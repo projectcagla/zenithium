@@ -20,6 +20,8 @@ struct TrendChart: View {
 
     @State private var scrubbedPoint: TrendPoint?
 
+    @ScaledMetric(relativeTo: .body) private var chartHeight: CGFloat = 200
+
     private var tint: Color {
         switch content.metric {
         case .recovery: return ZenithiumColor.green
@@ -31,7 +33,7 @@ struct TrendChart: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
             scrubReadout
 
             Chart {
@@ -91,7 +93,9 @@ struct TrendChart: View {
                         .gesture(scrubGesture(proxy: proxy, geometry: geometry))
                 }
             }
-            .frame(height: 200)
+            // Saf çizim (Swift Charts): sabit 200pt yerine @ScaledMetric ile minHeight kullanılır,
+            // Dynamic Type büyüdüğünde eksen etiketleri ve grafik rahat nefes alır.
+            .frame(minHeight: chartHeight)
             .accessibilityChartDescriptor(descriptor)
         }
     }
@@ -105,6 +109,8 @@ struct TrendChart: View {
                 Text(ZenithiumFormat.metric(point.value, digits: content.metric.fractionDigits))
                     .font(ZenithiumFont.metricValue)
                     .foregroundStyle(ZenithiumColor.textPrimary)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.8)
                 if !content.metric.unitSymbol.isEmpty {
                     Text(content.metric.unitSymbol)
                         .font(ZenithiumFont.unit)
@@ -116,6 +122,7 @@ struct TrendChart: View {
                     .foregroundStyle(ZenithiumColor.textSecondary)
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(scrubbedPoint == nil ? "En son değer" : "Seçili değer")
         .accessibilityValue(readoutAccessibilityValue)
@@ -124,7 +131,7 @@ struct TrendChart: View {
     private var readoutAccessibilityValue: String {
         guard let point = scrubbedPoint ?? content.points.last else { return "Değer yok" }
         let value = ZenithiumFormat.metric(point.value, digits: content.metric.fractionDigits)
-        return "\(value) \(content.metric.unitSymbol) on \(point.date.formatted(date: .abbreviated, time: .omitted))"
+        return "\(value) \(content.metric.unitSymbol), \(point.date.formatted(date: .abbreviated, time: .omitted))"
     }
 
     private func scrubGesture(proxy: ChartProxy, geometry: GeometryProxy) -> some Gesture {

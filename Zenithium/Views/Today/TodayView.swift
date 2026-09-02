@@ -285,8 +285,9 @@ struct TodayView: View {
             title: "Günün",
             subtitle: "Gün boyunca uyanıklık, uykuna göre demirlenmiş"
         ) {
+            // İçerik tabanlı yükseklik: CircadianArcView içindeki eğri @ScaledMetric ile
+            // ölçeklenir, altındaki 5 işaret ise kutuyu taşırmadan dinamik olarak sarar.
             CircadianArcView(arc: arc)
-                .frame(height: 140)
         }
     }
 

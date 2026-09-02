@@ -14,6 +14,7 @@ struct MuscleDetailView: View {
 
     let readiness: MuscleReadiness
     let sessions: [StrengthSessionSnapshot]
+    @ScaledMetric(relativeTo: .body) private var curveHeight: CGFloat = 110
 
     /// Hours plotted ahead — three days, which is past full recovery at every half-life.
     private static let projectionHours: Double = 72
@@ -69,8 +70,9 @@ struct MuscleDetailView: View {
             subtitle: "Kaydedilmiş seanslardan yansıtıldı"
         ) {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                // Saf çizim (DecayCurve Canvas): @ScaledMetric ile minHeight kullanılır.
                 DecayCurve(points: curve)
-                    .frame(height: 110)
+                    .frame(minHeight: curveHeight)
 
                 if let hours = readiness.hoursUntilReadiness(90) {
                     Text("Başka yük binmezse %90 hazır olmasına yaklaşık \(ZenithiumFormat.metric(hours, digits: 0)) saat var.")

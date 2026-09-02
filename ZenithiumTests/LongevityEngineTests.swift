@@ -257,6 +257,15 @@ struct EnvironmentEngineTests {
         #expect(east.adaptationDays > west.adaptationDays)
     }
 
+    @Test("Adaptasyon süresi içinde aktif, sonrasında pasif")
+    func adaptingWindowRespectsAdaptationDays() {
+        let shift = TimeZoneShift(from: "Europe/London", to: "Europe/Istanbul", date: now, hours: 3)
+        let dayWithin = now.addingTimeInterval(Double(shift.adaptationDays - 1) * 86_400)
+        let dayExpired = now.addingTimeInterval(Double(shift.adaptationDays + 2) * 86_400)
+        #expect(EnvironmentEngine.isAdapting(to: shift, on: dayWithin, calendar: calendar))
+        #expect(!EnvironmentEngine.isAdapting(to: shift, on: dayExpired, calendar: calendar))
+    }
+
     private func sample(daysAgo: Int, zone: String) -> BiometricDaySnapshot {
         BiometricDaySnapshot(
             dayStart: calendar.startOfDay(for: now.addingTimeInterval(-Double(daysAgo) * 86_400)),

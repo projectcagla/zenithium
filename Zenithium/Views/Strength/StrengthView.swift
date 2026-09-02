@@ -159,6 +159,7 @@ struct StrengthView: View {
                     }
                     .padding(.vertical, ZenithiumSpacing.s)
                     .accessibilityElement(children: .combine)
+                    .accessibilityValue(StrengthEngine.progressionSummary(for: estimate))
 
                     if estimate.id != estimates.prefix(8).last?.id {
                         Divider().overlay(ZenithiumColor.hairlineSoft)

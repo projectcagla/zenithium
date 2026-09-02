@@ -246,7 +246,13 @@ final class VitalsViewModel {
                     now: now,
                     calendar: calendar
                 ),
-                timeZoneShift: EnvironmentEngine.recentTimeZoneShift(in: history)
+                timeZoneShift: {
+                    guard let shift = EnvironmentEngine.recentTimeZoneShift(in: history),
+                          EnvironmentEngine.isAdapting(to: shift, on: now, calendar: calendar) else {
+                        return nil
+                    }
+                    return shift
+                }()
             )
         )
     }

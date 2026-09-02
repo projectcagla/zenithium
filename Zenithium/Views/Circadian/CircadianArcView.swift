@@ -19,6 +19,8 @@ struct CircadianArcView: View {
     /// Marked when the caller wants the compact form — major markers only (§5.5).
     var majorMarkersOnly = false
 
+    @ScaledMetric(relativeTo: .body) private var curveHeight: CGFloat = 80
+
     private var markers: [CircadianMarker] {
         majorMarkersOnly ? arc.markers.filter { $0.event.isMajor } : arc.markers
     }
@@ -31,12 +33,15 @@ struct CircadianArcView: View {
                     markerDots(in: proxy.size)
                 }
             }
+            .frame(height: curveHeight)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Gün boyunca uyanıklık")
             .accessibilityValue(curveAccessibilityValue)
 
             markerLegend
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Curve

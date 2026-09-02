@@ -191,4 +191,43 @@ struct StrengthEngineTests {
         let summary = try #require(signal.summary)
         #expect(SafetyFilter.isSafe(summary))
     }
+
+    @Test("İlerleme özeti yukarı ve aşağı yönü doğru yazar")
+    func progressionSummaryFormatsCorrectly() {
+        let improved = OneRepMaxEstimate(
+            exerciseName: "Squat",
+            estimate: 114.6,
+            weight: 100,
+            reps: 5,
+            date: now,
+            previousEstimate: 109.1
+        )
+        let summary1 = StrengthEngine.progressionSummary(for: improved)
+        #expect(summary1.contains("Squat"))
+        #expect(summary1.contains("114,6 kg"))
+        #expect(summary1.contains("%5 yukarıda"))
+
+        let declined = OneRepMaxEstimate(
+            exerciseName: "Bench Press",
+            estimate: 91.7,
+            weight: 80,
+            reps: 5,
+            date: now,
+            previousEstimate: 96.5
+        )
+        let summary2 = StrengthEngine.progressionSummary(for: declined)
+        #expect(summary2.contains("Bench Press"))
+        #expect(summary2.contains("%5 aşağıda"))
+
+        let unchanged = OneRepMaxEstimate(
+            exerciseName: "Deadlift",
+            estimate: 148.4,
+            weight: 140,
+            reps: 3,
+            date: now,
+            previousEstimate: nil
+        )
+        let summary3 = StrengthEngine.progressionSummary(for: unchanged)
+        #expect(summary3 == "Deadlift: tahmini 1TM 148,4 kg.")
+    }
 }

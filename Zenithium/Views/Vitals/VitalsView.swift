@@ -16,6 +16,7 @@ struct VitalsView: View {
 
     @State var viewModel: VitalsViewModel
     @State private var expanded: VitalSign?
+    @ScaledMetric(relativeTo: .body) private var ledgerHeight: CGFloat = 64
 
     var body: some View {
         NavigationStack {
@@ -344,7 +345,8 @@ struct VitalsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: ZenithiumRadius.small, style: .continuous))
             }
         }
-        .frame(height: 64)
+        // Saf çizim (Haftalık borç grafiği): @ScaledMetric ile minHeight kullanılır.
+        .frame(minHeight: ledgerHeight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Gecelik eksik ve fazla uyku")
         .accessibilityValue(nightlyAccessibilityValue(ledger))
