@@ -40,14 +40,22 @@ enum HealthDataKind: String, Sendable, Codable, CaseIterable, Hashable {
 
     var displayName: String {
         switch self {
-        case .heartRateVariability: return "heart rate variability"
-        case .restingHeartRate: return "resting heart rate"
-        case .heartRate: return "heart rate"
-        case .respiratoryRate: return "respiratory rate"
-        case .wristTemperature: return "wrist temperature"
-        case .oxygenSaturation: return "blood oxygen"
-        case .sleepAnalysis: return "sleep"
-        case .workout: return "workouts"
+        case .heartRateVariability:
+            return "kalp atış hızı değişkenliği"
+        case .restingHeartRate:
+            return "dinlenik nabız"
+        case .heartRate:
+            return "nabız"
+        case .respiratoryRate:
+            return "solunum hızı"
+        case .wristTemperature:
+            return "bilek sıcaklığı"
+        case .oxygenSaturation:
+            return "kandaki oksijen"
+        case .sleepAnalysis:
+            return "uyku analizi"
+        case .workout:
+            return "antrenmanlar"
         }
     }
 

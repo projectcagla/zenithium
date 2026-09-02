@@ -64,6 +64,11 @@ struct AccessibilityCopyTests {
         assertTurkish(band.displayName, "LiveSessionBand.\(band.rawValue)")
     }
 
+    @Test("Sağlık verisi türlerinin adları Türkçe", arguments: HealthDataKind.allCases)
+    func healthDataKindNamesAreTurkish(kind: HealthDataKind) {
+        assertTurkish(kind.displayName, "HealthDataKind.\(kind.rawValue)")
+    }
+
     // The widget's and the watch's own spoken strings are built inside their extensions,
     // which this target does not compile — so they are checked at the source level instead,
     // by `Scripts/check-symbols.py`. That is the only pass that reaches all four targets.

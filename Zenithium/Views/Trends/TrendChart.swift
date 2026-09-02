@@ -158,7 +158,7 @@ extension TrendChart {
     /// training-load and blood-marker charts can be played too. Yol haritası v4, B8.
     var descriptor: SeriesChartDescriptor {
         SeriesChartDescriptor(
-            title: "\(content.metric.displayName) over \(content.range.accessibilityName.lowercased())",
+            title: "\(content.range.accessibilityName) boyunca \(content.metric.displayName)",
             seriesName: content.metric.displayName,
             points: content.points.map { DescribedPoint(date: $0.date, value: $0.value) },
             formatValue: { [metric = content.metric] value in
