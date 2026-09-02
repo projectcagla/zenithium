@@ -615,7 +615,7 @@ def main() -> int:
         "ENABLE_TESTABILITY": "NO",
         "VALIDATE_PRODUCT": "YES",
     }
-    current_project_version = read_project_yml_setting("CURRENT_PROJECT_VERSION") or "5"
+    current_project_version = read_project_yml_setting("CURRENT_PROJECT_VERSION") or "6"
     marketing_version = read_project_yml_setting("MARKETING_VERSION") or "1.0"
     target_settings = {
         "Zenithium": {
