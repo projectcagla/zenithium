@@ -165,6 +165,8 @@ struct BiomarkerMatcherEquivalenceTests {
                 let line = "\(synonym)   12,4  \(definition.canonicalUnit.symbol)   (3,1 - 20,8)"
                 let fast = BiomarkerCatalog.bestMatch(inLine: line)?.definition.key
                 let reference = referenceMatch(inLine: line)?.key
+                #expect(fast != nil, "Hızlı eşleştirici bulamadı: \(line)")
+                #expect(reference != nil, "Referans eşleştirici bulamadı: \(line)")
                 #expect(fast == reference, "\(line): \(fast ?? "nil") vs \(reference ?? "nil")")
             }
         }
