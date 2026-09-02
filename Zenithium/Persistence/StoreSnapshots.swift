@@ -173,6 +173,56 @@ struct UserProfileSnapshot: Sendable, Equatable, Hashable {
     )
 }
 
+extension UserProfileSnapshot: Codable {
+
+    private enum CodingKeys: String, CodingKey {
+        case dateOfBirth
+        case biologicalSex
+        case maxHeartRateOverride
+        case baselineSleepNeedHours
+        case dayBoundary
+        case unitPreference
+        case trainingLens
+        case appearance
+        case tracksMenstrualCycle
+        case hasCompletedOnboarding
+        case disclaimerAcknowledgedAt
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            dateOfBirth: try container.decodeIfPresent(Date.self, forKey: .dateOfBirth),
+            biologicalSex: try container.decode(BiologicalSexValue.self, forKey: .biologicalSex),
+            maxHeartRateOverride: try container.decodeIfPresent(Double.self, forKey: .maxHeartRateOverride),
+            baselineSleepNeedHours: try container.decode(Double.self, forKey: .baselineSleepNeedHours),
+            dayBoundary: try container.decode(DayBoundary.self, forKey: .dayBoundary),
+            unitPreference: try container.decode(UnitPreference.self, forKey: .unitPreference),
+            trainingLens: try container.decode(TrainingLens.self, forKey: .trainingLens),
+            appearance: try container.decodeIfPresent(AppearancePreference.self, forKey: .appearance)
+                ?? .default,
+            tracksMenstrualCycle: try container.decode(Bool.self, forKey: .tracksMenstrualCycle),
+            hasCompletedOnboarding: try container.decode(Bool.self, forKey: .hasCompletedOnboarding),
+            disclaimerAcknowledgedAt: try container.decodeIfPresent(Date.self, forKey: .disclaimerAcknowledgedAt)
+        )
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(dateOfBirth, forKey: .dateOfBirth)
+        try container.encode(biologicalSex, forKey: .biologicalSex)
+        try container.encodeIfPresent(maxHeartRateOverride, forKey: .maxHeartRateOverride)
+        try container.encode(baselineSleepNeedHours, forKey: .baselineSleepNeedHours)
+        try container.encode(dayBoundary, forKey: .dayBoundary)
+        try container.encode(unitPreference, forKey: .unitPreference)
+        try container.encode(trainingLens, forKey: .trainingLens)
+        try container.encode(appearance, forKey: .appearance)
+        try container.encode(tracksMenstrualCycle, forKey: .tracksMenstrualCycle)
+        try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try container.encodeIfPresent(disclaimerAcknowledgedAt, forKey: .disclaimerAcknowledgedAt)
+    }
+}
+
 /// The fields a profile edit may change. `nil` leaves a field alone.
 struct UserProfileWrite: Sendable, Equatable {
     var dateOfBirth: Date??

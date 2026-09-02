@@ -72,7 +72,7 @@ struct LiveSessionOutput: Sendable, Equatable {
 }
 
 /// How the session reads against the day's ceiling.
-enum LiveSessionBand: String, Sendable, Hashable, CaseIterable {
+enum LiveSessionBand: String, Sendable, Hashable, CaseIterable, Codable {
 
     /// Well inside the day's room.
     case building

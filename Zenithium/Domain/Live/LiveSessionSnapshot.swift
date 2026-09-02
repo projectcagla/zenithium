@@ -71,4 +71,3 @@ struct LiveSessionSnapshot: Codable, Sendable, Equatable, Hashable {
     static let contextKey = "com.zenithium.liveSession"
 }
 
-extension LiveSessionBand: Codable {}
