@@ -231,10 +231,10 @@ enum DecisionEngine {
         }
 
         // Step 5: Final Deterministic Synthesis
-        let action: DecisionAction
-        let headline: String
-        let rationale: String
-        let activities: [WorkoutActivity]
+        var action: DecisionAction
+        var headline: String
+        var rationale: String
+        var activities: [WorkoutActivity]
 
         switch band {
         case .green:
@@ -256,6 +256,32 @@ enum DecisionEngine {
             headline = "Fizyolojik Toparlanma Önceliği"
             rationale = "Toparlanma skorunuz baskılanmış durumda. Ağır antrenmanlar yerine aktif toparlanma, mobilite veya dinlenme önerilir."
             activities = [.walking, .coreTraining, .functionalStrengthTraining]
+        }
+
+        // ACWR Safety Gating (Spike Guard)
+        if let acwr = input.acwr, acwr >= 1.50 {
+            let cappedTarget = min(RecoveryEngine.targetCeiling(forRecovery: recovery), 12.0)
+            if case .push = action {
+                action = .maintain(targetStrain: cappedTarget)
+            } else if case .maintain = action {
+                action = .maintain(targetStrain: cappedTarget)
+            }
+            headline = "Yüksek Akut Yük Koruması"
+            rationale = "Toparlanmanız \(band.displayName.lowercased()) bantta olsa da son haftalık akut yükünüz belirgin yükseldi (ACWR: \(MathSupport.decimal(acwr, digits: 2))). Aşırı yüklenme ve sakatlık riskine karşı günlük zorlanma tavanı \(MathSupport.decimal(cappedTarget)) ile sınırlandırıldı."
+        }
+
+        // Muscle Fatigue Screening
+        if !fatiguedMuscles.isEmpty {
+            let redGroups = Set(fatiguedMuscles.map(\.muscle))
+            let safeActivities = activities.filter { activity in
+                let row = MuscleInvolvementMatrix.involvement(for: activity)
+                return !redGroups.contains { group in (row[group] ?? 0) >= 0.40 }
+            }
+            if !safeActivities.isEmpty {
+                activities = safeActivities
+            } else {
+                activities = [.walking, .coreTraining]
+            }
         }
 
         let finalConfidenceValue = MathSupport.clamp(input.dataQuality.confidenceFactor * input.clinical.confidenceMultiplier, 0.0, 1.0)
