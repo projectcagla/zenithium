@@ -162,7 +162,8 @@ struct MockHealthProvider: HealthDataProviding {
 
     func fetchOvernightBiometrics(
         for night: DateInterval,
-        calendar: Calendar
+        calendar: Calendar,
+        previousWakeTime: Date? = nil
     ) async throws -> OvernightData {
         try requireAuthorization()
         let timeZoneIdentifier = calendar.timeZone.identifier
@@ -180,12 +181,17 @@ struct MockHealthProvider: HealthDataProviding {
             calendar: calendar,
             timeZoneIdentifier: timeZoneIdentifier
         )
-        let naps = napSegments(
-            forWakeDay: wakeDay,
-            dayIndex: index,
-            calendar: calendar,
-            timeZoneIdentifier: timeZoneIdentifier
-        )
+        let naps: [SleepSegment]
+        if previousWakeTime != nil {
+            naps = napSegments(
+                forWakeDay: wakeDay,
+                dayIndex: index,
+                calendar: calendar,
+                timeZoneIdentifier: timeZoneIdentifier
+            )
+        } else {
+            naps = []
+        }
 
         return OvernightData(
             night: night,

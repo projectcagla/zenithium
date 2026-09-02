@@ -46,7 +46,8 @@ enum SleepScoreEngine {
         )
 
         if input.timeInBedSeconds > 0 {
-            let efficiency = MathSupport.safeDivide(input.asleepSeconds, by: input.timeInBedSeconds)
+            let rawEfficiency = MathSupport.safeDivide(input.asleepSeconds, by: input.timeInBedSeconds)
+            let efficiency = min(rawEfficiency, 1.0)
             rawScores[.efficiency] = 100 * MathSupport.clamp(
                 MathSupport.safeDivide(
                     efficiency - EngineConstants.Sleep.efficiencyFloor,
@@ -180,6 +181,48 @@ enum SleepScoreEngine {
         )
     }
 
+    /// Resolves valid naps occurring between the previous night's wake time and the current night's start.
+    /// Returns `nil` if previous wake time is unknown (nap cannot be determined).
+    /// Discards segments that overlap the current night's sleep block or exceed `maxNapSeconds`.
+    static func resolveNaps(
+        candidates: [SleepSegment],
+        previousWakeTime: Date?,
+        currentNightSleepBlock: DateInterval? = nil
+    ) -> [SleepSegment]? {
+        guard let previousWakeTime else {
+            return nil
+        }
+        return candidates.filter { segment in
+            guard segment.isAsleep else { return false }
+            // Must begin at or after previous night's wake time
+            guard segment.start >= previousWakeTime else { return false }
+            // Must not exceed maxNapSeconds (3 hours)
+            guard segment.duration <= EngineConstants.Sleep.maxNapSeconds else { return false }
+            // Must not overlap with current night's main sleep block
+            if let currentNightSleepBlock, segment.interval.intersects(currentNightSleepBlock) {
+                return false
+            }
+            return true
+        }
+    }
+
+    /// Total qualifying nap seconds, or `nil` if previous night's wake time is unknown.
+    static func totalNapSeconds(
+        candidates: [SleepSegment],
+        previousWakeTime: Date?,
+        currentNightSleepBlock: DateInterval? = nil
+    ) -> Double? {
+        guard let naps = resolveNaps(
+            candidates: candidates,
+            previousWakeTime: previousWakeTime,
+            currentNightSleepBlock: currentNightSleepBlock
+        ) else {
+            return nil
+        }
+        let qualifying = naps.filter { $0.duration >= EngineConstants.Sleep.minNapSeconds }
+        return qualifying.reduce(into: 0.0) { $0 += $1.duration }
+    }
+
     // MARK: - Night resolution
 
     /// The longest contiguous asleep block in a set of segments (§5.5).
@@ -259,19 +302,28 @@ enum SleepScoreEngine {
         return MathSupport.circularMean(window, period: EngineConstants.Sleep.minutesPerDay)
     }
 
-    /// Stage seconds inside an interval, clipped to it.
+    /// Stage seconds inside an interval, clipped to it and resolved for multi-source overlaps.
     ///
-    /// Clipping matters at the night boundary: a segment that starts before the block or ends
-    /// after it contributes only its overlap, so the stage totals always sum to the block.
+    /// Clipping alone is not sufficient when multiple devices (e.g. Apple Watch and iPhone)
+    /// write concurrent segments. Overlapping segments are partitioned and resolved using
+    /// physiological specificity priority (Deep > REM > Core > Unspecified > Awake > InBed)
+    /// before measuring duration, guaranteeing that stage totals never exceed the block duration.
     static func stageSeconds(
         _ stages: Set<SleepStage>,
         in segments: [SleepSegment],
         clippedTo interval: DateInterval
     ) -> Double {
-        segments.reduce(into: 0.0) { total, segment in
-            guard stages.contains(segment.stage) else { return }
-            guard let overlap = interval.intersection(with: segment.interval) else { return }
-            total += overlap.duration
+        let clipped = segments.compactMap { segment -> SleepSegment? in
+            guard let overlap = interval.intersection(with: segment.interval), overlap.duration > 0 else {
+                return nil
+            }
+            return SleepSegment(
+                interval: overlap,
+                stage: segment.stage,
+                sourceBundleIdentifier: segment.sourceBundleIdentifier,
+                timeZoneIdentifier: segment.timeZoneIdentifier
+            )
         }
+        return clipped.seconds(in: stages)
     }
 }

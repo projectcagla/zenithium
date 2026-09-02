@@ -90,4 +90,24 @@ enum SleepStage: String, Sendable, Codable, CaseIterable, Hashable {
         case .asleepUnspecified: return "Uykuda"
         }
     }
+
+    /// Priority when resolving conflicting sleep stages for overlapping time intervals.
+    ///
+    /// Principle: more physiologically specific stages take precedence over generic ones.
+    /// 1. `asleepDeep`: Deep (slow-wave) sleep has the most distinctive physiological profile (delta waves, lowest HR).
+    /// 2. `asleepREM`: REM has distinct rapid eye movements, muscle atonia, and high autonomic variability.
+    /// 3. `asleepCore`: Core/light sleep is actively classified by Apple Watch sleep staging algorithms.
+    /// 4. `asleepUnspecified`: Generic sleep recorded by basic trackers or without algorithm staging.
+    /// 5. `awake`: Explicitly detected micro-awakenings or wake periods during sleep opportunity.
+    /// 6. `inBed`: Simply being in bed without validated sleep, the least specific observation.
+    var resolutionPriority: Int {
+        switch self {
+        case .asleepDeep: return 6
+        case .asleepREM: return 5
+        case .asleepCore: return 4
+        case .asleepUnspecified: return 3
+        case .awake: return 2
+        case .inBed: return 1
+        }
+    }
 }

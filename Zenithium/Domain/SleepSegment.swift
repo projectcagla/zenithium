@@ -26,8 +26,8 @@ struct SleepSegment: Sendable, Equatable, Hashable {
     init(
         interval: DateInterval,
         stage: SleepStage,
-        sourceBundleIdentifier: String?,
-        timeZoneIdentifier: String
+        sourceBundleIdentifier: String? = nil,
+        timeZoneIdentifier: String = "UTC"
     ) {
         self.interval = interval
         self.stage = stage
@@ -45,20 +45,83 @@ struct SleepSegment: Sendable, Equatable, Hashable {
 
 extension Array where Element == SleepSegment {
 
-    /// Total seconds spent in the given stages.
-    func seconds(in stages: Set<SleepStage>) -> TimeInterval {
-        reduce(into: 0) { total, segment in
-            if stages.contains(segment.stage) {
-                total += segment.duration
+    /// Whether any two segments in the collection overlap in time.
+    var hasOverlappingSegments: Bool {
+        let sorted = chronological
+        for i in 0..<sorted.count {
+            for j in (i + 1)..<sorted.count {
+                if let overlap = sorted[i].interval.intersection(with: sorted[j].interval),
+                   overlap.duration > 0 {
+                    return true
+                } else if sorted[j].start >= sorted[i].end {
+                    break
+                }
             }
         }
+        return false
     }
 
-    /// Total asleep seconds (§3).
-    var asleepSeconds: TimeInterval {
-        reduce(into: 0) { total, segment in
-            if segment.isAsleep { total += segment.duration }
+    /// Resolves overlapping segments into a non-overlapping partitioned timeline.
+    /// At every point where multiple segments coincide, the stage with the highest
+    /// specificity priority wins (Deep > REM > Core > Unspecified > Awake > InBed).
+    /// Adjacent segments with the same resolved stage are coalesced.
+    var resolvedNonOverlapping: [SleepSegment] {
+        guard count > 1 else { return self }
+        var timestamps = Set<Date>()
+        for segment in self {
+            guard segment.duration > 0 else { continue }
+            timestamps.insert(segment.start)
+            timestamps.insert(segment.end)
         }
+        let sortedTimes = timestamps.sorted()
+        guard sortedTimes.count >= 2 else { return [] }
+
+        var resolved: [SleepSegment] = []
+        for i in 0..<(sortedTimes.count - 1) {
+            let tStart = sortedTimes[i]
+            let tEnd = sortedTimes[i + 1]
+            guard tEnd > tStart else { continue }
+            let subInterval = DateInterval(start: tStart, end: tEnd)
+
+            let covering = filter { segment in
+                segment.start <= tStart && segment.end >= tEnd
+            }
+            guard !covering.isEmpty else { continue }
+
+            let bestSegment = covering.max(by: { $0.stage.resolutionPriority < $1.stage.resolutionPriority })!
+            let newSegment = SleepSegment(
+                interval: subInterval,
+                stage: bestSegment.stage,
+                sourceBundleIdentifier: bestSegment.sourceBundleIdentifier,
+                timeZoneIdentifier: bestSegment.timeZoneIdentifier
+            )
+
+            if let last = resolved.last, last.stage == newSegment.stage, last.end == newSegment.start {
+                resolved[resolved.count - 1] = SleepSegment(
+                    interval: DateInterval(start: last.start, end: newSegment.end),
+                    stage: last.stage,
+                    sourceBundleIdentifier: last.sourceBundleIdentifier,
+                    timeZoneIdentifier: last.timeZoneIdentifier
+                )
+            } else {
+                resolved.append(newSegment)
+            }
+        }
+        return resolved
+    }
+
+    /// Total seconds spent in the given stages after resolving overlapping intervals.
+    func seconds(in stages: Set<SleepStage>) -> TimeInterval {
+        resolvedNonOverlapping
+            .filter { stages.contains($0.stage) }
+            .reduce(into: 0.0) { $0 += $1.duration }
+    }
+
+    /// Total asleep seconds after resolving overlapping intervals (§3).
+    var asleepSeconds: TimeInterval {
+        resolvedNonOverlapping
+            .filter(\.isAsleep)
+            .reduce(into: 0.0) { $0 += $1.duration }
     }
 
     /// Whether any segment carries stage detail, which decides whether `Restorative` can be

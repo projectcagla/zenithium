@@ -88,6 +88,9 @@ enum DataQualityEngine {
         if nocturnalHours < minimumNocturnalHours {
             issues.append("Yetersiz gece saati takma süresi (en az 2,0 saat gereklidir).")
         }
+        if sleepSegments.hasOverlappingSegments {
+            issues.append("Çakışan uyku kayıtları tespit edildi.")
+        }
 
         // Compute wear time during the day
         let daySampleCount = daySamples.count

@@ -293,4 +293,205 @@ struct SleepScoreEngineTests {
             "Consistency across midnight"
         )
     }
+
+    // MARK: - Hata 1: Şekerleme Çözümleme Testleri
+
+    @Test("02:20-06:29 arası uyuyan bir kullanıcı için önceki gecenin uykusu şekerleme olarak sayılmıyor")
+    func previousNightSleepIsNotCountedAsNap() {
+        let cal = Calendar(identifier: .gregorian)
+        let baseDate = Date(timeIntervalSince1970: 1700000000)
+        let prevWake = cal.date(bySettingHour: 6, minute: 29, second: 0, of: baseDate)!
+        let prevNightSleep = SleepSegment(
+            interval: DateInterval(
+                start: cal.date(bySettingHour: 2, minute: 20, second: 0, of: baseDate)!,
+                end: prevWake
+            ),
+            stage: .asleepCore
+        )
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: [prevNightSleep],
+            previousWakeTime: prevWake,
+            currentNightSleepBlock: nil
+        )
+        #expect(naps?.isEmpty == true)
+    }
+
+    @Test("14:00-14:40 arası gerçek bir gündüz uykusu şekerleme olarak sayılıyor")
+    func daytimeNapIsCounted() {
+        let cal = Calendar(identifier: .gregorian)
+        let baseDate = Date(timeIntervalSince1970: 1700000000)
+        let prevWake = cal.date(bySettingHour: 6, minute: 29, second: 0, of: baseDate)!
+        let dayNap = SleepSegment(
+            interval: DateInterval(
+                start: cal.date(bySettingHour: 14, minute: 0, second: 0, of: baseDate)!,
+                end: cal.date(bySettingHour: 14, minute: 40, second: 0, of: baseDate)!
+            ),
+            stage: .asleepCore
+        )
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: [dayNap],
+            previousWakeTime: prevWake,
+            currentNightSleepBlock: nil
+        )
+        #expect(naps?.count == 1)
+        #expect(naps?.first?.duration == Double(40 * 60))
+    }
+
+    @Test("ana uyku bloğuyla çakışan segment şekerlemeden düşülüyor")
+    func segmentOverlappingMainSleepBlockIsDiscarded() {
+        let cal = Calendar(identifier: .gregorian)
+        let baseDate = Date(timeIntervalSince1970: 1700000000)
+        let prevWake = cal.date(bySettingHour: 6, minute: 29, second: 0, of: baseDate)!
+        let nextNightBlock = DateInterval(
+            start: cal.date(bySettingHour: 23, minute: 0, second: 0, of: baseDate)!,
+            end: cal.date(bySettingHour: 7, minute: 0, second: 0, of: baseDate.addingTimeInterval(86400))!
+        )
+        let overlappingNap = SleepSegment(
+            interval: DateInterval(
+                start: cal.date(bySettingHour: 22, minute: 30, second: 0, of: baseDate)!,
+                end: cal.date(bySettingHour: 23, minute: 30, second: 0, of: baseDate)!
+            ),
+            stage: .asleepCore
+        )
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: [overlappingNap],
+            previousWakeTime: prevWake,
+            currentNightSleepBlock: nextNightBlock
+        )
+        #expect(naps?.isEmpty == true)
+    }
+
+    @Test("maxNapSeconds üstündeki segment şekerlemeden düşülüyor")
+    func segmentExceedingMaxNapSecondsIsDiscarded() {
+        let cal = Calendar(identifier: .gregorian)
+        let baseDate = Date(timeIntervalSince1970: 1700000000)
+        let prevWake = cal.date(bySettingHour: 6, minute: 29, second: 0, of: baseDate)!
+        // 5 hours nap = 18000s > 3 * 3600s
+        let longNap = SleepSegment(
+            interval: DateInterval(
+                start: cal.date(bySettingHour: 11, minute: 0, second: 0, of: baseDate)!,
+                end: cal.date(bySettingHour: 16, minute: 0, second: 0, of: baseDate)!
+            ),
+            stage: .asleepCore
+        )
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: [longNap],
+            previousWakeTime: prevWake,
+            currentNightSleepBlock: nil
+        )
+        #expect(naps?.isEmpty == true)
+    }
+
+    @Test("önceki gece verisi yoksa şekerleme nil dönüyor, 0 değil")
+    func missingPreviousNightReturnsNil() {
+        let cal = Calendar(identifier: .gregorian)
+        let baseDate = Date(timeIntervalSince1970: 1700000000)
+        let dayNap = SleepSegment(
+            interval: DateInterval(
+                start: cal.date(bySettingHour: 14, minute: 0, second: 0, of: baseDate)!,
+                end: cal.date(bySettingHour: 14, minute: 40, second: 0, of: baseDate)!
+            ),
+            stage: .asleepCore
+        )
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: [dayNap],
+            previousWakeTime: nil,
+            currentNightSleepBlock: nil
+        )
+        #expect(naps == nil)
+        let total = SleepScoreEngine.totalNapSeconds(
+            candidates: [dayNap],
+            previousWakeTime: nil,
+            currentNightSleepBlock: nil
+        )
+        #expect(total == nil)
+    }
+
+    // MARK: - Hata 2: Çakışan Uyku Kayıtları Testleri
+
+    @Test("aynı aralığı kapsayan iki kaynak -> asleepSeconds tek sayılıyor")
+    func duplicateIntervalCountedOnce() {
+        let start = Date(timeIntervalSince1970: 1700000000)
+        let end = start.addingTimeInterval(3600)
+        let seg1 = SleepSegment(interval: DateInterval(start: start, end: end), stage: .asleepCore, sourceBundleIdentifier: "AppleWatch")
+        let seg2 = SleepSegment(interval: DateInterval(start: start, end: end), stage: .asleepDeep, sourceBundleIdentifier: "iPhone")
+        let segments = [seg1, seg2]
+        #expect(segments.asleepSeconds == 3600)
+    }
+
+    @Test("kısmi çakışan iki segment -> yalnızca birleşim süresi sayılıyor")
+    func partiallyOverlappingSegmentsUnionDuration() {
+        let t0 = Date(timeIntervalSince1970: 1700000000)
+        let t1 = t0.addingTimeInterval(1800) // 30 min
+        let t2 = t0.addingTimeInterval(3600) // 60 min
+        let seg1 = SleepSegment(interval: DateInterval(start: t0, end: t1.addingTimeInterval(600)), stage: .asleepCore) // 0..40 min
+        let seg2 = SleepSegment(interval: DateInterval(start: t1, end: t2), stage: .asleepREM) // 30..60 min
+        let segments = [seg1, seg2]
+        // Union is 0..60 min = 3600s, not 2400 + 1800 = 4200s
+        #expect(segments.asleepSeconds == 3600)
+    }
+
+    @Test("evre toplamı hiçbir zaman blok süresini aşmıyor (özellik testi)")
+    func stageSumNeverExceedsBlockDuration() {
+        let blockStart = Date(timeIntervalSince1970: 1700000000)
+        let blockEnd = blockStart.addingTimeInterval(4 * 3600) // 4 hours = 14400s
+        let block = DateInterval(start: blockStart, end: blockEnd)
+
+        // Multiple overlapping segments from multiple sources
+        let s1 = SleepSegment(interval: DateInterval(start: blockStart, end: blockStart.addingTimeInterval(2 * 3600)), stage: .asleepDeep)
+        let s2 = SleepSegment(interval: DateInterval(start: blockStart.addingTimeInterval(1800), end: blockStart.addingTimeInterval(3 * 3600)), stage: .asleepCore)
+        let s3 = SleepSegment(interval: DateInterval(start: blockStart.addingTimeInterval(2.5 * 3600), end: blockEnd), stage: .asleepREM)
+        let s4 = SleepSegment(interval: DateInterval(start: blockStart, end: blockEnd), stage: .inBed)
+        let s5 = SleepSegment(interval: DateInterval(start: blockStart.addingTimeInterval(3600), end: blockStart.addingTimeInterval(4000)), stage: .awake)
+        let segments = [s1, s2, s3, s4, s5]
+
+        let deep = SleepScoreEngine.stageSeconds([.asleepDeep], in: segments, clippedTo: block)
+        let rem = SleepScoreEngine.stageSeconds([.asleepREM], in: segments, clippedTo: block)
+        let core = SleepScoreEngine.stageSeconds([.asleepCore], in: segments, clippedTo: block)
+        let awake = SleepScoreEngine.stageSeconds([.awake], in: segments, clippedTo: block)
+        let inBed = SleepScoreEngine.stageSeconds([.inBed], in: segments, clippedTo: block)
+
+        let totalStageSeconds = deep + rem + core + awake + inBed
+        #expect(totalStageSeconds <= block.duration + 0.001)
+    }
+
+    @Test("verimlilik hiçbir girdide %100'ü aşmıyor")
+    func efficiencyNeverExceedsOneHundredPercent() {
+        let output = SleepScoreEngine.compute(
+            SleepInput(
+                asleepSeconds: 430 * 60,
+                timeInBedSeconds: 228 * 60, // asleep > timeInBed (corrupted input)
+                deepSeconds: 60 * 60,
+                remSeconds: 60 * 60,
+                coreSeconds: 310 * 60,
+                awakeSeconds: 10 * 60,
+                hasStageData: true,
+                midpointMinutesFromLocalMidnight: 200,
+                midpointBaselineMinutes: 200,
+                baselineNeedHours: 8.0,
+                yesterdayStrain: 10.0,
+                sleepDebtHours: 0,
+                napCreditHours: 0
+            )
+        )
+        let efficiencyScore = output.component(.efficiency)?.score ?? 0
+        #expect(efficiencyScore <= 100.0)
+    }
+
+    @Test("çakışma tespit edildiğinde veri kalitesine sorun yazılıyor")
+    func overlappingSegmentsFlaggedInDataQuality() {
+        let t0 = Date(timeIntervalSince1970: 1700000000)
+        let seg1 = SleepSegment(interval: DateInterval(start: t0, end: t0.addingTimeInterval(3600)), stage: .asleepCore)
+        let seg2 = SleepSegment(interval: DateInterval(start: t0.addingTimeInterval(1800), end: t0.addingTimeInterval(5400)), stage: .asleepDeep)
+        let segments = [seg1, seg2]
+
+        #expect(segments.hasOverlappingSegments == true)
+        let assessment = DataQualityEngine.assess(
+            overnight: nil,
+            sleepSegments: segments,
+            daySamples: [],
+            calibration: CalibrationState(recordedDaysCount: 20)
+        )
+        #expect(assessment.qualityIssues.contains(where: { $0.contains("Çakışan") || $0.contains("çakışan") }))
+    }
 }

@@ -106,6 +106,8 @@ enum EngineConstants {
         /// §5.2 — `− napCredit_h`, capped at 1.0 h, naps ≥ 20 min.
         static let maxNapCreditHours: Double = 1.0
         static let minNapSeconds: Double = 1200
+        /// Maximum plausible daytime nap (3 hours). Longer segments are not physiological naps.
+        static let maxNapSeconds: Double = 3 * 3600
 
         /// ASSUMPTION SLEEP-4 — naps count from the previous day.
         static let napLookbackDays: Int = 1

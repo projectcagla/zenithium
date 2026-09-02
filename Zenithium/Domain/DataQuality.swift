@@ -42,6 +42,9 @@ enum DataQualityReason: String, Sendable, Codable, CaseIterable, Hashable {
     /// Intraday heart rate had gaps long enough to suppress strain segments (§5.3).
     case intradayHeartRateSparse
 
+    /// Çakışan uyku kayıtları tespit edildi (§5.2, §5.6).
+    case overlappingSleepRecords
+
     var displayName: String {
         switch self {
         case .noOvernightWear: return "Gece verisi yok"
@@ -54,6 +57,7 @@ enum DataQualityReason: String, Sendable, Codable, CaseIterable, Hashable {
         case .restingHeartRateMissing: return "İstirahat nabzı yok"
         case .baselineStillCalibrating: return "Taban çizgisi hâlâ kuruluyor"
         case .intradayHeartRateSparse: return "Nabız kaydı seyrek"
+        case .overlappingSleepRecords: return "Çakışan uyku kayıtları tespit edildi"
         }
     }
 
@@ -64,7 +68,8 @@ enum DataQualityReason: String, Sendable, Codable, CaseIterable, Hashable {
             return true
         case .sleepStagesMissing, .wristTemperatureMissing, .respiratoryRateMissing,
              .heartRateVariabilityMissing, .restingHeartRateMissing,
-             .baselineStillCalibrating, .intradayHeartRateSparse:
+             .baselineStillCalibrating, .intradayHeartRateSparse,
+             .overlappingSleepRecords:
             return false
         }
     }

@@ -419,7 +419,8 @@ actor HealthKitService: HealthDataProviding {
 
     func fetchOvernightBiometrics(
         for night: DateInterval,
-        calendar: Calendar
+        calendar: Calendar,
+        previousWakeTime: Date? = nil
     ) async throws -> OvernightData {
         let timeZoneIdentifier = calendar.timeZone.identifier
 
@@ -436,16 +437,22 @@ actor HealthKitService: HealthDataProviding {
             fallbackTimeZoneIdentifier: timeZoneIdentifier
         )
 
-        // Naps in the daytime preceding the night, feeding the next night's credit (§5.2,
-        // ASSUMPTION SLEEP-4).
-        let napWindow = DateInterval(
-            start: night.start.addingTimeInterval(-Self.napLookbackWindow),
-            end: night.start
-        )
-        let napSegments = try await fetchSleepSegments(
-            in: napWindow,
-            fallbackTimeZoneIdentifier: timeZoneIdentifier
-        )
+        // Naps in the daytime preceding the night (§5.2).
+        // The nap window begins at the previous night's wake time and extends to the current night's start.
+        // If the previous wake time is unknown, naps cannot be resolved.
+        let napSegments: [SleepSegment]
+        if let previousWakeTime, previousWakeTime < night.start {
+            let napWindow = DateInterval(
+                start: previousWakeTime,
+                end: night.start
+            )
+            napSegments = try await fetchSleepSegments(
+                in: napWindow,
+                fallbackTimeZoneIdentifier: timeZoneIdentifier
+            )
+        } else {
+            napSegments = []
+        }
 
         // Same shape as the baseline read: one wave rather than one metric at a time.
         // Yol haritası v4, A7.

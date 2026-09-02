@@ -128,6 +128,16 @@ struct DayWindowResolver: Sendable {
         return DateInterval(start: start, end: max(start, end))
     }
 
+    /// Daytime nap window preceding a night.
+    /// Runs from the previous night's wake time up to the start of this night's window.
+    /// If previous wake time is unknown, returns `nil`.
+    func napWindow(previousWakeTime: Date?, forWakeDay wakeDay: Date) -> DateInterval? {
+        guard let previousWakeTime else { return nil }
+        let night = nightWindow(forWakeDay: wakeDay)
+        guard previousWakeTime < night.start else { return nil }
+        return DateInterval(start: previousWakeTime, end: night.start)
+    }
+
     /// Local midnight of the day a date falls in.
     func dayStart(for date: Date) -> Date {
         calendar.startOfDay(for: date)

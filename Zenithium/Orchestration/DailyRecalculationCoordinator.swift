@@ -251,20 +251,29 @@ actor DailyRecalculationCoordinator {
         //    whole pipeline idempotent: running it twice cannot fold a day in twice.
         let baselines = try await refreshBaselines(now: now, calendar: calendar)
 
-        // 2. The night that belongs to this wake day.
-        let night = resolver.nightWindow(forWakeDay: wakeDay)
-        let overnight = try await health.fetchOvernightBiometrics(for: night, calendar: calendar)
-
-        // 3. Sleep.
+        // 2. Sleep history & previous night's wake time (§5.2).
         let history = try await store.dayRecords(
             from: resolver.day(byAdding: -EngineConstants.Sleep.consistencyWindowDays, to: wakeDay),
             through: resolver.day(byAdding: -1, to: wakeDay)
         )
+        let previousDay = resolver.day(byAdding: -1, to: wakeDay)
+        let previousWakeTime = history.first(where: { calendar.isDate($0.dayStart, inSameDayAs: previousDay) })?.wakeTime
+
+        // 3. The night that belongs to this wake day.
+        let night = resolver.nightWindow(forWakeDay: wakeDay)
+        let overnight = try await health.fetchOvernightBiometrics(
+            for: night,
+            calendar: calendar,
+            previousWakeTime: previousWakeTime
+        )
+
+        // 4. Sleep.
         let sleepContext = resolveSleep(
             overnight: overnight,
             history: history,
             profile: profile,
-            calendar: calendar
+            calendar: calendar,
+            previousWakeTime: previousWakeTime
         )
         let sleepOutput = SleepScoreEngine.compute(sleepContext.input)
 
@@ -417,13 +426,15 @@ actor DailyRecalculationCoordinator {
         let timeInBedSeconds: Double
         let midpointMinutes: Double?
         let napSeconds: Double
+        let hasOverlappingSegments: Bool
     }
 
     private func resolveSleep(
         overnight: OvernightData,
         history: [BiometricDaySnapshot],
         profile: UserProfileSnapshot,
-        calendar: Calendar
+        calendar: Calendar,
+        previousWakeTime: Date?
     ) -> SleepContext {
         let segments = overnight.sleepSegments
         let block = SleepScoreEngine.longestAsleepBlock(in: segments)
@@ -449,10 +460,8 @@ actor DailyRecalculationCoordinator {
 
             // ASSUMPTION SLEEP-3 — use `.inBed` when the source writes it, else the block's
             // own span, so efficiency is defined for sources that never write `.inBed`.
-            let inBed = segments
-                .filter { $0.stage == .inBed }
-                .reduce(into: 0.0) { $0 += $1.duration }
-            timeInBed = inBed > 0 ? inBed : block.interval.duration
+            let inBed = segments.seconds(in: [.inBed])
+            timeInBed = inBed > 0 ? max(inBed, asleepSeconds) : block.interval.duration
 
             midpointMinutes = SleepScoreEngine.minutesFromLocalMidnight(
                 SleepScoreEngine.midpoint(of: block.interval),
@@ -462,9 +471,22 @@ actor DailyRecalculationCoordinator {
             deep = 0; rem = 0; core = 0; awake = 0; timeInBed = 0
         }
 
-        let napSeconds = overnight.napSegments
-            .filter { $0.isAsleep && $0.duration >= EngineConstants.Sleep.minNapSeconds }
-            .reduce(into: 0.0) { $0 += $1.duration }
+        let naps = SleepScoreEngine.resolveNaps(
+            candidates: overnight.napSegments,
+            previousWakeTime: previousWakeTime,
+            currentNightSleepBlock: block?.interval
+        )
+        let napSeconds: Double
+        let napCredit: Double
+        if let naps {
+            napSeconds = naps
+                .filter { $0.duration >= EngineConstants.Sleep.minNapSeconds }
+                .reduce(into: 0.0) { $0 += $1.duration }
+            napCredit = SleepScoreEngine.napCredit(from: naps)
+        } else {
+            napSeconds = 0
+            napCredit = 0
+        }
 
         // §5.2 — the 14-day circular mean of midpoints, and the decayed 7-night debt.
         let historyNewestFirst = history.sorted { $0.dayStart > $1.dayStart }
@@ -490,7 +512,7 @@ actor DailyRecalculationCoordinator {
             baselineNeedHours: profile.baselineSleepNeedHours,
             yesterdayStrain: yesterdayStrain,
             sleepDebtHours: debt,
-            napCreditHours: SleepScoreEngine.napCredit(from: overnight.napSegments)
+            napCreditHours: napCredit
         )
 
         return SleepContext(
@@ -504,7 +526,8 @@ actor DailyRecalculationCoordinator {
             awakeSeconds: awake,
             timeInBedSeconds: timeInBed,
             midpointMinutes: midpointMinutes,
-            napSeconds: napSeconds
+            napSeconds: napSeconds,
+            hasOverlappingSegments: segments.hasOverlappingSegments
         )
     }
 
@@ -716,11 +739,15 @@ actor DailyRecalculationCoordinator {
         write.sleepStart = sleepContext.sleepStart
         write.wakeTime = sleepContext.wakeTime
         write.napSeconds = sleepContext.napSeconds
+        var reasons = overnight.missingMetricReasons
         if sleepContext.timeInBedSeconds > 0 {
-            write.sleepEfficiency = sleepContext.asleepSeconds / sleepContext.timeInBedSeconds
+            let rawEfficiency = sleepContext.asleepSeconds / sleepContext.timeInBedSeconds
+            write.sleepEfficiency = min(rawEfficiency, 1.0)
+            if rawEfficiency > 1.0 || sleepContext.hasOverlappingSegments {
+                reasons.append(.overlappingSleepRecords)
+            }
         }
 
-        var reasons = overnight.missingMetricReasons
         if let validityReason = sleepOutput.validity.dataQualityReason {
             reasons.append(validityReason)
         }

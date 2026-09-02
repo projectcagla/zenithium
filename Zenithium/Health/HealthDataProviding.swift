@@ -81,7 +81,8 @@ protocol HealthDataProviding: HealthAuthorizing, VitalsProviding {
     /// Everything recorded across one night, plus the surrounding day's naps (§5.2).
     func fetchOvernightBiometrics(
         for night: DateInterval,
-        calendar: Calendar
+        calendar: Calendar,
+        previousWakeTime: Date?
     ) async throws -> OvernightData
 
     /// The intraday heart-rate series for an interval, already downsampled to at most one
@@ -116,6 +117,13 @@ protocol HealthDataProviding: HealthAuthorizing, VitalsProviding {
 }
 
 extension HealthDataProviding {
+    func fetchOvernightBiometrics(
+        for night: DateInterval,
+        calendar: Calendar
+    ) async throws -> OvernightData {
+        try await fetchOvernightBiometrics(for: night, calendar: calendar, previousWakeTime: nil)
+    }
+
     func fetchECGRecords(days: Int, now: Date) async throws -> [ECGRecord] {
         []
     }
