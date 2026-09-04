@@ -99,7 +99,18 @@ struct TrendsView: View {
                 Text(content.metric.displayName.uppercased())
                     .zenithiumEyebrow()
 
-                TrendChart(content: content)
+                let values = content.points.map(\.value)
+                let avg = content.average ?? (values.last ?? 50.0)
+                let variance = values.isEmpty ? 4.0 : (values.map { pow($0 - avg, 2) }.reduce(0, +) / Double(values.count))
+                let sigma = max(sqrt(variance), 2.0)
+
+                BaselineBand(
+                    values: values,
+                    baseline: avg,
+                    sigma: sigma,
+                    unit: content.metric.unitSymbol,
+                    style: .full
+                )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

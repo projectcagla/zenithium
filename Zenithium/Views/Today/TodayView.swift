@@ -149,28 +149,40 @@ struct TodayView: View {
     // MARK: - 2. KADEME — Dört Destekleyici Ölçüm Şeridi (L1 Sessiz Şerit)
 
     private func supportingMetricsStrip(_ content: TodayViewModel.Content) -> some View {
-        HStack(alignment: .top, spacing: ZenithiumSpacing.none) {
+        HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
             supportingMetricItem(
                 label: "HRV",
                 value: content.record.heartRateVariability.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
                 unit: "ms",
-                arrow: hrvArrow(content)
+                bandValues: [content.record.heartRateVariability ?? 49.0],
+                baseline: 52.0,
+                sigma: 6.0
             )
-            Spacer()
+
+            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
+
             supportingMetricItem(
                 label: "İstirahat",
                 value: content.record.restingHeartRate.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
                 unit: "bpm",
-                arrow: rhrArrow(content)
+                bandValues: [content.record.restingHeartRate ?? 54.0],
+                baseline: 53.0,
+                sigma: 3.5
             )
-            Spacer()
+
+            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
+
             supportingMetricItem(
                 label: "Uyku",
                 value: content.record.sleepScore.map { ZenithiumFormat.score($0) } ?? "—",
                 unit: "%",
-                arrow: sleepArrow(content)
+                bandValues: [content.record.sleepScore ?? 100.0],
+                baseline: 85.0,
+                sigma: 8.0
             )
-            Spacer()
+
+            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
+
             supportingMetricItem(
                 label: "Sıcaklık",
                 value: content.record.wristTemperatureDelta.map {
@@ -178,7 +190,9 @@ struct TodayView: View {
                     return ZenithiumFormat.signed(converted, digits: 1)
                 } ?? "—",
                 unit: content.profile.unitPreference.temperatureDeltaSymbol,
-                arrow: tempArrow(content)
+                bandValues: [content.record.wristTemperatureDelta ?? -0.3],
+                baseline: 0.0,
+                sigma: 0.35
             )
         }
         .padding(.vertical, ZenithiumSpacing.m)
@@ -190,27 +204,34 @@ struct TodayView: View {
         label: String,
         value: String,
         unit: String,
-        arrow: (symbol: String, color: Color)?
+        bandValues: [Double],
+        baseline: Double,
+        sigma: Double
     ) -> some View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-            Text(label)
-                .zenithiumCaption()
+            Text(label.uppercased())
+                .font(ZenithiumFont.label)
+                .foregroundStyle(ZenithiumColor.textTertiary)
                 .lineLimit(1)
             HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
                 Text(value)
-                    .metricNumeral()
+                    .font(ZenithiumFont.metricNumeral)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(unit)
-                    .metricUnit()
-                if let arrow {
-                    Image(systemName: arrow.symbol)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(arrow.color)
-                        .accessibilityHidden(true)
-                }
+                    .font(ZenithiumFont.metricUnit)
+                    .foregroundStyle(ZenithiumColor.textTertiary)
             }
+            BaselineBand(
+                values: bandValues,
+                baseline: baseline,
+                sigma: sigma,
+                unit: unit,
+                style: .micro
+            )
+            .frame(height: 20)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func hrvArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {

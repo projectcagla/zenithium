@@ -220,6 +220,14 @@ struct SleepView: View {
                     }
                 }
 
+                BaselineBand(
+                    values: [content.sleep.asleepHours],
+                    baseline: content.sleep.needHours,
+                    sigma: 0.8,
+                    unit: "sa",
+                    style: .inline
+                )
+
                 if content.shortfallHours > 0.1 {
                     Divider().overlay(ZenithiumColor.hairlineSoft)
                     HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {

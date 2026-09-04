@@ -117,6 +117,7 @@ targets:
       - path: Zenithium/Views/DesignSystem/ZenithiumFont.swift
       - path: Zenithium/Views/DesignSystem/ZenithiumMetrics.swift
       - path: Zenithium/Views/DesignSystem/ZenithiumPalette.swift
+      - path: Zenithium/Views/DesignSystem/BaselineBand.swift
       # Every bundle that draws needs its own copy: `Color(_:bundle:)` resolves against the
       # bundle it is asked from, and an extension's bundle is its own. Yol haritası v4, B6.
       - path: Zenithium/Resources/Zenithium.xcassets
@@ -165,6 +166,7 @@ targets:
       - path: Zenithium/Views/DesignSystem/ZenithiumFont.swift
       - path: Zenithium/Views/DesignSystem/ZenithiumMetrics.swift
       - path: Zenithium/Views/DesignSystem/ZenithiumPalette.swift
+      - path: Zenithium/Views/DesignSystem/BaselineBand.swift
       - path: Zenithium/Resources/Zenithium.xcassets
     settings:
       base:

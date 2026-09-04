@@ -131,6 +131,14 @@ struct VitalsView: View {
                     .foregroundStyle(ZenithiumColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                BaselineBand(
+                    values: score.contributors.map(\.orientedZ),
+                    baseline: 0.0,
+                    sigma: 1.0,
+                    unit: "σ",
+                    style: .inline
+                )
+
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
                     ForEach(score.contributors.filter { $0.orientedZ >= 1.0 }) { contributor in
                         HStack {

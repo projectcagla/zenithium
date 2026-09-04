@@ -40,6 +40,7 @@ WIDGET_SHARED = [
     "Zenithium/Views/DesignSystem/ZenithiumColorAsset.swift",
     "Zenithium/Views/DesignSystem/ZenithiumFont.swift",
     "Zenithium/Views/DesignSystem/ZenithiumMetrics.swift",
+    "Zenithium/Views/DesignSystem/BaselineBand.swift",
     # The Live Activity's shape, compiled by the app that starts it and the extension that
     # draws it — and by neither the watch nor the tests. Yol haritası v4, C10.
     "Zenithium/Live/LiveSessionAttributes.swift",
@@ -61,6 +62,7 @@ WATCH_SHARED = [
     "Zenithium/Views/DesignSystem/ZenithiumColorAsset.swift",
     "Zenithium/Views/DesignSystem/ZenithiumFont.swift",
     "Zenithium/Views/DesignSystem/ZenithiumMetrics.swift",
+    "Zenithium/Views/DesignSystem/BaselineBand.swift",
 ]
 WATCH_SHARED_DIRS = ["Zenithium/Domain"]
 

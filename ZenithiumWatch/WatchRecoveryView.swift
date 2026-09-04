@@ -50,6 +50,15 @@ struct WatchRecoveryView: View {
                     }
                     .padding(.top, 2)
                 }
+
+                BaselineBand(
+                    values: [score],
+                    baseline: 65.0,
+                    sigma: 12.0,
+                    unit: "%",
+                    style: .micro
+                )
+                .frame(width: 80, height: 16)
             } else if snapshot.isCalibrating {
                 Text("%\(Int((snapshot.calibrationProgress * 100).rounded()))")
                     .font(.system(size: 38, weight: .bold).monospacedDigit())

@@ -61,6 +61,14 @@ struct ThreeDayTrendView: View {
                         DayColumn(day: day)
                     }
                 }
+
+                BaselineBand(
+                    values: days.compactMap(\.recoveryScore),
+                    baseline: 65.0,
+                    sigma: 12.0,
+                    unit: "%",
+                    style: .inline
+                )
             }
 
             Spacer(minLength: 0)

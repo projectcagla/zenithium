@@ -206,6 +206,7 @@
 		14BA4B67705FF5CC44CCFBF0 /* AppearancePreference+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6709F85737DCA2DE37AF9F5F /* AppearancePreference+SwiftUI.swift */; };
 		3B1C899466CD597297F637F6 /* ArcGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */; };
 		F2F5BA91B934E4601F1487A0 /* BandChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718510BBF482B4FDD5978E8A /* BandChip.swift */; };
+		6DCC67E404588F4855676E73 /* BaselineBand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D6796034DB8B1A54D3CDB /* BaselineBand.swift */; };
 		384DE120BBC4B6B004AE26F0 /* ChartChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */; };
 		50DFE5FC357D7A160798FB16 /* EvidenceChainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */; };
 		DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA1A72F6E5706BF29E88A39 /* HubView.swift */; };
@@ -347,6 +348,7 @@
 		79735E33AF4565DD089972EA /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57935CDDDB370F363DB7FE7 /* WidgetSnapshot.swift */; };
 		A3ACB6B1FA9D5426895EC7FD /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4C94688E03B1004097245A /* AppGroup.swift */; };
 		C342328A6BE7C095F2F7BD64 /* ZenithiumLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600F21A4CFA14DD1A423CF6C /* ZenithiumLog.swift */; };
+		886B19C0327CBDB4AF64718C /* BaselineBand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D6796034DB8B1A54D3CDB /* BaselineBand.swift */; };
 		276F8A28C8A2B45CDC122388 /* ZenithiumColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704850C2C517221F90D520C3 /* ZenithiumColor.swift */; };
 		DFEECFBC91597513079519AF /* ZenithiumColorAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E45FF8D8821D3E2851D20 /* ZenithiumColorAsset.swift */; };
 		A4656C5C73C701A870EF6B00 /* ZenithiumFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41AC35C2D2F7955B415EAB17 /* ZenithiumFont.swift */; };
@@ -446,6 +448,7 @@
 		DED7936A4FC30527F226A7AA /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57935CDDDB370F363DB7FE7 /* WidgetSnapshot.swift */; };
 		38A387B52BE47409C74A22E8 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4C94688E03B1004097245A /* AppGroup.swift */; };
 		868D266ED0DF2D18F3272B20 /* ZenithiumLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600F21A4CFA14DD1A423CF6C /* ZenithiumLog.swift */; };
+		EDBB8E8B998712C67D39C788 /* BaselineBand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D6796034DB8B1A54D3CDB /* BaselineBand.swift */; };
 		D80A3203B0C85DCDE469F71A /* ZenithiumColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704850C2C517221F90D520C3 /* ZenithiumColor.swift */; };
 		778DA2AADF844C101D5B9770 /* ZenithiumColorAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E45FF8D8821D3E2851D20 /* ZenithiumColorAsset.swift */; };
 		F01AEAF28B94CE99DED53EEF /* ZenithiumFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41AC35C2D2F7955B415EAB17 /* ZenithiumFont.swift */; };
@@ -781,6 +784,7 @@
 		6709F85737DCA2DE37AF9F5F /* AppearancePreference+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppearancePreference+SwiftUI.swift"; sourceTree = "<group>"; };
 		9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArcGauge.swift; sourceTree = "<group>"; };
 		718510BBF482B4FDD5978E8A /* BandChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandChip.swift; sourceTree = "<group>"; };
+		A49D6796034DB8B1A54D3CDB /* BaselineBand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaselineBand.swift; sourceTree = "<group>"; };
 		B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartChrome.swift; sourceTree = "<group>"; };
 		7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EvidenceChainView.swift; sourceTree = "<group>"; };
 		CEA1A72F6E5706BF29E88A39 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
@@ -1405,6 +1409,7 @@
 				6709F85737DCA2DE37AF9F5F /* AppearancePreference+SwiftUI.swift */,
 				9BC13F1ED258AFF3F807E254 /* ArcGauge.swift */,
 				718510BBF482B4FDD5978E8A /* BandChip.swift */,
+				A49D6796034DB8B1A54D3CDB /* BaselineBand.swift */,
 				B832C4CAC9BDB116B48FC695 /* ChartChrome.swift */,
 				7D698793F226D4A4F331DB52 /* EvidenceChainView.swift */,
 				CEA1A72F6E5706BF29E88A39 /* HubView.swift */,
@@ -2117,6 +2122,7 @@
 				14BA4B67705FF5CC44CCFBF0 /* AppearancePreference+SwiftUI.swift in Sources */,
 				3B1C899466CD597297F637F6 /* ArcGauge.swift in Sources */,
 				F2F5BA91B934E4601F1487A0 /* BandChip.swift in Sources */,
+				6DCC67E404588F4855676E73 /* BaselineBand.swift in Sources */,
 				384DE120BBC4B6B004AE26F0 /* ChartChrome.swift in Sources */,
 				50DFE5FC357D7A160798FB16 /* EvidenceChainView.swift in Sources */,
 				DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */,
@@ -2265,6 +2271,7 @@
 				79735E33AF4565DD089972EA /* WidgetSnapshot.swift in Sources */,
 				A3ACB6B1FA9D5426895EC7FD /* AppGroup.swift in Sources */,
 				C342328A6BE7C095F2F7BD64 /* ZenithiumLog.swift in Sources */,
+				886B19C0327CBDB4AF64718C /* BaselineBand.swift in Sources */,
 				276F8A28C8A2B45CDC122388 /* ZenithiumColor.swift in Sources */,
 				DFEECFBC91597513079519AF /* ZenithiumColorAsset.swift in Sources */,
 				A4656C5C73C701A870EF6B00 /* ZenithiumFont.swift in Sources */,
@@ -2371,6 +2378,7 @@
 				DED7936A4FC30527F226A7AA /* WidgetSnapshot.swift in Sources */,
 				38A387B52BE47409C74A22E8 /* AppGroup.swift in Sources */,
 				868D266ED0DF2D18F3272B20 /* ZenithiumLog.swift in Sources */,
+				EDBB8E8B998712C67D39C788 /* BaselineBand.swift in Sources */,
 				D80A3203B0C85DCDE469F71A /* ZenithiumColor.swift in Sources */,
 				778DA2AADF844C101D5B9770 /* ZenithiumColorAsset.swift in Sources */,
 				F01AEAF28B94CE99DED53EEF /* ZenithiumFont.swift in Sources */,

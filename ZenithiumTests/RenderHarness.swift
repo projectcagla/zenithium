@@ -145,4 +145,51 @@ final class RenderHarness: XCTestCase {
             try data.write(to: targetURL)
         }
     }
+
+    func testBaselineBandThreeScales() throws {
+        // 1. Full scale
+        let fullView = BaselineBand(
+            values: [52, 54, 53, 56, 58, 62, 59, 64, 61, 68],
+            baseline: 55.0,
+            sigma: 4.0,
+            unit: "ms",
+            style: .full
+        )
+        .padding()
+        .background(ZenithiumColor.background)
+
+        if let dataFull = renderView(AnyView(fullView), size: CGSize(width: 380, height: 260)) {
+            savePNG(data: dataFull, filename: "baseline-band-full.png")
+        }
+
+        // 2. Inline scale
+        let inlineView = BaselineBand(
+            values: [7.2, 7.5, 6.8, 7.9, 8.1, 7.4, 6.2],
+            baseline: 7.5,
+            sigma: 0.6,
+            unit: "sa",
+            style: .inline
+        )
+        .frame(width: 340, height: 44)
+        .background(ZenithiumColor.background)
+
+        if let dataInline = renderView(AnyView(inlineView), size: CGSize(width: 340, height: 44)) {
+            savePNG(data: dataInline, filename: "baseline-band-inline.png")
+        }
+
+        // 3. Micro scale
+        let microView = BaselineBand(
+            values: [52, 54, 58],
+            baseline: 54.0,
+            sigma: 3.5,
+            unit: "bpm",
+            style: .micro
+        )
+        .frame(width: 80, height: 20)
+        .background(ZenithiumColor.background)
+
+        if let dataMicro = renderView(AnyView(microView), size: CGSize(width: 80, height: 20)) {
+            savePNG(data: dataMicro, filename: "baseline-band-micro.png")
+        }
+    }
 }
