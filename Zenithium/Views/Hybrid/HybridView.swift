@@ -245,11 +245,17 @@ struct HybridView: View {
     // MARK: - Koşu turları
 
     private func runSection(_ analysis: HybridSessionOutput) -> some View {
-        SectionCard(
+        let displaySplits = ZenithiumChartDownsampler.downsample(
+            analysis.runSplits,
+            maxPoints: 400,
+            x: { Double($0.roundIndex) },
+            y: { $0.paceSecondsPerKilometre }
+        )
+        return SectionCard(
             title: "Koşu turları",
             subtitle: "Tur başına bozulma: \(ZenithiumFormat.metric(analysis.compromisedRunning?.degradationPerRound ?? 0, digits: 1)) sn/km"
         ) {
-            Chart(analysis.runSplits) { split in
+            Chart(displaySplits) { split in
                 BarMark(
                     x: .value("Tur", split.roundIndex),
                     y: .value("Tempo", split.paceSecondsPerKilometre)
@@ -258,29 +264,7 @@ struct HybridView: View {
                 .cornerRadius(3)
             }
             .chartYScale(domain: .automatic(includesZero: false))
-            .chartXAxis {
-                AxisMarks(values: analysis.runSplits.map(\.roundIndex)) { value in
-                    AxisValueLabel {
-                        if let round = value.as(Int.self) {
-                            Text("\(round)")
-                                .font(ZenithiumFont.caption)
-                                .foregroundStyle(ZenithiumColor.textTertiary)
-                        }
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading) { value in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline)
-                    AxisValueLabel {
-                        if let pace = value.as(Double.self) {
-                            Text(ZenithiumFormat.clock(seconds: pace))
-                                .font(ZenithiumFont.caption)
-                                .foregroundStyle(ZenithiumColor.textTertiary)
-                        }
-                    }
-                }
-            }
+            .zenithiumChart(yValues: 3...4, showBaseline: false, xDesiredCount: 4)
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight150)
             .accessibilityElement()
@@ -298,17 +282,30 @@ struct HybridView: View {
     // MARK: - Seyir
 
     private func trendSection(_ points: [HybridViewModel.PenaltyPoint]) -> some View {
-        SectionCard(
+        let displayPoints = ZenithiumChartDownsampler.downsample(
+            points,
+            maxPoints: 400,
+            x: { $0.date.timeIntervalSince1970 },
+            y: { $0.penalty * 100 }
+        )
+        return SectionCard(
             title: "Kompanse koşu seyri",
             subtitle: "Aşağı inmesi iyi"
         ) {
-            Chart(points) { point in
+            Chart(displayPoints) { point in
+                AreaMark(
+                    x: .value("Tarih", point.date),
+                    y: .value("Ceza", point.penalty * 100)
+                )
+                .foregroundStyle(ZenithiumChartGradient.area(for: ZenithiumColor.accent))
+                .interpolationMethod(.monotone)
+
                 LineMark(
                     x: .value("Tarih", point.date),
                     y: .value("Ceza", point.penalty * 100)
                 )
                 .foregroundStyle(ZenithiumColor.accent)
-                .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                .lineStyle(ZenithiumChartLine.strokeStyle)
                 .interpolationMethod(.monotone)
 
                 PointMark(
@@ -317,14 +314,7 @@ struct HybridView: View {
                 )
                 .foregroundStyle(ZenithiumColor.accent)
             }
-            .chartYAxis {
-                AxisMarks(position: .leading) { _ in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline)
-                    AxisValueLabel()
-                        .font(ZenithiumFont.caption)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                }
-            }
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight140)
             .accessibilityElement()

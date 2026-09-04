@@ -41,23 +41,6 @@ extension View {
         dateAxis: ZenithiumChartDateAxis = .dayAndMonth,
         desiredXCount: Int = 3
     ) -> some View {
-        self
-            .chartYAxis {
-                AxisMarks(position: .leading) { _ in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairlineSoft)
-                    AxisValueLabel(anchor: .leading)
-                        .foregroundStyle(ZenithiumColor.textTertiary.opacity(0.85))
-                        .font(ZenithiumFont.caption.monospacedDigit())
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairlineSoft.opacity(0.5))
-                    AxisTick().foregroundStyle(ZenithiumColor.hairlineSoft.opacity(0.5))
-                    AxisValueLabel(anchor: .top, collisionResolution: .greedy)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                        .font(ZenithiumFont.caption)
-                }
-            }
+        self.zenithiumChart(yValues: 3...4, showBaseline: true, xDesiredCount: desiredXCount)
     }
 }

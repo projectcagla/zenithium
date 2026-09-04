@@ -32,31 +32,48 @@ struct TrendChart: View {
         }
     }
 
+    private var displayPoints: [TrendPoint] {
+        ZenithiumChartDownsampler.downsample(
+            content.points,
+            maxPoints: 400,
+            x: { $0.date.timeIntervalSince1970 },
+            y: { $0.value }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
             scrubReadout
 
             Chart {
-                ForEach(content.points) { point in
+                ForEach(displayPoints) { point in
                     AreaMark(
                         x: .value("Gün", point.date),
                         y: .value(content.metric.displayName, point.value)
                     )
-                    .foregroundStyle(
-                        .linearGradient(
-                            colors: [tint.opacity(0.28), tint.opacity(0.02)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .foregroundStyle(ZenithiumChartGradient.area(for: tint))
 
                     LineMark(
                         x: .value("Gün", point.date),
                         y: .value(content.metric.displayName, point.value)
                     )
                     .foregroundStyle(tint)
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    .lineStyle(ZenithiumChartLine.strokeStyle)
                     .interpolationMethod(.monotone)
+                }
+
+                if let last = displayPoints.last, scrubbedPoint == nil {
+                    PointMark(
+                        x: .value("Gün", last.date),
+                        y: .value(content.metric.displayName, last.value)
+                    )
+                    .foregroundStyle(tint)
+                    .symbolSize(ZenithiumChartLastPoint.symbolSize)
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text(ZenithiumFormat.metric(last.value, digits: 1))
+                            .font(ZenithiumFont.caption.monospacedDigit())
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                    }
                 }
 
                 if let average = content.average {
@@ -84,7 +101,7 @@ struct TrendChart: View {
                 }
             }
             .chartYScale(domain: content.axisRange)
-            .zenithiumChartChrome()
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle()

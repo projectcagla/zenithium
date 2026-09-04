@@ -220,22 +220,19 @@ struct RacePlanView: View {
     // MARK: - Profile
 
     private func profileCard(_ plan: RacePlan) -> some View {
-        SectionCard(title: "Yükseklik profili") {
-            Chart(plan.course.points, id: \.distance) { point in
+        let displayPoints = ZenithiumChartDownsampler.downsample(
+            plan.course.points,
+            maxPoints: 400,
+            x: { $0.distance },
+            y: { $0.elevation }
+        )
+        return SectionCard(title: "Yükseklik profili") {
+            Chart(displayPoints, id: \.distance) { point in
                 AreaMark(
                     x: .value("Mesafe", point.distance / 1_000),
                     y: .value("Yükseklik", point.elevation)
                 )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            ZenithiumColor.spectrumTeal.opacity(0.45),
-                            ZenithiumColor.spectrumTeal.opacity(0.04)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .foregroundStyle(ZenithiumChartGradient.area(for: ZenithiumColor.spectrumTeal))
                 .interpolationMethod(.monotone)
 
                 LineMark(
@@ -243,30 +240,25 @@ struct RacePlanView: View {
                     y: .value("Yükseklik", point.elevation)
                 )
                 .foregroundStyle(ZenithiumColor.spectrumTeal)
-                .lineStyle(StrokeStyle(lineWidth: 1.4))
+                .lineStyle(ZenithiumChartLine.strokeStyle)
                 .interpolationMethod(.monotone)
-            }
-            .chartYScale(domain: plan.course.elevationRange ?? 0...1)
-            .chartYAxis {
-                AxisMarks(position: .leading) { _ in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline)
-                    AxisValueLabel()
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                        .font(ZenithiumFont.caption.monospacedDigit())
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) { value in
-                    AxisGridLine().foregroundStyle(ZenithiumColor.hairline.opacity(0.6))
-                    AxisValueLabel {
-                        if let kilometre = value.as(Double.self) {
-                            Text("\(Int(kilometre.rounded()))K")
-                                .foregroundStyle(ZenithiumColor.textTertiary)
-                                .font(ZenithiumFont.caption)
-                        }
+
+                if let last = displayPoints.last {
+                    PointMark(
+                        x: .value("Mesafe", last.distance / 1_000),
+                        y: .value("Yükseklik", last.elevation)
+                    )
+                    .foregroundStyle(ZenithiumColor.spectrumTeal)
+                    .symbolSize(ZenithiumChartLastPoint.symbolSize)
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text("\(Int(last.elevation))m")
+                            .font(ZenithiumFont.caption.monospacedDigit())
+                            .foregroundStyle(ZenithiumColor.textSecondary)
                     }
                 }
             }
+            .chartYScale(domain: plan.course.elevationRange ?? 0...1)
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
             .accessibilityChartDescriptor(

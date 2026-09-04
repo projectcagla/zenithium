@@ -168,8 +168,11 @@ struct TrainingLoadView: View {
 
     private func chartCard(_ content: TrainingLoadViewModel.Content) -> some View {
         SectionCard(title: "Günlük yük", subtitle: "Çubuklar günün yükü, çizgi yük oranı") {
+            let displaySeries = ZenithiumChartDownsampler.downsample(content.series, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.load })
+            let displayRatios = ZenithiumChartDownsampler.downsample(content.ratioPoints, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.ratio })
+
             Chart {
-                ForEach(content.series) { day in
+                ForEach(displaySeries) { day in
                     BarMark(
                         x: .value("Gün", day.dayStart, unit: .day),
                         y: .value("Yük", day.load)
@@ -177,18 +180,32 @@ struct TrainingLoadView: View {
                     .foregroundStyle(ZenithiumColor.accent.opacity(0.55))
                 }
 
-                ForEach(content.ratioPoints) { point in
+                ForEach(displayRatios) { point in
                     LineMark(
                         x: .value("Gün", point.dayStart, unit: .day),
                         y: .value("Oran", point.ratio * content.ratioScale),
                         series: .value("Seri", "oran")
                     )
                     .foregroundStyle(ZenithiumColor.spectrumAmber)
-                    .lineStyle(StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                    .lineStyle(ZenithiumChartLine.strokeStyle)
                     .interpolationMethod(.monotone)
                 }
+
+                if let lastRatio = displayRatios.last {
+                    PointMark(
+                        x: .value("Gün", lastRatio.dayStart, unit: .day),
+                        y: .value("Oran", lastRatio.ratio * content.ratioScale)
+                    )
+                    .foregroundStyle(ZenithiumColor.spectrumAmber)
+                    .symbolSize(ZenithiumChartLastPoint.symbolSize)
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text(ZenithiumFormat.metric(lastRatio.ratio, digits: 2))
+                            .font(ZenithiumFont.caption.monospacedDigit())
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                    }
+                }
             }
-            .zenithiumChartChrome()
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
             // The daily load, described so VoiceOver can play the block as a tone rather

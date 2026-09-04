@@ -192,4 +192,49 @@ final class RenderHarness: XCTestCase {
             savePNG(data: dataMicro, filename: "baseline-band-micro.png")
         }
     }
+
+    func testZenithiumChartStyleAndDownsampling() async throws {
+        // 1. LTTB Downsampler testi
+        struct TestPoint {
+            let x: Double
+            let y: Double
+        }
+        let originalPoints = (0..<1000).map { i in
+            TestPoint(x: Double(i), y: sin(Double(i) * 0.05) * 50 + 50)
+        }
+        let downsampled = ZenithiumChartDownsampler.downsample(
+            originalPoints,
+            maxPoints: 400,
+            x: { $0.x },
+            y: { $0.y }
+        )
+        XCTAssertTrue(downsampled.count == 400, "1000 noktalık dizi tam 400 noktaya downsample edilmelidir.")
+        XCTAssertTrue(downsampled.first?.x == originalPoints.first?.x, "İlk nokta korunmalıdır.")
+        XCTAssertTrue(downsampled.last?.x == originalPoints.last?.x, "Son nokta korunmalıdır.")
+
+        // 2. Swift Charts render testi
+        let now = Date()
+        let trendPoints = (0..<14).map { i in
+            TrendPoint(
+                date: Calendar.current.date(byAdding: .day, value: i - 13, to: now) ?? now,
+                value: 55.0 + Double(i % 5) * 3.0
+            )
+        }
+        let content = TrendsViewModel.Content(
+            points: trendPoints,
+            metric: .heartRateVariability,
+            range: .week,
+            average: 60.0,
+            minimum: 50.0,
+            maximum: 70.0,
+            bloodEvents: []
+        )
+        let chartView = TrendChart(content: content)
+            .padding()
+            .background(ZenithiumColor.background)
+
+        if let chartData = renderView(AnyView(chartView), size: CGSize(width: 380, height: 240)) {
+            savePNG(data: chartData, filename: "zenithium-chart-style.png")
+        }
+    }
 }

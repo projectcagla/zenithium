@@ -119,6 +119,12 @@ struct TrendsView: View {
         }
     }
 
+    /// Detaylı Swift Charts grafiği
+    private func trendChartDetailed(_ content: TrendsViewModel.Content) -> some View {
+        TrendChart(content: content)
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
+    }
+
     private func changeSummaryCard(_ content: TrendsViewModel.Content) -> some View {
         let trendDirection = trendSlopeDirection(content)
 

@@ -52,9 +52,15 @@ struct BloodMarkerDetailView: View {
     }
 
     private var chartCard: some View {
-        SectionCard(title: "Zaman içinde", subtitle: rateSubtitle) {
+        let displayEntries = ZenithiumChartDownsampler.downsample(
+            series.entries,
+            maxPoints: 400,
+            x: { $0.drawnAt.timeIntervalSince1970 },
+            y: { $0.value }
+        )
+        return SectionCard(title: "Zaman içinde", subtitle: rateSubtitle) {
             Chart {
-                if let range = series.entries.first?.referenceRange,
+                if let range = displayEntries.first?.referenceRange,
                    let minimum = range.minimum,
                    let maximum = range.maximum {
                     RectangleMark(
@@ -64,13 +70,19 @@ struct BloodMarkerDetailView: View {
                     .foregroundStyle(ZenithiumColor.textSecondary.opacity(0.10))
                 }
 
-                ForEach(series.entries) { entry in
+                ForEach(displayEntries) { entry in
+                    AreaMark(
+                        x: .value("Alınma", entry.drawnAt),
+                        y: .value(series.marker.displayName, entry.value)
+                    )
+                    .foregroundStyle(ZenithiumChartGradient.area(for: ZenithiumColor.accent))
+
                     LineMark(
                         x: .value("Alınma", entry.drawnAt),
                         y: .value(series.marker.displayName, entry.value)
                     )
                     .foregroundStyle(ZenithiumColor.accent)
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .lineStyle(ZenithiumChartLine.strokeStyle)
 
                     PointMark(
                         x: .value("Alınma", entry.drawnAt),
@@ -78,9 +90,23 @@ struct BloodMarkerDetailView: View {
                     )
                     .foregroundStyle(ZenithiumColor.accent)
                 }
+
+                if let lastEntry = displayEntries.last {
+                    PointMark(
+                        x: .value("Alınma", lastEntry.drawnAt),
+                        y: .value(series.marker.displayName, lastEntry.value)
+                    )
+                    .foregroundStyle(ZenithiumColor.accent)
+                    .symbolSize(ZenithiumChartLastPoint.symbolSize)
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text(ZenithiumFormat.metric(lastEntry.value, digits: 1))
+                            .font(ZenithiumFont.caption.monospacedDigit())
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                    }
+                }
             }
             .chartYScale(domain: series.axisRange ?? 0...1)
-            .zenithiumChartChrome(dateAxis: .monthAndYear, desiredXCount: 3)
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             // Saf çizim (Swift Charts): sabit 180pt yerine @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
             // A marker's shape over years is the point of this screen, so it is playable

@@ -369,3 +369,11 @@ struct HypnogramSegment: Identifiable {
     let startFraction: Double
     let endFraction: Double
 }
+
+// MARK: - Swift Charts Uyumluluğu
+extension HypnogramView {
+    /// Şartname Faz 3 standart grafik biçimlendirici
+    func asZenithiumChart() -> some View {
+        self.zenithiumChart(yValues: 3...4, showBaseline: false)
+    }
+}

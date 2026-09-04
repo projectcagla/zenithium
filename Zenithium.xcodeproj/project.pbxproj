@@ -220,6 +220,7 @@
 		4C2E3290354EB6ED2FDC0345 /* Sparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878FC4A4C01D642782FA1639 /* Sparkline.swift */; };
 		10D222059104D65DA2AE90FB /* SpectralField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C521606EE49597A829070D3C /* SpectralField.swift */; };
 		063A026F725CAB66DC0AF6B6 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC5AD288AC518743E416123 /* StateViews.swift */; };
+		CC52B0E0759565B6187DDF5B /* ZenithiumChartStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D20BDE9090EDF138E5B6CA3 /* ZenithiumChartStyle.swift */; };
 		A635DF842D67881C7A40873A /* ZenithiumColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704850C2C517221F90D520C3 /* ZenithiumColor.swift */; };
 		64A826585B5B1898931B05EE /* ZenithiumColorAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E45FF8D8821D3E2851D20 /* ZenithiumColorAsset.swift */; };
 		599C74503DF85FFAFB7C5A67 /* ZenithiumFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41AC35C2D2F7955B415EAB17 /* ZenithiumFont.swift */; };
@@ -798,6 +799,7 @@
 		878FC4A4C01D642782FA1639 /* Sparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sparkline.swift; sourceTree = "<group>"; };
 		C521606EE49597A829070D3C /* SpectralField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectralField.swift; sourceTree = "<group>"; };
 		CEC5AD288AC518743E416123 /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
+		7D20BDE9090EDF138E5B6CA3 /* ZenithiumChartStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZenithiumChartStyle.swift; sourceTree = "<group>"; };
 		704850C2C517221F90D520C3 /* ZenithiumColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZenithiumColor.swift; sourceTree = "<group>"; };
 		567E45FF8D8821D3E2851D20 /* ZenithiumColorAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZenithiumColorAsset.swift; sourceTree = "<group>"; };
 		41AC35C2D2F7955B415EAB17 /* ZenithiumFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZenithiumFont.swift; sourceTree = "<group>"; };
@@ -1423,6 +1425,7 @@
 				878FC4A4C01D642782FA1639 /* Sparkline.swift */,
 				C521606EE49597A829070D3C /* SpectralField.swift */,
 				CEC5AD288AC518743E416123 /* StateViews.swift */,
+				7D20BDE9090EDF138E5B6CA3 /* ZenithiumChartStyle.swift */,
 				704850C2C517221F90D520C3 /* ZenithiumColor.swift */,
 				567E45FF8D8821D3E2851D20 /* ZenithiumColorAsset.swift */,
 				41AC35C2D2F7955B415EAB17 /* ZenithiumFont.swift */,
@@ -2136,6 +2139,7 @@
 				4C2E3290354EB6ED2FDC0345 /* Sparkline.swift in Sources */,
 				10D222059104D65DA2AE90FB /* SpectralField.swift in Sources */,
 				063A026F725CAB66DC0AF6B6 /* StateViews.swift in Sources */,
+				CC52B0E0759565B6187DDF5B /* ZenithiumChartStyle.swift in Sources */,
 				A635DF842D67881C7A40873A /* ZenithiumColor.swift in Sources */,
 				64A826585B5B1898931B05EE /* ZenithiumColorAsset.swift in Sources */,
 				599C74503DF85FFAFB7C5A67 /* ZenithiumFont.swift in Sources */,

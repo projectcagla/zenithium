@@ -308,17 +308,17 @@ struct EnduranceView: View {
     }
 
     // MARK: - Volume
-
     private func volumeCard(_ weeks: [EnduranceViewModel.WeeklyDistance]) -> some View {
-        SectionCard(title: "Haftalık hacim", subtitle: "Kilometre") {
-            Chart(weeks) { week in
+        let displayWeeks = ZenithiumChartDownsampler.downsample(weeks, maxPoints: 400, x: { $0.weekStart.timeIntervalSince1970 }, y: { $0.distance })
+        return SectionCard(title: "Haftalık hacim", subtitle: "Kilometre") {
+            Chart(displayWeeks) { week in
                 BarMark(
                     x: .value("Hafta", week.weekStart, unit: .weekOfYear),
                     y: .value("Kilometre", week.distance)
                 )
                 .foregroundStyle(ZenithiumColor.spectrumMagenta.opacity(0.7))
             }
-            .zenithiumChartChrome()
+            .zenithiumChart(yValues: 3...4, showBaseline: true)
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
             // Playable, so a build-up or a drop in weekly volume is audible rather than

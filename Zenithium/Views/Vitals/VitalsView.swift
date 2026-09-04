@@ -512,3 +512,11 @@ private struct LongevityRow: View {
         .accessibilityValue("\(ZenithiumFormat.score(component.score)) puan, ağırlık \(ZenithiumFormat.percentTR(component.pillar.weight)). \(component.pillar.rationale)")
     }
 }
+
+// MARK: - Swift Charts Uyumluluğu
+extension VitalsView {
+    /// Şartname Faz 3 standart grafik biçimlendirici
+    func asZenithiumChart() -> some View {
+        self.zenithiumChart(yValues: 3...4, showBaseline: true)
+    }
+}
