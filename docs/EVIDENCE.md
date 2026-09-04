@@ -34,7 +34,7 @@ Gabbett TJ (2016). *The training-injury prevention paradox: should athletes be t
 - **Kanıt derecesi:** Derleme / konsensüs
 - **Ne göstermiyor:** Belirli bir akut:kronik oranının güvenli olduğunu göstermez ve rekreasyonel sporcularda doğrulanmamıştır. Bulguların çoğu takım sporu profesyonellerinden gelir.
 - **Çelişki:** LOLLI-2019
-- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift
+- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift, Zenithium/Views/DesignSystem/PreviewFixtures.swift
 
 #### HIRSHKOWITZ-2015
 
@@ -61,7 +61,7 @@ Plews DJ, Laursen PB, Stanley J, Kilding AE, Buchheit M (2013). *Training adapta
 - **Tanımlayıcı:** doi:10.1007/s40279-013-0071-8
 - **Kanıt derecesi:** Derleme / konsensüs
 - **Ne göstermiyor:** Tek bir günün HRV değerinden o günün antrenman kapasitesini çıkarmayı desteklemez; savunduğu şey haftalık ortalamaların takibidir. Bir gecelik düşüşün nedenini de söylemez.
-- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift
+- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift, Zenithium/Views/DesignSystem/PreviewFixtures.swift
 
 #### ROSS-2016
 

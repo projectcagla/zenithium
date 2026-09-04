@@ -134,9 +134,11 @@ FRAMEWORK_SYMBOLS = {
     "HKObjectQueryNoLimit", "HKSampleSortIdentifierStartDate", "HKCategoryValueVaginalBleeding",
     "HKMetadataKeyMenstrualCycleStart", "HKMetadataKeyTimeZone", "Gauge", "Preview",
     "ContainerBackground", "WidgetAccentedRenderingMode",
-    # Swift Testing
+    # Swift Testing / XCTest
     "Test", "Suite", "Issue", "Comment", "SourceLocation", "Tag", "ConfirmationError",
-    "CustomTestStringConvertible",
+    "CustomTestStringConvertible", "XCTestCase", "XCTAssertGreaterThanOrEqual", "XCTAssertNotNil", "XCTAssertTrue",
+    # SwiftUI / UIKit Graphics
+    "ImageRenderer", "UIHostingController", "UIWindow", "UIWindowScene", "RunLoop", "UIGraphicsImageRenderer", "UIGraphicsImageRendererFormat",
 }
 
 # Names that appear capitalised but are not type references.

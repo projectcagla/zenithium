@@ -13,62 +13,73 @@ import SwiftUI
 struct BloodworkView: View {
 
     @State var viewModel: BloodworkViewModel
+    var embedInNavigation: Bool = true
     @State private var isAddingEntry = false
     @State private var isImportingReport = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: ZenithiumSpacing.sectionSpacing) {
-                    ViewStateContainer(
-                        state: viewModel.state,
-                        loadingLabel: "Sonuçlar yükleniyor",
-                        retry: { await viewModel.load() },
-                        requestAccess: nil
-                    ) { content in
-                        loadedBody(content)
-                    }
-
-                    disclaimerText
-                }
-                .padding(.horizontal, ZenithiumSpacing.screenEdge)
-                .padding(.bottom, ZenithiumSpacing.xxl)
-                .padding(.top, ZenithiumSpacing.s)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Kan Değerleri")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            isImportingReport = true
-                        } label: {
-                            Label("PDF tahlil sonucu içe aktar", systemImage: "doc.text.viewfinder")
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Kan Değerleri")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Menu {
+                                Button {
+                                    isImportingReport = true
+                                } label: {
+                                    Label("PDF tahlil sonucu içe aktar", systemImage: "doc.text.viewfinder")
+                                }
+                                Button {
+                                    isAddingEntry = true
+                                } label: {
+                                    Label("Elle değer gir", systemImage: "square.and.pencil")
+                                }
+                            } label: {
+                                Label("Sonuç ekle", systemImage: "plus")
+                            }
+                            .accessibilityLabel("Sonuç ekle")
                         }
-                        Button {
-                            isAddingEntry = true
-                        } label: {
-                            Label("Elle değer gir", systemImage: "square.and.pencil")
-                        }
-                    } label: {
-                        Label("Sonuç ekle", systemImage: "plus")
                     }
-                    .accessibilityLabel("Sonuç ekle")
-                }
+                    .sheet(isPresented: $isAddingEntry) {
+                        BloodMarkerEditorView(viewModel: viewModel)
+                    }
+                    .sheet(isPresented: $isImportingReport) {
+                        LabImportView(repository: viewModel.markerRepository) {
+                            Task { await viewModel.load() }
+                        }
+                    }
             }
-            .sheet(isPresented: $isAddingEntry) {
-                BloodMarkerEditorView(viewModel: viewModel)
-            }
-            .sheet(isPresented: $isImportingReport) {
-                LabImportView(repository: viewModel.markerRepository) {
-                    Task { await viewModel.load() }
-                }
-            }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumIndigo, intensity: 0.3)
+            .task { await viewModel.onAppear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumIndigo, intensity: 0.3)
+                .task { await viewModel.onAppear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumIndigo, intensity: 0.3)
-        .task { await viewModel.onAppear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+                ViewStateContainer(
+                    state: viewModel.state,
+                    loadingLabel: "Sonuçlar yükleniyor",
+                    retry: { await viewModel.load() },
+                    requestAccess: nil
+                ) { content in
+                    loadedBody(content)
+                }
+
+                disclaimerText
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+            .padding(.top, ZenithiumSpacing.s)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     private var disclaimerText: some View {
@@ -283,5 +294,35 @@ private struct MarkerSummaryRow: View {
         }
         val += ", test tarihi \(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))"
         return val
+    }
+}
+
+#Preview("Tahlil · dolu") {
+    BloodworkPreviewWrapper(state: .dolu)
+}
+
+#Preview("Tahlil · kalibrasyon") {
+    BloodworkPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Tahlil · veri yok") {
+    BloodworkPreviewWrapper(state: .veriyok)
+}
+
+private struct BloodworkPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: BloodworkViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                BloodworkView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeBloodworkViewModel(state: state)
+                    }
+            }
+        }
     }
 }

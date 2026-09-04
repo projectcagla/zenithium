@@ -10,35 +10,47 @@ import SwiftUI
 struct TrendsView: View {
 
     @State var viewModel: TrendsViewModel
+    var embedInNavigation: Bool = true
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: ZenithiumSpacing.l) {
-                    controls
-                    ViewStateContainer(
-                        state: viewModel.state,
-                        loadingLabel: "Geçmiş yükleniyor",
-                        loadingLayout: .chart,
-                        retry: { await viewModel.load() },
-                        requestAccess: nil
-                    ) { content in
-                        loadedBody(content)
-                    }
-                }
-                .padding(.horizontal, ZenithiumSpacing.screenEdge)
-                .padding(.bottom, ZenithiumSpacing.xxl)
-                .padding(.top, ZenithiumSpacing.s)
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Trendler")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .refreshable { await viewModel.load() }
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Trendler")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .refreshable { await viewModel.load() }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.3)
+            .task { await viewModel.onAppear() }
+            .onDisappear { viewModel.onDisappear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.3)
+                .task { await viewModel.onAppear() }
+                .onDisappear { viewModel.onDisappear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.3)
-        .task { await viewModel.onAppear() }
-        .onDisappear { viewModel.onDisappear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            VStack(spacing: ZenithiumSpacing.l) {
+                controls
+                ViewStateContainer(
+                    state: viewModel.state,
+                    loadingLabel: "Geçmiş yükleniyor",
+                    loadingLayout: .chart,
+                    retry: { await viewModel.load() },
+                    requestAccess: nil
+                ) { content in
+                    loadedBody(content)
+                }
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+            .padding(.top, ZenithiumSpacing.s)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     private var controls: some View {
@@ -228,5 +240,35 @@ private struct MetricPill: View {
         .buttonStyle(.plain)
         .accessibilityLabel(metric.displayName)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+#Preview("Trendler · dolu") {
+    TrendsPreviewWrapper(state: .dolu)
+}
+
+#Preview("Trendler · kalibrasyon") {
+    TrendsPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Trendler · veri yok") {
+    TrendsPreviewWrapper(state: .veriyok)
+}
+
+private struct TrendsPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: TrendsViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                TrendsView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeTrendsViewModel(state: state)
+                    }
+            }
+        }
     }
 }

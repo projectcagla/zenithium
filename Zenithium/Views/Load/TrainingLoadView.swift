@@ -17,31 +17,42 @@ struct TrainingLoadView: View {
 
     @ScaledMetric private var chartHeight: CGFloat = 180
     @State var viewModel: TrainingLoadViewModel
+    var embedInNavigation: Bool = true
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                ViewStateContainer(
-                    state: viewModel.state,
-                    loadingLabel: "Yük geçmişi okunuyor",
-                    loadingLayout: .chart,
-                    retry: { await viewModel.load() },
-                    requestAccess: nil
-                ) { content in
-                    loadedBody(content)
-                }
-                .padding(.horizontal, ZenithiumSpacing.l)
-                .padding(.bottom, ZenithiumSpacing.xxl)
-                .padding(.top, ZenithiumSpacing.s)
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Yük")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .refreshable { await viewModel.load() }
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Yük")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .refreshable { await viewModel.load() }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.34)
+            .task { await viewModel.onAppear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.34)
+                .task { await viewModel.onAppear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.34)
-        .task { await viewModel.onAppear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            ViewStateContainer(
+                state: viewModel.state,
+                loadingLabel: "Yük geçmişi okunuyor",
+                loadingLayout: .chart,
+                retry: { await viewModel.load() },
+                requestAccess: nil
+            ) { content in
+                loadedBody(content)
+            }
+            .padding(.horizontal, ZenithiumSpacing.l)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+            .padding(.top, ZenithiumSpacing.s)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -264,6 +275,36 @@ struct TrainingLoadView: View {
         case .productive: return ZenithiumColor.green
         case .rising: return ZenithiumColor.yellow
         case .spike: return ZenithiumColor.red
+        }
+    }
+}
+
+#Preview("Yük · dolu") {
+    TrainingLoadPreviewWrapper(state: .dolu)
+}
+
+#Preview("Yük · kalibrasyon") {
+    TrainingLoadPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Yük · veri yok") {
+    TrainingLoadPreviewWrapper(state: .veriyok)
+}
+
+private struct TrainingLoadPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: TrainingLoadViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                TrainingLoadView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeTrainingLoadViewModel(state: state)
+                    }
+            }
         }
     }
 }

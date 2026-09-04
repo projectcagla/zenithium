@@ -74,11 +74,8 @@ struct ZenithiumBackground: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background {
-                ZStack {
-                    ZenithiumColor.background
-                    SpectralField(tint: tint, intensity: intensity)
-                }
-                .ignoresSafeArea()
+                ZenithiumColor.background
+                    .ignoresSafeArea()
             }
             .tint(ZenithiumColor.accent)
     }

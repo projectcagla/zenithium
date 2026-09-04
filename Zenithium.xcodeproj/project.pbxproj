@@ -211,6 +211,7 @@
 		DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA1A72F6E5706BF29E88A39 /* HubView.swift */; };
 		C8D276BC07F9C7389309A3E0 /* LensMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82682898DF4767A6A29146B7 /* LensMark.swift */; };
 		29776997640096ACCD6E971D /* MetricTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809ABE7D002871C62126334F /* MetricTile.swift */; };
+		8CE7556BC1C8A6C594AEB698 /* PreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D625714B6DF64B8B4ABAD83 /* PreviewFixtures.swift */; };
 		1EBD7329A9084CE904905DDD /* SectionBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = D466B7BAF114478556049BE2 /* SectionBlock.swift */; };
 		E8D49E82912D621F5D20674A /* SectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2714C24CD095E1349C36D7E2 /* SectionCard.swift */; };
 		09E567C00BDA6BAEB4CBF501 /* SeriesChartDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */; };
@@ -255,6 +256,7 @@
 		5B09E8348770F831EEA887E7 /* DecisionTraceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10BB04F4B6ADFC9CAD07758E /* DecisionTraceCard.swift */; };
 		3E92B957DEE1D665CF77A7CC /* DriverBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5763B70CD8885CE5E7B7D122 /* DriverBreakdownView.swift */; };
 		BD7CFA18DB0D2381F87D3F7D /* PrescriptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D45F5441672884185F194AA /* PrescriptionCard.swift */; };
+		CFD3A8D439061C9B9C29FF03 /* ReasonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B665611879D8C9BBBA6CFE7F /* ReasonView.swift */; };
 		0187458D2285D11BC3835670 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC958F3A6775F8C5C1CDF638 /* TodayView.swift */; };
 		7D1C5FB3E176C5F63DC4DE95 /* TrendChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02900892A89079CE310B61F3 /* TrendChart.swift */; };
 		C4AC07393033034A488F5C63 /* TrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D44DF01A6B6ACAE468EBC2 /* TrendsView.swift */; };
@@ -498,6 +500,7 @@
 		2BC86214A1ED8A9A915F8731 /* RecommendationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */; };
 		67E13583426719B11AAE3DB5 /* RecoveryEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */; };
 		CA8469384441247CA100EAFC /* ReferenceNormsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */; };
+		8A5F2D867EE5BD298D024D12 /* RenderHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CFCC09EBD6977BEC0BF51E8 /* RenderHarness.swift */; };
 		B2993B971B97C0D25A7EBA94 /* SafetyFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */; };
 		FE64CD8DEEFCFB946328D773 /* ScientificBoundaryRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417FE64FFCB93D47D5D88A8D /* ScientificBoundaryRegistryTests.swift */; };
 		4C8651C4B913DE211E361C4D /* ScientificBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AD7185015DB4C38F9C00163 /* ScientificBoundaryTests.swift */; };
@@ -783,6 +786,7 @@
 		CEA1A72F6E5706BF29E88A39 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		82682898DF4767A6A29146B7 /* LensMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensMark.swift; sourceTree = "<group>"; };
 		809ABE7D002871C62126334F /* MetricTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricTile.swift; sourceTree = "<group>"; };
+		1D625714B6DF64B8B4ABAD83 /* PreviewFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewFixtures.swift; sourceTree = "<group>"; };
 		D466B7BAF114478556049BE2 /* SectionBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionBlock.swift; sourceTree = "<group>"; };
 		2714C24CD095E1349C36D7E2 /* SectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCard.swift; sourceTree = "<group>"; };
 		BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeriesChartDescriptor.swift; sourceTree = "<group>"; };
@@ -827,6 +831,7 @@
 		10BB04F4B6ADFC9CAD07758E /* DecisionTraceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionTraceCard.swift; sourceTree = "<group>"; };
 		5763B70CD8885CE5E7B7D122 /* DriverBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverBreakdownView.swift; sourceTree = "<group>"; };
 		3D45F5441672884185F194AA /* PrescriptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrescriptionCard.swift; sourceTree = "<group>"; };
+		B665611879D8C9BBBA6CFE7F /* ReasonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasonView.swift; sourceTree = "<group>"; };
 		DC958F3A6775F8C5C1CDF638 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		02900892A89079CE310B61F3 /* TrendChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendChart.swift; sourceTree = "<group>"; };
 		94D44DF01A6B6ACAE468EBC2 /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
@@ -874,6 +879,7 @@
 		39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngineTests.swift; sourceTree = "<group>"; };
 		AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEngineTests.swift; sourceTree = "<group>"; };
 		96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferenceNormsTests.swift; sourceTree = "<group>"; };
+		1CFCC09EBD6977BEC0BF51E8 /* RenderHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderHarness.swift; sourceTree = "<group>"; };
 		F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafetyFilterTests.swift; sourceTree = "<group>"; };
 		417FE64FFCB93D47D5D88A8D /* ScientificBoundaryRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryRegistryTests.swift; sourceTree = "<group>"; };
 		9AD7185015DB4C38F9C00163 /* ScientificBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScientificBoundaryTests.swift; sourceTree = "<group>"; };
@@ -1404,6 +1410,7 @@
 				CEA1A72F6E5706BF29E88A39 /* HubView.swift */,
 				82682898DF4767A6A29146B7 /* LensMark.swift */,
 				809ABE7D002871C62126334F /* MetricTile.swift */,
+				1D625714B6DF64B8B4ABAD83 /* PreviewFixtures.swift */,
 				D466B7BAF114478556049BE2 /* SectionBlock.swift */,
 				2714C24CD095E1349C36D7E2 /* SectionCard.swift */,
 				BDFD071A824DB7E6E67FD529 /* SeriesChartDescriptor.swift */,
@@ -1553,6 +1560,7 @@
 				10BB04F4B6ADFC9CAD07758E /* DecisionTraceCard.swift */,
 				5763B70CD8885CE5E7B7D122 /* DriverBreakdownView.swift */,
 				3D45F5441672884185F194AA /* PrescriptionCard.swift */,
+				B665611879D8C9BBBA6CFE7F /* ReasonView.swift */,
 				DC958F3A6775F8C5C1CDF638 /* TodayView.swift */,
 			);
 			path = Today;
@@ -1675,6 +1683,7 @@
 				39BFA90CEE4B597874FD6389 /* RecommendationEngineTests.swift */,
 				AD7706EDD68700328CB7A0CA /* RecoveryEngineTests.swift */,
 				96923A1220ABC9442A6CAFFB /* ReferenceNormsTests.swift */,
+				1CFCC09EBD6977BEC0BF51E8 /* RenderHarness.swift */,
 				F62FD57B5B95877F39F3F641 /* SafetyFilterTests.swift */,
 				417FE64FFCB93D47D5D88A8D /* ScientificBoundaryRegistryTests.swift */,
 				9AD7185015DB4C38F9C00163 /* ScientificBoundaryTests.swift */,
@@ -2113,6 +2122,7 @@
 				DA384E12134CAC7A9340BEF7 /* HubView.swift in Sources */,
 				C8D276BC07F9C7389309A3E0 /* LensMark.swift in Sources */,
 				29776997640096ACCD6E971D /* MetricTile.swift in Sources */,
+				8CE7556BC1C8A6C594AEB698 /* PreviewFixtures.swift in Sources */,
 				1EBD7329A9084CE904905DDD /* SectionBlock.swift in Sources */,
 				E8D49E82912D621F5D20674A /* SectionCard.swift in Sources */,
 				09E567C00BDA6BAEB4CBF501 /* SeriesChartDescriptor.swift in Sources */,
@@ -2157,6 +2167,7 @@
 				5B09E8348770F831EEA887E7 /* DecisionTraceCard.swift in Sources */,
 				3E92B957DEE1D665CF77A7CC /* DriverBreakdownView.swift in Sources */,
 				BD7CFA18DB0D2381F87D3F7D /* PrescriptionCard.swift in Sources */,
+				CFD3A8D439061C9B9C29FF03 /* ReasonView.swift in Sources */,
 				0187458D2285D11BC3835670 /* TodayView.swift in Sources */,
 				7D1C5FB3E176C5F63DC4DE95 /* TrendChart.swift in Sources */,
 				C4AC07393033034A488F5C63 /* TrendsView.swift in Sources */,
@@ -2421,6 +2432,7 @@
 				2BC86214A1ED8A9A915F8731 /* RecommendationEngineTests.swift in Sources */,
 				67E13583426719B11AAE3DB5 /* RecoveryEngineTests.swift in Sources */,
 				CA8469384441247CA100EAFC /* ReferenceNormsTests.swift in Sources */,
+				8A5F2D867EE5BD298D024D12 /* RenderHarness.swift in Sources */,
 				B2993B971B97C0D25A7EBA94 /* SafetyFilterTests.swift in Sources */,
 				FE64CD8DEEFCFB946328D773 /* ScientificBoundaryRegistryTests.swift in Sources */,
 				4C8651C4B913DE211E361C4D /* ScientificBoundaryTests.swift in Sources */,

@@ -16,31 +16,43 @@ import SwiftUI
 struct TodayView: View {
 
     @State var viewModel: TodayViewModel
+    var embedInNavigation: Bool = true
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                ViewStateContainer(
-                    state: viewModel.state,
-                    loadingLabel: "Dün gece okunuyor",
-                    loadingLayout: .scored,
-                    retry: { await viewModel.refresh() },
-                    requestAccess: { await viewModel.requestAuthorization() }
-                ) { content in
-                    loadedBody(content)
-                }
-                .padding(.horizontal, ZenithiumSpacing.screenEdge)
-                .padding(.bottom, ZenithiumSpacing.xxl)
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Bugün")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .refreshable { await viewModel.refresh() }
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Bugün")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .refreshable { await viewModel.refresh() }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.42)
+            .task { await viewModel.onAppear() }
+            .onDisappear { viewModel.onDisappear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.42)
+                .task { await viewModel.onAppear() }
+                .onDisappear { viewModel.onDisappear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.42)
-        .task { await viewModel.onAppear() }
-        .onDisappear { viewModel.onDisappear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            ViewStateContainer(
+                state: viewModel.state,
+                loadingLabel: "Dün gece okunuyor",
+                loadingLayout: .scored,
+                retry: { await viewModel.refresh() },
+                requestAccess: { await viewModel.requestAuthorization() }
+            ) { content in
+                loadedBody(content)
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -471,5 +483,35 @@ struct TodayView: View {
         if confidence >= 0.80 { return ZenithiumColor.green }
         if confidence >= 0.50 { return ZenithiumColor.yellow }
         return ZenithiumColor.red
+    }
+}
+
+#Preview("Bugün · dolu") {
+    TodayPreviewWrapper(state: .dolu)
+}
+
+#Preview("Bugün · kalibrasyon") {
+    TodayPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Bugün · veri yok") {
+    TodayPreviewWrapper(state: .veriyok)
+}
+
+private struct TodayPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: TodayViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                TodayView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeTodayViewModel(state: state)
+                    }
+            }
+        }
     }
 }

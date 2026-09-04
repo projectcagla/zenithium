@@ -14,61 +14,73 @@ import SwiftUI
 struct MuscleMapView: View {
 
     @State var viewModel: MuscleMapViewModel
+    var embedInNavigation: Bool = true
     @State private var isLoggingSession = false
 
     /// The region a pain entry is being logged for, set by a long press on the map.
     @State private var painTarget: MuscleGroup?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                ViewStateContainer(
-                    state: viewModel.state,
-                    loadingLabel: "Kas toparlanması yansıtılıyor",
-                    loadingLayout: .scored,
-                    retry: { await viewModel.refresh() },
-                    requestAccess: nil
-                ) { content in
-                    loadedBody(content)
-                }
-                .padding(.horizontal, ZenithiumSpacing.screenEdge)
-                .padding(.bottom, ZenithiumSpacing.xxl)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Kaslar")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isLoggingSession = true
-                    } label: {
-                        Label("Seans kaydet", systemImage: "plus")
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Kaslar")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                isLoggingSession = true
+                            } label: {
+                                Label("Seans kaydet", systemImage: "plus")
+                            }
+                            .accessibilityLabel("Kuvvet seansı kaydet")
+                        }
                     }
-                    .accessibilityLabel("Kuvvet seansı kaydet")
-                }
+                    .refreshable { await viewModel.refresh() }
+                    .navigationDestination(item: $viewModel.selectedMuscle) { muscle in
+                        if let readiness = viewModel.state.value?.readiness(for: muscle) {
+                            MuscleDetailView(
+                                readiness: readiness,
+                                sessions: viewModel.sessions
+                            )
+                        }
+                    }
+                    .sheet(isPresented: $isLoggingSession) {
+                        StrengthSessionLoggerView(viewModel: viewModel)
+                    }
+                    .sheet(item: $painTarget) { muscle in
+                        PainLoggerView(muscle: muscle) { entry in
+                            await viewModel.savePain(entry)
+                        }
+                    }
             }
-            .refreshable { await viewModel.refresh() }
-            .navigationDestination(item: $viewModel.selectedMuscle) { muscle in
-                if let readiness = viewModel.state.value?.readiness(for: muscle) {
-                    MuscleDetailView(
-                        readiness: readiness,
-                        sessions: viewModel.sessions
-                    )
-                }
-            }
-            .sheet(isPresented: $isLoggingSession) {
-                StrengthSessionLoggerView(viewModel: viewModel)
-            }
-            .sheet(item: $painTarget) { muscle in
-                PainLoggerView(muscle: muscle) { entry in
-                    await viewModel.savePain(entry)
-                }
-            }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.3)
+            .task { await viewModel.onAppear() }
+            .onDisappear { viewModel.onDisappear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.3)
+                .task { await viewModel.onAppear() }
+                .onDisappear { viewModel.onDisappear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumAmber, intensity: 0.3)
-        .task { await viewModel.onAppear() }
-        .onDisappear { viewModel.onDisappear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            ViewStateContainer(
+                state: viewModel.state,
+                loadingLabel: "Kas toparlanması yansıtılıyor",
+                loadingLayout: .scored,
+                retry: { await viewModel.refresh() },
+                requestAccess: nil
+            ) { content in
+                loadedBody(content)
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -538,5 +550,35 @@ private struct SessionRow: View {
         }
         .padding(.vertical, ZenithiumSpacing.m)
         .accessibilityElement(children: .contain)
+    }
+}
+
+#Preview("Kas · dolu") {
+    MuscleMapPreviewWrapper(state: .dolu)
+}
+
+#Preview("Kas · kalibrasyon") {
+    MuscleMapPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Kas · veri yok") {
+    MuscleMapPreviewWrapper(state: .veriyok)
+}
+
+private struct MuscleMapPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: MuscleMapViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                MuscleMapView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeMuscleMapViewModel(state: state)
+                    }
+            }
+        }
     }
 }

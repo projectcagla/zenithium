@@ -15,31 +15,43 @@ import SwiftUI
 struct SleepView: View {
 
     @State var viewModel: SleepViewModel
+    var embedInNavigation: Bool = true
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                ViewStateContainer(
-                    state: viewModel.state,
-                    loadingLabel: "Dün gece okunuyor",
-                    loadingLayout: .scored,
-                    retry: { await viewModel.refresh() },
-                    requestAccess: nil
-                ) { content in
-                    loadedBody(content)
-                }
-                .padding(.horizontal, ZenithiumSpacing.screenEdge)
-                .padding(.bottom, ZenithiumSpacing.xxl)
+        if embedInNavigation {
+            NavigationStack {
+                mainContent
+                    .navigationTitle("Uyku")
+                    .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+                    .refreshable { await viewModel.refresh() }
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Uyku")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
-            .refreshable { await viewModel.refresh() }
+            .zenithiumBackground(tint: ZenithiumColor.spectrumMagenta, intensity: 0.3)
+            .task { await viewModel.onAppear() }
+            .onDisappear { viewModel.onDisappear() }
+        } else {
+            mainContent
+                .zenithiumBackground(tint: ZenithiumColor.spectrumMagenta, intensity: 0.3)
+                .task { await viewModel.onAppear() }
+                .onDisappear { viewModel.onDisappear() }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumMagenta, intensity: 0.3)
-        .task { await viewModel.onAppear() }
-        .onDisappear { viewModel.onDisappear() }
+    }
+
+    private var mainContent: some View {
+        ScrollView {
+            ViewStateContainer(
+                state: viewModel.state,
+                loadingLabel: "Dün gece okunuyor",
+                loadingLayout: .scored,
+                retry: { await viewModel.refresh() },
+                requestAccess: nil
+            ) { content in
+                loadedBody(content)
+            }
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
+            .padding(.bottom, ZenithiumSpacing.xxl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -341,5 +353,35 @@ private struct SleepComponentRow: View {
         .accessibilityValue(
             "100 üzerinden \(ZenithiumFormat.score(component.score)), ağırlık \(ZenithiumFormat.metric(component.weight, digits: 2)). \(component.component.explanation)"
         )
+    }
+}
+
+#Preview("Uyku · dolu") {
+    SleepPreviewWrapper(state: .dolu)
+}
+
+#Preview("Uyku · kalibrasyon") {
+    SleepPreviewWrapper(state: .kalibrasyon)
+}
+
+#Preview("Uyku · veri yok") {
+    SleepPreviewWrapper(state: .veriyok)
+}
+
+private struct SleepPreviewWrapper: View {
+    let state: PreviewState
+    @State private var viewModel: SleepViewModel?
+
+    var body: some View {
+        Group {
+            if let viewModel {
+                SleepView(viewModel: viewModel)
+            } else {
+                ZenithiumColor.background.ignoresSafeArea()
+                    .task {
+                        viewModel = await PreviewFixtures.shared.makeSleepViewModel(state: state)
+                    }
+            }
+        }
     }
 }
