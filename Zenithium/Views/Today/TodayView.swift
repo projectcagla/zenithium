@@ -18,6 +18,11 @@ struct TodayView: View {
     @State var viewModel: TodayViewModel
     var embedInNavigation: Bool = true
 
+    @Namespace private var todayNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showingReason: Bool = false
+    @State private var selectedMetricForDetail: SupportingMetricDetail? = nil
+
     var body: some View {
         if embedInNavigation {
             NavigationStack {
@@ -38,21 +43,44 @@ struct TodayView: View {
     }
 
     private var mainContent: some View {
-        ScrollView {
-            ViewStateContainer(
-                state: viewModel.state,
-                loadingLabel: "Dün gece okunuyor",
-                loadingLayout: .scored,
-                retry: { await viewModel.refresh() },
-                requestAccess: { await viewModel.requestAuthorization() }
-            ) { content in
-                loadedBody(content)
+        ZStack {
+            ScrollView {
+                ViewStateContainer(
+                    state: viewModel.state,
+                    loadingLabel: "Dün gece okunuyor",
+                    loadingLayout: .scored,
+                    retry: { await viewModel.refresh() },
+                    requestAccess: { await viewModel.requestAuthorization() }
+                ) { content in
+                    loadedBody(content)
+                }
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
+                .padding(.bottom, ZenithiumSpacing.xxl)
             }
-            .padding(.horizontal, ZenithiumSpacing.screenEdge)
-            .padding(.bottom, ZenithiumSpacing.xxl)
+            .scrollBounceBehavior(.basedOnSize)
+            .background(ZenithiumColor.background.ignoresSafeArea())
+
+            if let metric = selectedMetricForDetail {
+                metricDetailOverlay(metric)
+                    .zIndex(15)
+            }
+
+            if showingReason, let content = viewModel.state.value {
+                ReasonView(
+                    recommendation: viewModel.recommendations.first ?? fallbackRecommendation(content),
+                    embedInNavigation: false,
+                    namespace: todayNamespace,
+                    onDismiss: {
+                        withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                            showingReason = false
+                        }
+                    }
+                )
+                .background(ZenithiumColor.background.ignoresSafeArea())
+                .transition(.opacity)
+                .zIndex(20)
+            }
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -108,6 +136,7 @@ struct TodayView: View {
                 band: content.band,
                 confidence: confidence
             )
+            .matchedGeometryEffect(id: "today-reason-score", in: todayNamespace)
             .padding(.top, ZenithiumSpacing.xs)
 
             // Band Sembolü + Band Adı (Renk körlüğü için sembol + metin)
@@ -154,39 +183,46 @@ struct TodayView: View {
     private func supportingMetricsStrip(_ content: TodayViewModel.Content) -> some View {
         HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
             supportingMetricItem(
+                id: "hrv",
                 label: "HRV",
                 value: content.record.heartRateVariability.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
                 unit: "ms",
                 bandValues: [content.record.heartRateVariability ?? 49.0],
                 baseline: 52.0,
-                sigma: 6.0
+                sigma: 6.0,
+                description: "Gece boyunca ölçülen kalp atış hızı değişkenliği (rMSSD). Otonom sinir sistemi dengesini ve parasempatik aktiviteyi yansıtır."
             )
 
             Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
 
             supportingMetricItem(
+                id: "rhr",
                 label: "İstirahat",
                 value: content.record.restingHeartRate.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
                 unit: "bpm",
                 bandValues: [content.record.restingHeartRate ?? 54.0],
                 baseline: 53.0,
-                sigma: 3.5
+                sigma: 3.5,
+                description: "Uyku sırasındaki en düşük dinlenme kalp atış hızı. Kardiyovasküler toparlanma ve sistemik yorgunluğun birincil göstergesidir."
             )
 
             Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
 
             supportingMetricItem(
+                id: "sleep",
                 label: "Uyku",
                 value: content.record.sleepScore.map { ZenithiumFormat.score($0) } ?? "—",
                 unit: "%",
                 bandValues: [content.record.sleepScore ?? 100.0],
                 baseline: 85.0,
-                sigma: 8.0
+                sigma: 8.0,
+                description: "Uyku süresi, evre dağılımı (derin, REM) ve gece bölünmelerinin ağırlıklı bileşik skoru."
             )
 
             Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
 
             supportingMetricItem(
+                id: "temp",
                 label: "Sıcaklık",
                 value: content.record.wristTemperatureDelta.map {
                     let converted = content.profile.unitPreference.temperatureDelta(fromCelsius: $0)
@@ -195,7 +231,8 @@ struct TodayView: View {
                 unit: content.profile.unitPreference.temperatureDeltaSymbol,
                 bandValues: [content.record.wristTemperatureDelta ?? -0.3],
                 baseline: 0.0,
-                sigma: 0.35
+                sigma: 0.35,
+                description: "Taban çizgisine göre bilek cilt sıcaklığı sapması. İmmün yanıt veya aşırı antrenman yükünü erken haber verir."
             )
         }
         .padding(.vertical, ZenithiumSpacing.m)
@@ -204,37 +241,61 @@ struct TodayView: View {
     }
 
     private func supportingMetricItem(
+        id: String,
         label: String,
         value: String,
         unit: String,
         bandValues: [Double],
         baseline: Double,
-        sigma: Double
+        sigma: Double,
+        description: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-            Text(label.uppercased())
-                .font(ZenithiumFont.label)
-                .foregroundStyle(ZenithiumColor.textTertiary)
-                .lineLimit(1)
-            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                Text(value)
-                    .font(ZenithiumFont.metricNumeral)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Text(unit)
-                    .font(ZenithiumFont.metricUnit)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
+        Button {
+            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                selectedMetricForDetail = SupportingMetricDetail(
+                    id: id,
+                    label: label,
+                    value: value,
+                    unit: unit,
+                    bandValues: bandValues,
+                    baseline: baseline,
+                    sigma: sigma,
+                    description: description
+                )
             }
-            BaselineBand(
-                values: bandValues,
-                baseline: baseline,
-                sigma: sigma,
-                unit: unit,
-                style: .micro
-            )
-            .frame(height: 20)
+        } label: {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+                Text(label.uppercased())
+                    .font(ZenithiumFont.label)
+                    .foregroundStyle(ZenithiumColor.textTertiary)
+                    .lineLimit(1)
+                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                    Text(value)
+                        .font(ZenithiumFont.metricNumeral)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(unit)
+                        .font(ZenithiumFont.metricUnit)
+                        .foregroundStyle(ZenithiumColor.textTertiary)
+                }
+                if selectedMetricForDetail?.id != id {
+                    BaselineBand(
+                        values: bandValues,
+                        baseline: baseline,
+                        sigma: sigma,
+                        unit: unit,
+                        style: .micro
+                    )
+                    .matchedGeometryEffect(id: "baseline-\(id)", in: todayNamespace)
+                    .frame(height: 20)
+                } else {
+                    Color.clear.frame(height: 20)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(label): \(value) \(unit)")
     }
 
     private func hrvArrow(_ content: TodayViewModel.Content) -> (symbol: String, color: Color)? {
@@ -264,64 +325,86 @@ struct TodayView: View {
         let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
         let action = decision?.action ?? defaultAction(for: content.score, ceiling: content.ceiling)
 
-        return SectionCard(
-            title: "Günün Önerisi",
-            subtitle: actionTitle(action)
-        ) {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                // Eylem ve Yük Tavanı
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                        Text(decision?.headline ?? content.headline)
-                            .zenithiumBody()
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+        return Button {
+            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                showingReason = true
+            }
+        } label: {
+            SectionCard(
+                title: "Günün Önerisi",
+                subtitle: actionTitle(action)
+            ) {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                    // Eylem ve Yük Tavanı
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
+                            HStack(spacing: 6) {
+                                Text(actionBadgeText(action))
+                                    .font(ZenithiumFont.label)
+                                    .foregroundStyle(actionColor(action))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(
+                                        Capsule().fill(actionColor(action).opacity(0.16))
+                                    )
+                                    .matchedGeometryEffect(id: "today-reason-hero", in: todayNamespace)
 
-                    if let ceiling = content.ceiling {
-                        Spacer(minLength: 12)
-                        VStack(alignment: .trailing, spacing: ZenithiumSpacing.none) {
-                            Text("TAVAN")
-                                .zenithiumEyebrow()
-                            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                                Text(ZenithiumFormat.strain(ceiling))
-                                    .metricNumeral()
-                                    .foregroundStyle(ZenithiumColor.accent)
-                                Text("/21")
-                                    .metricUnit()
+                                Spacer()
+                            }
+
+                            Text(decision?.headline ?? content.headline)
+                                .zenithiumBody()
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        if let ceiling = content.ceiling {
+                            Spacer(minLength: 12)
+                            VStack(alignment: .trailing, spacing: ZenithiumSpacing.none) {
+                                Text("TAVAN")
+                                    .zenithiumEyebrow()
+                                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                                    Text(ZenithiumFormat.strain(ceiling))
+                                        .metricNumeral()
+                                        .foregroundStyle(ZenithiumColor.accent)
+                                    Text("/21")
+                                        .metricUnit()
+                                }
                             }
                         }
                     }
-                }
 
-                // Egzersiz Reçetesi
-                if let prescription = viewModel.prescription {
-                    Divider().overlay(ZenithiumColor.hairlineSoft)
-                    PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
-                }
-
-                // Güven Çubuğu
-                Divider().overlay(ZenithiumColor.hairlineSoft)
-                HStack(spacing: ZenithiumSpacing.s) {
-                    Text("Karar Güveni")
-                        .zenithiumCaption()
-                    Spacer()
-                    Text("%\(Int((confidence * 100).rounded()))")
-                        .zenithiumCaption()
-                        .monospacedDigit()
-                }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(ZenithiumColor.hairline)
-                            .frame(height: 4)
-                        Capsule()
-                            .fill(confidenceColor(confidence))
-                            .frame(width: max(8, geo.size.width * CGFloat(confidence)), height: 4)
+                    // Egzersiz Reçetesi
+                    if let prescription = viewModel.prescription {
+                        Divider().overlay(ZenithiumColor.hairlineSoft)
+                        PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
                     }
+
+                    // Güven Çubuğu
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+                    HStack(spacing: ZenithiumSpacing.s) {
+                        Text("Karar Güveni")
+                            .zenithiumCaption()
+                        Spacer()
+                        Text("%\(Int((confidence * 100).rounded()))")
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(ZenithiumColor.hairline)
+                                .frame(height: 4)
+                            Capsule()
+                                .fill(confidenceColor(confidence))
+                                .frame(width: max(8, geo.size.width * CGFloat(confidence)), height: 4)
+                        }
+                    }
+                    .frame(height: 4)
                 }
-                .frame(height: 4)
             }
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - SİRKADİYEN RİTİM (24 Saatlik İnce Şerit)
@@ -508,6 +591,97 @@ struct TodayView: View {
         if confidence >= 0.50 { return ZenithiumColor.yellow }
         return ZenithiumColor.red
     }
+
+    private func actionBadgeText(_ action: DecisionAction) -> String {
+        switch action {
+        case .push: return "Öneri"
+        case .maintain: return "Denge"
+        case .recover: return "Uyarı"
+        case .calibrate: return "Kalibrasyon"
+        }
+    }
+
+    private func fallbackRecommendation(_ content: TodayViewModel.Content) -> Recommendation {
+        viewModel.recommendations.first ?? PreviewFixtures.sampleRecommendation
+    }
+
+    private func metricDetailOverlay(_ metric: SupportingMetricDetail) -> some View {
+        ZStack {
+            Color.black.opacity(0.72)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                        selectedMetricForDetail = nil
+                    }
+                }
+
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(metric.label.uppercased())
+                            .zenithiumEyebrow()
+                        HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
+                            Text(metric.value)
+                                .font(ZenithiumFont.metricNumeral)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                            Text(metric.unit)
+                                .zenithiumCaption()
+                                .foregroundStyle(ZenithiumColor.textTertiary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Button {
+                        withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                            selectedMetricForDetail = nil
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(ZenithiumColor.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                BaselineBand(
+                    values: metric.bandValues,
+                    baseline: metric.baseline,
+                    sigma: metric.sigma,
+                    unit: metric.unit,
+                    style: .full
+                )
+                .matchedGeometryEffect(id: "baseline-\(metric.id)", in: todayNamespace)
+                .frame(height: 180)
+
+                Text(metric.description)
+                    .zenithiumBody()
+                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(ZenithiumSpacing.l)
+            .background(
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                    .fill(ZenithiumColor.surfaceElevated)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                            .strokeBorder(ZenithiumColor.hairline, lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, ZenithiumSpacing.m)
+        }
+    }
+}
+
+struct SupportingMetricDetail: Identifiable, Equatable {
+    let id: String
+    let label: String
+    let value: String
+    let unit: String
+    let bandValues: [Double]
+    let baseline: Double
+    let sigma: Double
+    let description: String
 }
 
 #Preview("Bugün · dolu") {

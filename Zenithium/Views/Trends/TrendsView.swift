@@ -12,6 +12,9 @@ struct TrendsView: View {
     @State var viewModel: TrendsViewModel
     var embedInNavigation: Bool = true
 
+    @Namespace private var trendsNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         if embedInNavigation {
             NavigationStack {
@@ -70,9 +73,12 @@ struct TrendsView: View {
                     ForEach(TrendMetric.allCases) { metric in
                         MetricPill(
                             metric: metric,
-                            isSelected: metric == viewModel.metric
+                            isSelected: metric == viewModel.metric,
+                            namespace: trendsNamespace
                         ) {
-                            viewModel.select(metric: metric)
+                            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                                viewModel.select(metric: metric)
+                            }
                         }
                     }
                 }
@@ -117,6 +123,7 @@ struct TrendsView: View {
             // TEK L2 KART: Değişim Özeti
             changeSummaryCard(content)
         }
+        .animation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82), value: content.metric)
     }
 
     /// Detaylı Swift Charts grafiği
@@ -231,6 +238,7 @@ private struct MetricPill: View {
 
     let metric: TrendMetric
     let isSelected: Bool
+    let namespace: Namespace.ID
     let action: () -> Void
 
     var body: some View {
@@ -242,8 +250,14 @@ private struct MetricPill: View {
                 .padding(.horizontal, ZenithiumSpacing.m)
                 .padding(.vertical, ZenithiumSpacing.s)
                 .background {
-                    Capsule(style: .continuous)
-                        .fill(isSelected ? ZenithiumColor.accent.opacity(0.20) : ZenithiumColor.surface)
+                    if isSelected {
+                        Capsule(style: .continuous)
+                            .fill(ZenithiumColor.accent.opacity(0.20))
+                            .matchedGeometryEffect(id: "trend-pill-selection", in: namespace)
+                    } else {
+                        Capsule(style: .continuous)
+                            .fill(ZenithiumColor.surface)
+                    }
                 }
                 .overlay {
                     Capsule(style: .continuous)

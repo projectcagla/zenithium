@@ -20,21 +20,37 @@ struct ReasonView: View {
 
     let recommendation: Recommendation?
     let state: ViewState<Recommendation>
+    var namespace: Namespace.ID? = nil
+    var onDismiss: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
 
     var embedInNavigation: Bool = true
 
-    init(recommendation: Recommendation, embedInNavigation: Bool = true) {
+    init(
+        recommendation: Recommendation,
+        embedInNavigation: Bool = true,
+        namespace: Namespace.ID? = nil,
+        onDismiss: (() -> Void)? = nil
+    ) {
         self.recommendation = recommendation
         self.state = .loaded(recommendation)
         self.embedInNavigation = embedInNavigation
+        self.namespace = namespace
+        self.onDismiss = onDismiss
     }
 
-    init(state: ViewState<Recommendation>, embedInNavigation: Bool = true) {
+    init(
+        state: ViewState<Recommendation>,
+        embedInNavigation: Bool = true,
+        namespace: Namespace.ID? = nil,
+        onDismiss: (() -> Void)? = nil
+    ) {
         self.state = state
         self.recommendation = state.value
         self.embedInNavigation = embedInNavigation
+        self.namespace = namespace
+        self.onDismiss = onDismiss
     }
 
     var body: some View {
@@ -46,7 +62,11 @@ struct ReasonView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
-                                dismiss()
+                                if let onDismiss {
+                                    onDismiss()
+                                } else {
+                                    dismiss()
+                                }
                             } label: {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 14, weight: .semibold))
@@ -56,7 +76,29 @@ struct ReasonView: View {
                     }
             }
         } else {
-            scrollContent
+            VStack(spacing: 0) {
+                if onDismiss != nil {
+                    HStack {
+                        Button {
+                            onDismiss?()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundStyle(ZenithiumColor.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                        Text("Neden?")
+                            .font(ZenithiumFont.sectionTitle)
+                            .foregroundStyle(ZenithiumColor.textPrimary)
+                        Spacer()
+                        Color.clear.frame(width: 22, height: 22)
+                    }
+                    .padding(.horizontal, ZenithiumSpacing.screenEdge)
+                    .padding(.top, ZenithiumSpacing.m)
+                }
+                scrollContent
+            }
         }
     }
 
@@ -92,7 +134,12 @@ struct ReasonView: View {
 
                     Spacer(minLength: 8)
 
-                    strengthBadge(item.strength)
+                    if let namespace {
+                        strengthBadge(item.strength)
+                            .matchedGeometryEffect(id: "today-reason-hero", in: namespace)
+                    } else {
+                        strengthBadge(item.strength)
+                    }
                 }
 
                 Text(item.body)
@@ -103,11 +150,20 @@ struct ReasonView: View {
 
             // [L1] Yedi adım, hepsi L1, aralarında hairlineSoft çizgi
             VStack(alignment: .leading, spacing: 16) {
-                stepRow(
-                    number: 1,
-                    title: "Senin verin",
-                    content: userEvidenceText(item)
-                )
+                if let namespace {
+                    stepRow(
+                        number: 1,
+                        title: "Senin verin",
+                        content: userEvidenceText(item)
+                    )
+                    .matchedGeometryEffect(id: "today-reason-score", in: namespace)
+                } else {
+                    stepRow(
+                        number: 1,
+                        title: "Senin verin",
+                        content: userEvidenceText(item)
+                    )
+                }
 
                 stepDivider
 
