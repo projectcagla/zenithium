@@ -130,7 +130,7 @@ FRAMEWORK_SYMBOLS = {
     "DragGesture", "Gesture", "Layout", "ProposedViewSize", "Subviews", "FormatStyle",
     "LocalizedStringResource", "IntentDescription", "ProvidesDialog", "NSKeyedArchiver",
     "NSKeyedUnarchiver", "NSSortDescriptor", "UIActivityViewController",
-    "UIViewControllerRepresentable", "UIPasteboard", "UIImage", "CGColorSpaceCreateDeviceGray", "CGImageAlphaInfo",
+    "UIViewControllerRepresentable", "UIPasteboard", "UIImage", "CGColorSpaceCreateDeviceGray", "CGColorSpaceCreateDeviceRGB", "CGImageAlphaInfo",
     "HKObjectQueryNoLimit", "HKSampleSortIdentifierStartDate", "HKCategoryValueVaginalBleeding",
     "HKMetadataKeyMenstrualCycleStart", "HKMetadataKeyTimeZone", "Gauge", "Preview",
     "ContainerBackground", "WidgetAccentedRenderingMode",
