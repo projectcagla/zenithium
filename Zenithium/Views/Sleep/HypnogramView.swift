@@ -16,6 +16,9 @@ struct HypnogramView: View {
 
     let record: BiometricDaySnapshot
 
+    @State private var scrubFraction: CGFloat? = nil
+    @State private var lastScrubStage: SleepStage? = nil
+
     private var totalSeconds: Double {
         let sum = record.deepSeconds + record.remSeconds + record.coreSeconds + record.awakeSeconds
         return sum > 0 ? sum : (record.sleepDurationSeconds > 0 ? record.sleepDurationSeconds : 28800)
@@ -25,12 +28,69 @@ struct HypnogramView: View {
         buildUltradianSegments()
     }
 
+    private func yForStage(_ stage: SleepStage, in height: CGFloat) -> CGFloat {
+        switch stage {
+        case .awake: return height * 0.14
+        case .asleepREM: return height * 0.40
+        case .asleepCore, .asleepUnspecified: return height * 0.66
+        case .asleepDeep: return height * 0.90
+        case .inBed: return height * 0.14
+        }
+    }
+
+    private func segment(at fraction: CGFloat) -> HypnogramSegment? {
+        let clamped = MathSupport.clamp(fraction, 0, 1)
+        return segments.first { $0.startFraction <= clamped && clamped <= $0.endFraction }
+            ?? segments.last
+    }
+
+    private func scrubbedDate(at fraction: CGFloat) -> Date? {
+        guard let start = record.sleepStart else { return nil }
+        return start.addingTimeInterval(Double(fraction) * totalSeconds)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
             GeometryReader { proxy in
-                hypnogramCanvas(size: proxy.size)
+                ZStack(alignment: .topLeading) {
+                    hypnogramCanvas(size: proxy.size)
+
+                    if let scrubFraction {
+                        let x = MathSupport.clamp(scrubFraction * proxy.size.width, 0, proxy.size.width)
+                        Rectangle()
+                            .fill(ZenithiumColor.textPrimary.opacity(0.45))
+                            .frame(width: 1, height: proxy.size.height)
+                            .offset(x: x)
+
+                        if let seg = segment(at: scrubFraction) {
+                            let y = yForStage(seg.stage, in: proxy.size.height)
+                            Circle()
+                                .fill(ZenithiumColor.color(for: seg.stage))
+                                .frame(width: 8, height: 8)
+                                .offset(x: x - 4, y: y - 4)
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let fraction = MathSupport.clamp(value.location.x / proxy.size.width, 0, 1)
+                            scrubFraction = fraction
+                            if let seg = segment(at: fraction), seg.stage != lastScrubStage {
+                                lastScrubStage = seg.stage
+                            }
+                        }
+                        .onEnded { _ in
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                scrubFraction = nil
+                                lastScrubStage = nil
+                            }
+                        }
+                )
             }
             .frame(height: chartHeight)
+            .sensoryFeedback(.selection, trigger: lastScrubStage)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Hipnogram grafiği")
             .accessibilityValue(accessibilityDescription)
@@ -49,21 +109,11 @@ struct HypnogramView: View {
             let h = canvasSize.height
             guard w > 10, h > 10 else { return }
 
-            // 4 seviyenin Y koordinatları (üstten alta: Uyanık, REM, Çekirdek, Derin)
-            let yAwake = h * 0.14
-            let yREM = h * 0.40
-            let yCore = h * 0.66
-            let yDeep = h * 0.90
-
-            func yForStage(_ stage: SleepStage) -> CGFloat {
-                switch stage {
-                case .awake: return yAwake
-                case .asleepREM: return yREM
-                case .asleepCore, .asleepUnspecified: return yCore
-                case .asleepDeep: return yDeep
-                case .inBed: return yAwake
-                }
-            }
+            // 4 seviyenin Y koordinatları
+            let yAwake = yForStage(.awake, in: h)
+            let yREM = yForStage(.asleepREM, in: h)
+            let yCore = yForStage(.asleepCore, in: h)
+            let yDeep = yForStage(.asleepDeep, in: h)
 
             // Kılavuz çizgileri
             let levels: [(CGFloat, String)] = [
@@ -110,7 +160,7 @@ struct HypnogramView: View {
             for (idx, seg) in segs.enumerated() {
                 let x0 = w * seg.startFraction
                 let x1 = w * seg.endFraction
-                let y = yForStage(seg.stage)
+                let y = yForStage(seg.stage, in: h)
 
                 if idx == 0 {
                     path.move(to: CGPoint(x: x0, y: y))
@@ -133,7 +183,7 @@ struct HypnogramView: View {
             for seg in segs {
                 let x0 = w * seg.startFraction
                 let x1 = w * seg.endFraction
-                let y = yForStage(seg.stage)
+                let y = yForStage(seg.stage, in: h)
                 var segPath = Path()
                 segPath.move(to: CGPoint(x: x0, y: y))
                 segPath.addLine(to: CGPoint(x: x1, y: y))
@@ -158,41 +208,74 @@ struct HypnogramView: View {
     // MARK: - Zaman Ekseni
 
     private var timeAxis: some View {
-        HStack(alignment: .firstTextBaseline) {
-            if let start = record.sleepStart {
-                Text(start.formatted(date: .omitted, time: .shortened))
-                    .zenithiumCaption()
-                    .monospacedDigit()
+        Group {
+            if let scrubFraction, let seg = segment(at: scrubFraction) {
+                HStack(alignment: .center) {
+                    if let date = scrubbedDate(at: scrubFraction) {
+                        Text(date.formatted(date: .omitted, time: .shortened))
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                            .foregroundStyle(ZenithiumColor.textPrimary)
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(ZenithiumColor.color(for: seg.stage))
+                            .frame(width: 8, height: 8)
+                        Text(seg.stage.displayName)
+                            .zenithiumCaption()
+                            .foregroundStyle(ZenithiumColor.color(for: seg.stage))
+                    }
+
+                    Spacer()
+
+                    Text("İnceleniyor")
+                        .zenithiumCaption()
+                        .foregroundStyle(ZenithiumColor.textTertiary)
+                }
+                .transition(.opacity)
             } else {
-                Text("23:00")
-                    .zenithiumCaption()
-                    .monospacedDigit()
-            }
+                HStack(alignment: .firstTextBaseline) {
+                    if let start = record.sleepStart {
+                        Text(start.formatted(date: .omitted, time: .shortened))
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                    } else {
+                        Text("23:00")
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                    }
 
-            Spacer()
+                    Spacer()
 
-            // Ortada derin uyku vurgusu
-            HStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(ZenithiumColor.spectrumTeal)
-                    .frame(width: 8, height: 8)
-                Text("Derin: \(ZenithiumFormat.duration(seconds: record.deepSeconds))")
-                    .zenithiumCaption()
-                    .foregroundStyle(ZenithiumColor.spectrumTeal)
-            }
+                    // Ortada derin uyku vurgusu
+                    HStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(ZenithiumColor.spectrumTeal)
+                            .frame(width: 8, height: 8)
+                        Text("Derin: \(ZenithiumFormat.duration(seconds: record.deepSeconds))")
+                            .zenithiumCaption()
+                            .foregroundStyle(ZenithiumColor.spectrumTeal)
+                    }
 
-            Spacer()
+                    Spacer()
 
-            if let wake = record.wakeTime {
-                Text(wake.formatted(date: .omitted, time: .shortened))
-                    .zenithiumCaption()
-                    .monospacedDigit()
-            } else {
-                Text("07:00")
-                    .zenithiumCaption()
-                    .monospacedDigit()
+                    if let wake = record.wakeTime {
+                        Text(wake.formatted(date: .omitted, time: .shortened))
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                    } else {
+                        Text("07:00")
+                            .zenithiumCaption()
+                            .monospacedDigit()
+                    }
+                }
+                .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.15), value: scrubFraction != nil)
     }
 
     // MARK: - Ultradian Segment Modellemesi

@@ -439,7 +439,6 @@ actor DailyRecalculationCoordinator {
         let segments = overnight.sleepSegments
         let block = SleepScoreEngine.longestAsleepBlock(in: segments)
 
-        let asleepSeconds = block?.asleepSeconds ?? 0
         let sleepStart = block?.interval.start
         let wakeTime = block?.interval.end
 
@@ -447,6 +446,7 @@ actor DailyRecalculationCoordinator {
         let rem: Double
         let core: Double
         let awake: Double
+        let asleepSeconds: Double
         let timeInBed: Double
         var midpointMinutes: Double?
 
@@ -458,6 +458,12 @@ actor DailyRecalculationCoordinator {
             )
             awake = SleepScoreEngine.stageSeconds([.awake], in: segments, clippedTo: block.interval)
 
+            if segments.hasStageDetail {
+                asleepSeconds = min(deep + rem + core, block.interval.duration)
+            } else {
+                asleepSeconds = min(block.asleepSeconds, block.interval.duration)
+            }
+
             // ASSUMPTION SLEEP-3 — use `.inBed` when the source writes it, else the block's
             // own span, so efficiency is defined for sources that never write `.inBed`.
             let inBed = segments.seconds(in: [.inBed])
@@ -468,7 +474,7 @@ actor DailyRecalculationCoordinator {
                 calendar: calendar
             )
         } else {
-            deep = 0; rem = 0; core = 0; awake = 0; timeInBed = 0
+            deep = 0; rem = 0; core = 0; awake = 0; asleepSeconds = 0; timeInBed = 0
         }
 
         let naps = SleepScoreEngine.resolveNaps(

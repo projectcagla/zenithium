@@ -12,21 +12,43 @@ struct WatchRecoveryView: View {
     let snapshot: WidgetSnapshot
 
     var body: some View {
-        VStack(spacing: ZenithiumSpacing.s) {
+        VStack(spacing: ZenithiumSpacing.xs) {
             if let score = snapshot.recoveryScore {
-                Text("\(Int(score.rounded()))")
-                    .font(.system(size: 46, weight: .bold).width(.expanded).monospacedDigit())
-                    .foregroundStyle(tint)
-                Text("Toparlanma")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                ZStack {
+                    Circle()
+                        .trim(from: 0.12, to: 0.68)
+                        .stroke(
+                            tint.opacity(0.18),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(90))
+
+                    Circle()
+                        .trim(from: 0.12, to: 0.12 + 0.56 * min(max(score / 100, 0), 1))
+                        .stroke(
+                            tint,
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(90))
+
+                    VStack(spacing: ZenithiumSpacing.none) {
+                        Text("\(Int(score.rounded()))")
+                            .font(.system(size: 38, weight: .bold).width(.expanded).monospacedDigit())
+                            .foregroundStyle(ZenithiumColor.textPrimary)
+                        Text("%")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .offset(y: 4)
+                }
+                .frame(width: 104, height: 104)
 
                 if let ceiling = snapshot.targetCeiling {
-                    Divider()
                     HStack(spacing: ZenithiumSpacing.m) {
                         value(ZenithiumFormat.strain(snapshot.dayStrain), label: "Zorlanma")
                         value(ZenithiumFormat.strain(ceiling), label: "Tavan")
                     }
+                    .padding(.top, 2)
                 }
             } else if snapshot.isCalibrating {
                 Text("%\(Int((snapshot.calibrationProgress * 100).rounded()))")
@@ -46,7 +68,7 @@ struct WatchRecoveryView: View {
             }
         }
         .padding(.horizontal, ZenithiumSpacing.xs)
-        .containerBackground(tint.gradient.opacity(0.28), for: .tabView)
+        .containerBackground(Color.black, for: .tabView)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Toparlanma")
         .accessibilityValue(spokenValue)

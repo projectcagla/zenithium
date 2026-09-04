@@ -300,11 +300,17 @@ struct TodayView: View {
 
                     HStack {
                         if let next = nextCircadianMarker(in: arc) {
-                            Text("Sonraki döngü: \(next.event.displayName) (\(next.date.formatted(date: .omitted, time: .shortened)))")
+                            let diff = next.date.timeIntervalSinceNow
+                            let hours = Int(diff / 3600)
+                            let minutes = Int((diff.truncatingRemainder(dividingBy: 3600)) / 60)
+                            let remaining = diff > 0 ? " (\(hours > 0 ? "\(hours) sa " : "")\(max(1, minutes)) dk kaldı)" : ""
+                            Text("Sonraki: \(next.event.displayName) · \(next.date.formatted(date: .omitted, time: .shortened))\(remaining)")
                                 .zenithiumCaption()
+                                .foregroundStyle(ZenithiumColor.textSecondary)
                         } else {
                             Text("24 saatlik uyanıklık ve melatonin döngüsü")
                                 .zenithiumCaption()
+                                .foregroundStyle(ZenithiumColor.textSecondary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right")

@@ -120,6 +120,32 @@ struct CircadianArcView: View {
                 context.fill(dot, with: .color(ZenithiumColor.background))
                 context.stroke(dot, with: .color(ZenithiumColor.accent), lineWidth: 2)
             }
+
+            // Anlık zaman kılavuzu (Şu an buradasın)
+            let now = Date()
+            if now >= first.date && now <= last.date {
+                let nowProgress = now.timeIntervalSince(first.date) / span
+                let nowX = nowProgress * canvasSize.width
+
+                var line = Path()
+                line.move(to: CGPoint(x: nowX, y: 0))
+                line.addLine(to: CGPoint(x: nowX, y: canvasSize.height))
+                context.stroke(
+                    line,
+                    with: .color(ZenithiumColor.textPrimary.opacity(0.35)),
+                    style: StrokeStyle(lineWidth: 1, dash: [3, 3])
+                )
+
+                let closest = arc.samples.min(by: { abs($0.date.timeIntervalSince(now)) < abs($1.date.timeIntervalSince(now)) })
+                if let closest {
+                    let normalized = MathSupport.clamp(
+                        closest.alertness / EngineConstants.Circadian.maxAlertness, 0, 1
+                    )
+                    let nowY = canvasSize.height - normalized * canvasSize.height
+                    let nowDot = Path(ellipseIn: CGRect(x: nowX - 3.5, y: nowY - 3.5, width: 7, height: 7))
+                    context.fill(nowDot, with: .color(ZenithiumColor.textPrimary))
+                }
+            }
         }
         .frame(width: size.width, height: size.height)
         .accessibilityHidden(true)

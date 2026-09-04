@@ -105,8 +105,8 @@ enum SleepStage: String, Sendable, Codable, CaseIterable, Hashable {
         case .asleepDeep: return 6
         case .asleepREM: return 5
         case .asleepCore: return 4
-        case .asleepUnspecified: return 3
-        case .awake: return 2
+        case .awake: return 3
+        case .asleepUnspecified: return 2
         case .inBed: return 1
         }
     }

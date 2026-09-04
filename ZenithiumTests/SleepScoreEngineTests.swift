@@ -494,4 +494,45 @@ struct SleepScoreEngineTests {
         )
         #expect(assessment.qualityIssues.contains(where: { $0.contains("Çakışan") || $0.contains("çakışan") }))
     }
+
+    @Test("Çok kaynaklı ve örtüşen uyku kayıtları süreyi şişirmiyor")
+    func overlappingMultiSourceSegmentsDoNotInflateDuration() {
+        let t0 = Date(timeIntervalSince1970: 1700000000)
+        // iPhone genel uyku kaydı (gece boyunca eşzamanlı 7 saat 10 dk)
+        let iPhoneSample = SleepSegment(
+            interval: DateInterval(start: t0, duration: 7 * 3600 + 600),
+            stage: .asleepUnspecified,
+            sourceBundleIdentifier: "com.apple.Health"
+        )
+        // Apple Watch evreleri (aynı gece içinde: 4h core, 10 dk uyanık, 1.5h deep, 1.5h rem)
+        let watchCore = SleepSegment(
+            interval: DateInterval(start: t0, duration: 4 * 3600),
+            stage: .asleepCore,
+            sourceBundleIdentifier: "com.apple.health.watch"
+        )
+        let watchAwake = SleepSegment(
+            interval: DateInterval(start: t0.addingTimeInterval(4 * 3600), duration: 600),
+            stage: .awake,
+            sourceBundleIdentifier: "com.apple.health.watch"
+        )
+        let watchDeep = SleepSegment(
+            interval: DateInterval(start: t0.addingTimeInterval(4 * 3600 + 600), duration: 1.5 * 3600),
+            stage: .asleepDeep,
+            sourceBundleIdentifier: "com.apple.health.watch"
+        )
+        let watchREM = SleepSegment(
+            interval: DateInterval(start: t0.addingTimeInterval(5.5 * 3600 + 600), duration: 1.5 * 3600),
+            stage: .asleepREM,
+            sourceBundleIdentifier: "com.apple.health.watch"
+        )
+
+        let segments = [iPhoneSample, watchCore, watchAwake, watchDeep, watchREM]
+        let block = SleepScoreEngine.longestAsleepBlock(in: segments)
+        #expect(block != nil)
+
+        // Gerçek uyku: 4 + 1.5 + 1.5 = 7 saat (25200s). Uyanıklık (10 dk) asla uykuya katılmaz.
+        // iPhone'un 8 saatlik genel kaydı da 7 saatin üstüne eklenip 15 saat yapılamaz.
+        expectClose(block?.asleepSeconds ?? 0, 7 * 3600, tolerance: 1, "uyku süresi çift sayılmamalı")
+        #expect((block?.asleepSeconds ?? 0) <= (block?.interval.duration ?? 0))
+    }
 }

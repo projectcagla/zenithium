@@ -236,7 +236,8 @@ enum SleepScoreEngine {
     static func longestAsleepBlock(
         in segments: [SleepSegment]
     ) -> (interval: DateInterval, asleepSeconds: Double)? {
-        let asleep = segments.filter(\.isAsleep).chronological
+        let resolved = segments.resolvedNonOverlapping
+        let asleep = resolved.filter(\.isAsleep).chronological
         guard let first = asleep.first else { return nil }
 
         var bestStart = first.start
@@ -268,7 +269,9 @@ enum SleepScoreEngine {
             bestEnd = currentEnd
             bestAsleep = currentAsleep
         }
-        return (DateInterval(start: bestStart, end: max(bestStart, bestEnd)), bestAsleep)
+        let interval = DateInterval(start: bestStart, end: max(bestStart, bestEnd))
+        let cappedAsleep = min(bestAsleep, interval.duration)
+        return (interval, cappedAsleep)
     }
 
     /// The sleep midpoint of a block: `sleepStart + duration/2` (§5.5).

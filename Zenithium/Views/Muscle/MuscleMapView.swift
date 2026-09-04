@@ -114,9 +114,15 @@ struct MuscleMapView: View {
                 onSelect: { viewModel.selectedMuscle = $0 },
                 onLogPain: { painTarget = $0 }
             )
+            .id(viewModel.selectedSide)
             .aspectRatio(BodyGeometry.aspectRatio, contentMode: .fit)
             .frame(maxWidth: 300)
             .frame(maxWidth: .infinity)
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.96).combined(with: .opacity),
+                removal: .scale(scale: 0.96).combined(with: .opacity)
+            ))
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: viewModel.selectedSide)
 
             readinessLegend
         }
@@ -165,8 +171,16 @@ struct MuscleMapView: View {
                             .foregroundStyle(ZenithiumColor.color(for: item.band))
                             .accessibilityHidden(true)
 
-                        Text(item.muscle.displayName)
-                            .zenithiumLabel()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.muscle.displayName)
+                                .zenithiumLabel()
+
+                            if let hours = item.hoursUntilReadiness(90), hours > 0.5 {
+                                Text("\(Int(hours.rounded())) sa toparlanma kaldı")
+                                    .zenithiumCaption()
+                                    .foregroundStyle(ZenithiumColor.textTertiary)
+                            }
+                        }
 
                         Spacer()
 
