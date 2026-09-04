@@ -49,6 +49,7 @@ struct TodayView: View {
                     state: viewModel.state,
                     loadingLabel: "Dün gece okunuyor",
                     loadingLayout: .scored,
+                    actionCallout: "İlk gecenizden sonra toparlanma skorunuz burada hesaplanacak.",
                     retry: { await viewModel.refresh() },
                     requestAccess: { await viewModel.requestAuthorization() }
                 ) { content in

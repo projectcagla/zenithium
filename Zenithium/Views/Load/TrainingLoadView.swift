@@ -42,6 +42,7 @@ struct TrainingLoadView: View {
                 state: viewModel.state,
                 loadingLabel: "Yük geçmişi okunuyor",
                 loadingLayout: .chart,
+                actionCallout: "Antrenman uygulamasından ilk antrenmanınızı kaydedin.",
                 retry: { await viewModel.load() },
                 requestAccess: nil
             ) { content in

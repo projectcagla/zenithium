@@ -42,6 +42,7 @@ struct TrendsView: View {
                     state: viewModel.state,
                     loadingLabel: "Geçmiş yükleniyor",
                     loadingLayout: .chart,
+                    actionCallout: "En az 3 günlük veri toplandığında eğilimler burada görünecek.",
                     retry: { await viewModel.load() },
                     requestAccess: nil
                 ) { content in

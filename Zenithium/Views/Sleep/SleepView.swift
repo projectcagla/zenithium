@@ -42,6 +42,7 @@ struct SleepView: View {
                 state: viewModel.state,
                 loadingLabel: "Dün gece okunuyor",
                 loadingLayout: .scored,
+                actionCallout: "Apple Watch'unuzu bu gece kolunuzda tutarak uyuyun.",
                 retry: { await viewModel.refresh() },
                 requestAccess: nil
             ) { content in

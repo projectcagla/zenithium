@@ -71,6 +71,7 @@ struct MuscleMapView: View {
                 state: viewModel.state,
                 loadingLabel: "Kas toparlanması yansıtılıyor",
                 loadingLayout: .scored,
+                actionCallout: "Bir kuvvet antrenmanı tamamlayın.",
                 retry: { await viewModel.refresh() },
                 requestAccess: nil
             ) { content in

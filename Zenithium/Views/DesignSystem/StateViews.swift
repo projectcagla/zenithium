@@ -57,7 +57,7 @@ struct StatusView<Actions: View>: View {
     }
 }
 
-/// §4.2.4 — fewer than five valid baseline days. Shows `n/14` progress.
+/// §4.2.4 — fewer than five valid baseline days. Shows `n/14` progress with dots and metric separation.
 struct CalibratingView: View {
 
     let daysCollected: Int
@@ -69,22 +69,64 @@ struct CalibratingView: View {
             symbolName: "circle.dotted",
             tint: ZenithiumColor.accent,
             title: SafetyCopy.calibratingTitle,
-            message: SafetyCopy.calibratingBody(
-                daysCollected: daysCollected,
-                daysRequired: daysRequired
-            )
+            message: "\(daysCollected)/\(daysRequired) gün toplandı · \(max(0, daysRequired - daysCollected)) gün kaldı"
         ) {
-            VStack(spacing: ZenithiumSpacing.s) {
-                ProgressView(value: MathSupport.clamp(progress, 0, 1))
-                    .tint(ZenithiumColor.accent)
-                    .frame(maxWidth: 240)
-                Text("\(daysRequired) gecenin \(daysCollected) tanesi")
-                    .font(ZenithiumFont.caption.monospacedDigit())
-                    .foregroundStyle(ZenithiumColor.textSecondary)
+            VStack(spacing: ZenithiumSpacing.l) {
+                // İlerleme çubuğu yerine kalibre olan günlerin noktaları (7 veya 14 nokta)
+                HStack(spacing: 8) {
+                    ForEach(0..<max(daysRequired, 1), id: \.self) { index in
+                        Circle()
+                            .fill(index < daysCollected ? ZenithiumColor.accent : ZenithiumColor.hairline)
+                            .frame(width: 10, height: 10)
+                    }
+                }
+                .padding(.vertical, ZenithiumSpacing.xs)
+
+                // Kalibrasyon sürecinde hangi metriklerin şimdiden güvenilir olduğu, hangilerinin taban çizgisi beklediği
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                    HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(ZenithiumColor.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Şimdiden güvenilir:")
+                                .font(ZenithiumFont.caption)
+                                .foregroundStyle(ZenithiumColor.textSecondary)
+                            Text("Uyku süresi, anlık nabız, solunum hızı")
+                                .font(ZenithiumFont.caption)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                        }
+                    }
+
+                    Divider().overlay(ZenithiumColor.hairlineSoft)
+
+                    HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 13))
+                            .foregroundStyle(ZenithiumColor.yellow)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Taban çizgisi bekleyen:")
+                                .font(ZenithiumFont.caption)
+                                .foregroundStyle(ZenithiumColor.textSecondary)
+                            Text("HRV sapması, toparlanma skoru, yük dengesi")
+                                .font(ZenithiumFont.caption)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                        }
+                    }
+                }
+                .padding(ZenithiumSpacing.m)
+                .background(
+                    RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                        .fill(ZenithiumColor.surface)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                                .strokeBorder(ZenithiumColor.hairline, lineWidth: 1)
+                        )
+                )
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Kalibrasyon ilerlemesi")
-            .accessibilityValue("\(daysRequired) gecenin \(daysCollected) tanesi toplandı")
+            .frame(maxWidth: 320)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Kalibrasyon: \(daysCollected) / \(daysRequired) gün")
         }
     }
 }
@@ -154,24 +196,84 @@ struct AuthorizationGateView: View {
 struct NoDataView: View {
 
     let reason: NoDataReason
+    var actionCallout: String? = nil
+    var layout: SkeletonLayout = .cards
     var retry: (() async -> Void)?
 
     var body: some View {
-        StatusView(
-            symbolName: symbolName,
-            tint: ZenithiumColor.textSecondary,
-            title: reason.title,
-            message: reason.message
-        ) {
-            if let retry {
-                Button {
-                    Task { await retry() }
-                } label: {
-                    Text("Yenile")
-                        .font(ZenithiumFont.label)
+        VStack(spacing: ZenithiumSpacing.l) {
+            StatusView(
+                symbolName: symbolName,
+                tint: ZenithiumColor.textSecondary,
+                title: reason.title,
+                message: reason.message
+            ) {
+                VStack(spacing: ZenithiumSpacing.m) {
+                    // "Ne yapmalısın?" tek cümlelik eylem çağrısı
+                    HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(ZenithiumColor.accent)
+                            .padding(.top, 2)
+                        Text(effectiveActionCallout)
+                            .font(ZenithiumFont.body)
+                            .foregroundStyle(ZenithiumColor.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(ZenithiumSpacing.m)
+                    .background(
+                        RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                            .fill(ZenithiumColor.surface)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
+                                    .strokeBorder(ZenithiumColor.hairline, lineWidth: 1)
+                            )
+                    )
+
+                    if let retry {
+                        Button {
+                            Task { await retry() }
+                        } label: {
+                            Text("Yenile")
+                                .font(ZenithiumFont.label)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(ZenithiumColor.accent)
+                    }
                 }
-                .buttonStyle(.bordered)
-                .tint(ZenithiumColor.accent)
+            }
+
+            // Hayalet iskelet (skeleton): verinin nereye geleceğini gösteren %6 opaklıkta sessiz yer tutucular
+            ghostSkeleton(layout)
+                .opacity(0.06)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var effectiveActionCallout: String {
+        if let actionCallout, !actionCallout.isEmpty {
+            return actionCallout
+        }
+        switch reason {
+        case .noOvernightData, .sleepImplausible:
+            return "Apple Watch'unuzu bu gece kolunuzda tutarak uyuyun."
+        case .noHeartRateYet:
+            return "İlk gecenizden sonra toparlanma skorunuz burada hesaplanacak."
+        case .recoveryUnavailable:
+            return "İlk gecenizden sonra toparlanma skorunuz burada hesaplanacak."
+        case .notEnoughHistory:
+            return "En az 3 günlük veri toplandığında eğilimler burada görünecek."
+        case .nothingLogged(let what):
+            if what.localizedCaseInsensitiveContains("kas") || what.localizedCaseInsensitiveContains("kuvvet") {
+                return "Bir kuvvet antrenmanı tamamlayın."
+            } else if what.localizedCaseInsensitiveContains("tahlil") || what.localizedCaseInsensitiveContains("kan") {
+                return "Sağlık ocağı veya laboratuvar tahlilinizi PDF olarak aktarın."
+            } else if what.localizedCaseInsensitiveContains("antrenman") || what.localizedCaseInsensitiveContains("yük") {
+                return "Antrenman uygulamasından ilk antrenmanınızı kaydedin."
+            } else if what.localizedCaseInsensitiveContains("öneri") || what.localizedCaseInsensitiveContains("neden") {
+                return "Günün önerisi oluştuktan sonra karar gerekçesi burada incelenebilir."
+            } else {
+                return "Yeni bir kayıt ekleyerek başlayın."
             }
         }
     }
@@ -185,6 +287,48 @@ struct NoDataView: View {
         case .notEnoughHistory: return "chart.line.uptrend.xyaxis"
         case .nothingLogged: return "tray"
         }
+    }
+
+    @ViewBuilder
+    private func ghostSkeleton(_ layout: SkeletonLayout) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            switch layout {
+            case .scored:
+                HStack {
+                    Spacer()
+                    Circle()
+                        .stroke(ZenithiumColor.textPrimary, lineWidth: 8)
+                        .frame(width: 120, height: 120)
+                    Spacer()
+                }
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 50)
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
+                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
+                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
+                }
+            case .chart:
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 160)
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 70)
+            case .cards:
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 60)
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 60)
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
+                    .fill(ZenithiumColor.textPrimary)
+                    .frame(height: 60)
+            }
+        }
+        .padding(.horizontal, ZenithiumSpacing.m)
     }
 }
 
@@ -257,6 +401,7 @@ struct ViewStateContainer<Value: Sendable, Loaded: View>: View {
     /// The shape the loading skeleton takes. Screens that open on an arc or a chart say so;
     /// everything else gets the card column. Yol haritası v4, B5.
     var loadingLayout: SkeletonLayout = .cards
+    var actionCallout: String? = nil
 
     var retry: (() async -> Void)?
     var requestAccess: (() async -> Void)?
@@ -280,7 +425,12 @@ struct ViewStateContainer<Value: Sendable, Loaded: View>: View {
             }
 
         case .noData(let reason):
-            NoDataView(reason: reason, retry: retry)
+            NoDataView(
+                reason: reason,
+                actionCallout: actionCallout,
+                layout: loadingLayout,
+                retry: retry
+            )
 
         case .loaded(let value):
             loaded(value)

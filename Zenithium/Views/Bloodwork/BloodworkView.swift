@@ -66,6 +66,7 @@ struct BloodworkView: View {
                 ViewStateContainer(
                     state: viewModel.state,
                     loadingLabel: "Sonuçlar yükleniyor",
+                    actionCallout: "Sağlık ocağı veya laboratuvar tahlilinizi PDF olarak aktarın.",
                     retry: { await viewModel.load() },
                     requestAccess: nil
                 ) { content in

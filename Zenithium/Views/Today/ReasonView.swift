@@ -108,6 +108,7 @@ struct ReasonView: View {
                 state: state,
                 loadingLabel: "Kanıt zinciri çözümleniyor",
                 loadingLayout: .cards,
+                actionCallout: "Günün önerisi oluştuktan sonra karar gerekçesi burada incelenebilir.",
                 retry: nil,
                 requestAccess: nil
             ) { item in
