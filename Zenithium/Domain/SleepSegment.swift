@@ -86,9 +86,7 @@ extension Array where Element == SleepSegment {
             let covering = filter { segment in
                 segment.start <= tStart && segment.end >= tEnd
             }
-            guard !covering.isEmpty else { continue }
-
-            let bestSegment = covering.max(by: { $0.stage.resolutionPriority < $1.stage.resolutionPriority })!
+            guard let bestSegment = covering.max(by: { $0.stage.resolutionPriority < $1.stage.resolutionPriority }) else { continue }
             let newSegment = SleepSegment(
                 interval: subInterval,
                 stage: bestSegment.stage,

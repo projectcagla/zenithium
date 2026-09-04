@@ -442,6 +442,21 @@ def check_banned(files: list[Path]) -> list[str]:
     return problems
 
 
+FORCE_UNWRAP_PATTERN = re.compile(r"(?:\)|\]|\b[a-zA-Z_]\w*)!(?!=|!)")
+
+
+def check_force_unwrap(files: list[Path]) -> list[str]:
+    problems = []
+    for file in files:
+        if "/ZenithiumTests/" in str(file) or "Tests" in file.parts:
+            continue
+        source = strip_noise(file.read_text(encoding="utf-8"))
+        for match in FORCE_UNWRAP_PATTERN.finditer(source):
+            line = source[: match.start()].count("\n") + 1
+            problems.append(f"{file.relative_to(ROOT)}:{line}: force-unwrap yasaklı (§2.4) — `{match.group(0)}`")
+    return problems
+
+
 
 # ---------------------------------------------------------------------------
 # Argument labels
@@ -661,7 +676,7 @@ def main() -> int:
     all_files = sorted(set(app_files) | set(test_files)
                        | set(target_sources("ZenithiumWatch"))
                        | set(target_sources("ZenithiumWidgets")))
-    for problem in check_banned(all_files) + check_balance(all_files) + check_decimal_separator(all_files):
+    for problem in check_banned(all_files) + check_balance(all_files) + check_decimal_separator(all_files) + check_force_unwrap(all_files):
         failures += 1
         print(f"  {problem}")
     if failures == 0:
