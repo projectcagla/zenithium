@@ -40,10 +40,13 @@
 		<string>processing</string>
 	</array>
 
-	<!-- No UIUserInterfaceStyle key on purpose. §10's palette is OLED-black and the app
-	     opens dark, but that is chosen in SwiftUI through `.preferredColorScheme` from the
-	     stored appearance setting — pinning it here would override the setting rather than
-	     seed it. The comment that used to sit here claimed a key that was never present. -->
+	<!-- Dark mode lock gerekçesi:
+	     Zenithium tıbbi/atletik hassasiyet arayüzüdür. Gece ölçümleri,
+	     sirkadiyen ritim takibi ve OLED piksel başına güç tasarrufu için
+	     karanlık tema zorunludur. Apple HIG 'uygulamanızın teması içeriğin
+	     doğasından kaynaklanıyorsa tek tema meşrudur' istisnası. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 
 	<key>UILaunchScreen</key>
 	<dict>

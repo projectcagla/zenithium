@@ -132,3 +132,15 @@ struct ColourCatalogTests {
         #expect(text.contains("0xBE"))
     }
 }
+
+@Suite("İlk İzlenim ve 5 Sekmeli Navigasyon (Faz 6)")
+struct NavigationAndAppearanceTests {
+
+    @Test("5 sekme tam olarak tanımlı")
+    func fiveTabsAreConfigured() {
+        let tabs = RootTab.allCases
+        #expect(tabs.count == 5)
+        #expect(tabs == [.today, .sleep, .load, .trends, .muscle])
+    }
+}
+

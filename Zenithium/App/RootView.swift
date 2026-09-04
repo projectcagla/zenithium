@@ -207,53 +207,105 @@ struct RootView: View {
         }
     }
 
-    /// The tab shell.
+    /// The custom 5-tab shell (Faz 6).
     ///
-    /// Five tabs and a hub, not one tab per screen. Zenithium now has fourteen destinations;
-    /// putting them all on the bar would hand iOS a "More" list it builds itself, in an order
-    /// nobody chose, with no room for a description of what anything is. Four fixed tabs plus
-    /// a hub keeps the daily loop one tap away and gives everything else a page that can
-    /// explain itself.
-    ///
-    /// Which four are fixed is the lens's decision — that is the whole point of a lens.
+    /// Standart UITabBar yerine özel hafif tab bar:
+    /// - 5 sekme: Bugün, Uyku, Yük, Trend, Kas
+    /// - Yükseklik: 56pt + safe area
+    /// - Arka plan: ZenithiumColor.background (%85 blur ile ultraThinMaterial)
+    /// - Üst kenar: 1px hairline (#1F2836)
+    /// - SF Symbol'ler: 20pt, .medium ağırlık (aktif textPrimary, pasif textTertiary)
+    /// - Today sekmesi görsel ağırlığı: aktifken prizmatik spektrum noktası
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Bugün", systemImage: "heart.fill", value: RootTab.today) {
-                TodayView(viewModel: todayViewModel)
-            }
-
-            // The second tab is the one the user opens between sessions, and that differs by
-            // discipline: an endurance athlete watches accumulating load, a strength athlete
-            // watches which muscles are back, and someone tracking health alone watches sleep.
-            switch lens.secondaryTab {
-            case .load:
-                Tab("Yük", systemImage: "flame.fill", value: RootTab.secondary) {
+        ZStack(alignment: .bottom) {
+            Group {
+                switch selectedTab {
+                case .today:
+                    TodayView(viewModel: todayViewModel)
+                case .sleep:
+                    SleepView(viewModel: sleepViewModel)
+                case .load, .secondary:
                     TrainingLoadView(viewModel: trainingLoadViewModel)
-                }
-            case .muscles:
-                Tab("Kaslar", systemImage: "figure.strengthtraining.traditional", value: RootTab.secondary) {
+                case .trends:
+                    TrendsView(viewModel: trendsViewModel)
+                case .muscle:
                     MuscleMapView(viewModel: muscleViewModel)
+                case .journal:
+                    JournalView(viewModel: journalViewModel)
+                case .hub:
+                    hub
                 }
-            case .vitals:
-                Tab("Sağlık", systemImage: "waveform.path.ecg", value: RootTab.secondary) {
-                    VitalsView(viewModel: vitalsViewModel)
-                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: 56)
             }
 
-            Tab("Uyku", systemImage: "moon.zzz.fill", value: RootTab.sleep) {
-                SleepView(viewModel: sleepViewModel)
-            }
-
-            // Günlük her mercekte var: üç personaya da aynı gün değer katan tek ekran bu.
-            Tab("Günlük", systemImage: "square.and.pencil", value: RootTab.journal) {
-                JournalView(viewModel: journalViewModel)
-            }
-
-            Tab("Daha fazla", systemImage: "square.grid.2x2.fill", value: RootTab.hub) {
-                hub
-            }
+            customTabBar
         }
-        .tint(ZenithiumColor.accent)
+        .ignoresSafeArea(.keyboard)
+    }
+
+    private var customTabBar: some View {
+        HStack(spacing: 0) {
+            tabItem(.today, title: "Bugün", symbol: "heart.fill")
+            tabItem(.sleep, title: "Uyku", symbol: "moon.zzz.fill")
+            tabItem(.load, title: "Yük", symbol: "flame.fill")
+            tabItem(.trends, title: "Trend", symbol: "chart.line.uptrend.xyaxis")
+            tabItem(.muscle, title: "Kas", symbol: "figure.strengthtraining.traditional")
+        }
+        .frame(height: 56)
+        .background {
+            ZenithiumColor.background
+                .opacity(0.85)
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .bottom)
+        }
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(ZenithiumColor.hairline)
+                .frame(height: 1)
+        }
+    }
+
+    private func tabItem(_ tab: RootTab, title: String, symbol: String) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(selectedTab == tab ? ZenithiumColor.textPrimary : ZenithiumColor.textTertiary)
+
+                Text(title)
+                    .font(ZenithiumFont.caption)
+                    .foregroundStyle(selectedTab == tab ? ZenithiumColor.textPrimary : ZenithiumColor.textTertiary)
+
+                // Today sekmesi görsel ağırlığı farklı: aktifken küçük bir spektrum noktası altında belirsin
+                if tab == .today {
+                    if selectedTab == .today {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [ZenithiumColor.spectrumViolet, ZenithiumColor.spectrumTeal, ZenithiumColor.spectrumAmber],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 4, height: 4)
+                    } else {
+                        Color.clear.frame(width: 4, height: 4)
+                    }
+                } else {
+                    Color.clear.frame(width: 4, height: 4)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selectedTab == tab ? [.isButton, .isSelected] : .isButton)
     }
 
     /// Everything that is not part of the daily loop, described rather than just listed.
@@ -329,10 +381,17 @@ struct RootView: View {
 ///
 /// The second tab is one case rather than three, because which screen sits there is the
 /// lens's decision and nothing outside should have to know which one it got.
-enum RootTab: Hashable {
+enum RootTab: Hashable, CaseIterable {
     case today
-    case secondary
     case sleep
+    case load
+    case trends
+    case muscle
+    case secondary
     case journal
     case hub
+
+    static var allCases: [RootTab] {
+        [.today, .sleep, .load, .trends, .muscle]
+    }
 }
