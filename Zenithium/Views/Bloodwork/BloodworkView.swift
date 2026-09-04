@@ -99,10 +99,13 @@ struct BloodworkView: View {
     @ViewBuilder
     private func loadedBody(_ content: BloodworkViewModel.Content) -> some View {
         VStack(spacing: ZenithiumSpacing.sectionSpacing) {
-            // TEK L2 KART: Aksiyon Gerektiren Bulgular Özeti
+            // 1. KADEME (KAHRAMAN): Son test tarihi ve genel durum özeti (kartsız)
+            headerHero(content)
+
+            // 2. KADEME: Aksiyon Gerektiren Bulgular Özeti (TEK L2 KART)
             actionableFindingsSection(content.observations)
 
-            // KAHRAMAN: Sakin Tahlil Listesi (L1 SectionBlock)
+            // 3. KADEME: Sistemlere Göre Gruplanmış Biyobelirteçler (kartsız L1 SectionBlock)
             ForEach(content.panels) { group in
                 panelBlock(title: group.panel.displayName, series: group.series)
             }
@@ -112,6 +115,34 @@ struct BloodworkView: View {
                 panelBlock(title: "Diğer Belirteçler", series: ungrouped)
             }
         }
+    }
+
+    // MARK: - 1. KADEME (KAHRAMAN): Son Test ve Durum Özeti (Kartsız)
+
+    private func headerHero(_ content: BloodworkViewModel.Content) -> some View {
+        let lastDate = content.series.flatMap(\.entries).map(\.drawnAt).max()
+        let actionableCount = content.observations.filter(\.requiresClinician).count
+
+        return VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
+            Text("KAN TAHLİLİ")
+                .zenithiumEyebrow()
+
+            if let lastDate {
+                Text(lastDate.formatted(date: .abbreviated, time: .omitted))
+                    .heroNumeral()
+                    .foregroundStyle(ZenithiumColor.textPrimary)
+            } else {
+                Text("Kayıt yok")
+                    .heroNumeral()
+                    .foregroundStyle(ZenithiumColor.textSecondary)
+            }
+
+            Text(actionableCount > 0 ? "\(actionableCount) bulgu hekim değerlendirmesi gerektiriyor" : "\(content.series.count) biyobelirteç izleniyor, değerler dengede")
+                .zenithiumBody()
+                .foregroundStyle(actionableCount > 0 ? ZenithiumColor.yellow : ZenithiumColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - TEK L2 KART / SESSİZ L1 SATIR: Aksiyon Gerektiren Bulgular

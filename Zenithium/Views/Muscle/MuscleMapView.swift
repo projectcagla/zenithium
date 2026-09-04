@@ -253,7 +253,7 @@ struct MuscleMapView: View {
             adviceDetail = "Kas gruplarında belirgin bir lokal yorgunluk birikimi yok. Planlı kuvvet seansına tam kapasiteyle girilebilir."
         }
 
-        return SectionCard(
+        return SectionBlock(
             title: "Sonraki Seans Önerisi",
             subtitle: adviceTitle
         ) {

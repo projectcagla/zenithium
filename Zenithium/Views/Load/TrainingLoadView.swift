@@ -57,11 +57,22 @@ struct TrainingLoadView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: TrainingLoadViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.l) {
-            ratioCard(content)
+        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+            // 1. KADEME (KAHRAMAN): Akut/Kronik oran göstergesi (kartsız)
+            ratioHero(content)
+
+            // 2. KADEME: Yük dengesi kartı (TEK L2 KART)
+            balanceCard(content)
+
+            // 3. KADEME: Günlük yük çubukları (Swift Charts, kartsız L1)
             chartCard(content)
+
+            // 4. KADEME: Yorgunluk ve zindelik ayrımı (kartsız L1)
             formCard(content)
+
+            // 5. KADEME: Bu hafta özeti (kartsız L1)
             weekCard(content)
+
             Text(SafetyCopy.disclaimerFooter)
                 .font(ZenithiumFont.caption)
                 .foregroundStyle(ZenithiumColor.textTertiary)
@@ -69,36 +80,56 @@ struct TrainingLoadView: View {
         }
     }
 
-    // MARK: - Ratio
+    // MARK: - 1. KADEME (KAHRAMAN): Akut/Kronik Oran Göstergesi (Kartsız)
 
-    private func ratioCard(_ content: TrainingLoadViewModel.Content) -> some View {
-        SectionCard {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.m) {
-                    Text(content.output.ratio.map { ZenithiumFormat.metric($0, digits: 2) } ?? "—")
-                        .font(ZenithiumFont.arcValue(size: 46))
-                        .foregroundStyle(content.output.ratio == nil ? ZenithiumColor.textTertiary : ZenithiumColor.textPrimary)
-                    if let band = content.band {
-                        Text(band.displayName)
-                            .font(ZenithiumFont.caption)
-                            .padding(.horizontal, ZenithiumSpacing.s)
-                            .padding(.vertical, ZenithiumSpacing.xs)
-                            .background(Capsule().fill(tint(for: band).opacity(0.18)))
-                            .foregroundStyle(tint(for: band))
-                    }
-                    Spacer(minLength: 0)
+    private func ratioHero(_ content: TrainingLoadViewModel.Content) -> some View {
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            Text("AKUT / KRONİK YÜK ORANI")
+                .zenithiumEyebrow()
+
+            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.m) {
+                Text(content.output.ratio.map { ZenithiumFormat.metric($0, digits: 2) } ?? "—")
+                    .heroNumeral()
+                    .foregroundStyle(content.output.ratio == nil ? ZenithiumColor.textTertiary : ZenithiumColor.textPrimary)
+
+                if let band = content.band {
+                    Text(band.displayName)
+                        .font(ZenithiumFont.caption)
+                        .padding(.horizontal, ZenithiumSpacing.s)
+                        .padding(.vertical, ZenithiumSpacing.xs)
+                        .background(Capsule().fill(tint(for: band).opacity(0.18)))
+                        .foregroundStyle(tint(for: band))
                 }
-                Text(content.summary)
-                    .font(ZenithiumFont.callout)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                bandScale(content.output.ratio)
+                Spacer(minLength: 0)
             }
+
+            bandScale(content.output.ratio)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Yük oranı")
         .accessibilityValue(content.summary)
+    }
+
+    // MARK: - 2. KADEME: Yük Dengesi Kartı (TEK L2 KART)
+
+    private func balanceCard(_ content: TrainingLoadViewModel.Content) -> some View {
+        SectionCard(
+            title: "Yük Dengesi",
+            subtitle: content.band?.displayName ?? "Hesaplanıyor"
+        ) {
+            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
+                Image(systemName: content.band == .productive ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(content.band.map(tint(for:)) ?? ZenithiumColor.accent)
+                    .accessibilityHidden(true)
+
+                Text(content.summary)
+                    .zenithiumCallout()
+                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 
     /// The band scale, with the current ratio marked on it.
@@ -164,10 +195,10 @@ struct TrainingLoadView: View {
         return width * CGFloat((bounds.1 - bounds.0) / span)
     }
 
-    // MARK: - Chart
+    // MARK: - 3. KADEME: Günlük Yük Çubukları (Swift Charts, Kartsız L1)
 
     private func chartCard(_ content: TrainingLoadViewModel.Content) -> some View {
-        SectionCard(title: "Günlük yük", subtitle: "Çubuklar günün yükü, çizgi yük oranı") {
+        SectionBlock(title: "Günlük yük", subtitle: "Çubuklar günün yükü, çizgi yük oranı") {
             let displaySeries = ZenithiumChartDownsampler.downsample(content.series, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.load })
             let displayRatios = ZenithiumChartDownsampler.downsample(content.ratioPoints, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.ratio })
 
@@ -224,11 +255,11 @@ struct TrainingLoadView: View {
         }
     }
 
-    // MARK: - Form
+    // MARK: - 4. KADEME: Kondisyon ve Yorgunluk (Kartsız L1)
 
     private func formCard(_ content: TrainingLoadViewModel.Content) -> some View {
         let values = content.output.fitnessFatigue
-        return SectionCard(title: "Kondisyon ve yorgunluk", subtitle: "Yavaş ve hızlı yükün farkı") {
+        return SectionBlock(title: "Kondisyon ve yorgunluk", subtitle: "Yavaş ve hızlı yükün farkı") {
             HStack(spacing: ZenithiumSpacing.m) {
                 MetricTile(
                     label: "Kondisyon",
@@ -250,10 +281,10 @@ struct TrainingLoadView: View {
         }
     }
 
-    // MARK: - Week
+    // MARK: - 5. KADEME: Hafta Özeti (Kartsız L1)
 
     private func weekCard(_ content: TrainingLoadViewModel.Content) -> some View {
-        SectionCard(title: "Bu hafta") {
+        SectionBlock(title: "Bu hafta") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 HStack(spacing: ZenithiumSpacing.m) {
                     MetricTile(

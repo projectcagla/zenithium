@@ -3,7 +3,7 @@
 //  Zenithium
 //
 //  Şartname: "Neden?" Ekranı.
-//  Ritim: Tek iddia → yedi eşit adım. Kart YOK (L1, SectionCard: 0).
+//  Ritim: Tek iddia → yedi eşit adım. Kart YOK (tamamen kartsız L1 akış).
 //  Adımlar:
 //    1 Senin verin
 //    2 Hesap

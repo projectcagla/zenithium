@@ -40,11 +40,11 @@ struct SectionCard<Content: View>: View {
         .fixedSize(horizontal: false, vertical: true)
         .padding(ZenithiumSpacing.cardPadding)
         .background {
-            RoundedRectangle(cornerRadius: ZenithiumRadius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
                 .fill(ZenithiumColor.surface)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: ZenithiumRadius.xLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
                 .strokeBorder(ZenithiumColor.hairline, lineWidth: 1)
         }
     }

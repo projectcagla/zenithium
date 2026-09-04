@@ -59,6 +59,7 @@ final class PreviewFixtures {
             let deps = try AppDependencies.preview(configuration: .complete)
             _ = try await deps.coordinator.recalculate(now: Date())
             try await seedBloodMarkers(into: deps.store)
+            try await seedStrengthSessions(into: deps.store)
             doluDependencies = deps
             return deps
 
@@ -133,6 +134,18 @@ final class PreviewFixtures {
             optimalRange: MarkerRange(minimum: 75, maximum: 90),
             drawnAt: now.addingTimeInterval(-86400 * 14),
             note: "Açlık glukozu"
+        )
+    }
+
+    private func seedStrengthSessions(into store: ZenithiumStore) async throws {
+        try await store.saveStrengthSession(
+            id: UUID(),
+            performedAt: Date().addingTimeInterval(-3600 * 18),
+            timeZoneIdentifier: TimeZone.current.identifier,
+            pattern: .squat,
+            entries: [StrengthEntry(id: UUID(), exerciseName: "Squat", sets: 4, reps: 8, rpe: 8)],
+            sessionLoad: 75.0,
+            note: "Ağır bacak seansı"
         )
     }
 

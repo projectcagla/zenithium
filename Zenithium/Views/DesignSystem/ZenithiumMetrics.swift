@@ -72,8 +72,11 @@ enum ZenithiumRadius {
     /// 8pt — inner containers: a sparkline well, a code block, a progress track.
     static let medium: CGFloat = 8
 
-    /// 12pt — cards.
+    /// 12pt — cards (legacy).
     static let large: CGFloat = 12
+
+    /// 14pt — Şartname Kart köşesi (14pt)
+    static let card: CGFloat = 14
 
     /// 20pt — sheets and full-bleed panels, where the radius has to survive being large.
     static let xLarge: CGFloat = 20

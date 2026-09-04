@@ -58,16 +58,19 @@ struct TodayView: View {
     @ViewBuilder
     private func loadedBody(_ content: TodayViewModel.Content) -> some View {
         VStack(spacing: ZenithiumSpacing.sectionSpacing) {
-            // 1. KADEME (KAHRAMAN): Toparlanma Skoru + Tek Cümle Gerekçe
+            // 1. KADEME (KAHRAMAN): Toparlanma Skoru Dairesi (64pt sayı, ortalanmış, kartsız)
             recoveryHero(content)
 
-            // 2. KADEME: Dört Destekleyici Ölçüm (KART DEĞİL, Tek Satırlık Sessiz Şerit)
-            supportingMetricsStrip(content)
-
-            // TEK L2 KART: Günün Önerisi (Güç rozeti + gerekçe + tavan + güven çubuğu)
+            // 2. KADEME: Günün Tek Önerisi (TEK L2 KART) → Dokununca Neden ekranına
             prescriptionCard(content)
 
-            // SİRKADİYEN RİTİM: 24 Saatlik İnce Şerit (5 satırlık liste kaldırıldı, detay ekranına bağlı)
+            // 3. KADEME: 4 Destekleyici Metrik (HRV, İstirahat, Uyku, Sıcaklık — kartsız yatay akış + .micro taban bandı)
+            supportingMetricsStrip(content)
+
+            // 4. KADEME: Karar İzi (Dikey 3 Adımlı Çizgi, kartsız L1)
+            evidenceSection(content)
+
+            // SİRKADİYEN RİTİM: 24 Saatlik İnce Şerit (Sessiz bant)
             if let circadian = content.circadian {
                 circadianStripSection(circadian)
             }

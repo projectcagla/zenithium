@@ -128,7 +128,7 @@ struct TrendsView: View {
     private func changeSummaryCard(_ content: TrendsViewModel.Content) -> some View {
         let trendDirection = trendSlopeDirection(content)
 
-        return SectionCard(
+        return SectionBlock(
             title: "Değişim Özeti",
             subtitle: "\(content.range.displayName) içindeki seyir"
         ) {
