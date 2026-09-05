@@ -19,16 +19,11 @@ struct SectionBlock<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.sectionHeaderToContent) {
-            if showTopDivider {
-                Divider().overlay(ZenithiumColor.hairlineSoft)
-                    .padding(.bottom, ZenithiumSpacing.xs)
-            }
-
             if title != nil || subtitle != nil {
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
                     if let title {
                         Text(title)
-                            .sectionTitle()
+                            .zenithiumEyebrow()
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let subtitle {

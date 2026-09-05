@@ -1,18 +1,3 @@
-//
-//  ZenithiumFont.swift
-//  Zenithium
-//
-//  Tipografi. Tasarım yönü v1.
-//
-//  ASSUMPTION DESIGN-2: sayılar SF Pro **genişletilmiş** genişlikte, yuvarlatılmış değil.
-//  Yuvarlak biçimler sıcak ve tüketici ürünü okunur — Whoop'un ve her fitness uygulamasının
-//  dili. Genişletilmiş genişlik enstrüman okunur: bir uçuş göstergesinin ya da iyi bir saatin
-//  kadranı gibi. Aynı aile, farklı eksen; sistem yazı tipinden çıkmadan karakter değişiyor.
-//
-//  Gövde metni yuvarlatılmış kalıyor: uzun paragraflarda genişletilmiş genişlik yorucudur.
-//  Ayrım kasıtlı — sayılar alet, cümleler insan.
-//
-
 import SwiftUI
 
 enum ZenithiumFont {
@@ -20,20 +5,20 @@ enum ZenithiumFont {
     // MARK: - 11 Tipografi Token'ı (Şartname Yasa 3 Açık Punto Rampası)
 
     /// Kahraman sayı: 64pt, .semibold, tracking -1.5, tabular (relativeTo: .largeTitle)
-    static let heroNumeral = Font.system(size: 64, weight: .semibold, design: .default)
+    static let heroNumeral = Font.system(size: 68, weight: .bold, design: .rounded)
         .monospacedDigit()
 
     /// Kahraman birim: 17pt, .medium, ikincil renk (relativeTo: .headline)
-    static let heroUnit = Font.system(size: 17, weight: .medium, design: .default)
+    static let heroUnit = Font.system(size: 20, weight: .medium, design: .default)
 
     /// Ekran başlığı: 28pt, .bold, tracking -0.5 (relativeTo: .title)
     static let screenTitle = Font.system(size: 28, weight: .bold, design: .default)
 
     /// Bölüm başlığı: 17pt, .semibold (relativeTo: .headline)
-    static let sectionTitle = Font.system(size: 17, weight: .semibold, design: .default)
+    static let sectionTitle = Font.system(size: 22, weight: .semibold, design: .default)
 
     /// Metrik sayısı: 30pt, .medium, tracking -0.5, tabular (relativeTo: .title2)
-    static let metricNumeral = Font.system(size: 30, weight: .medium, design: .default)
+    static let metricNumeral = Font.system(size: 30, weight: .semibold, design: .rounded)
         .monospacedDigit()
 
     /// Metrik birimi: 12pt, .medium, üçüncül renk (relativeTo: .caption)
@@ -49,7 +34,7 @@ enum ZenithiumFont {
     static let label = Font.system(size: 12, weight: .medium, design: .default)
 
     /// Bölüm üstü teknik etiket (eyebrow): 11pt, .semibold, BÜYÜK HARF, tracking +0.8, monospaced, üçüncül (relativeTo: .caption2)
-    static let eyebrow = Font.system(size: 11, weight: .semibold, design: .monospaced)
+    static let eyebrow = Font.system(size: 11, weight: .bold, design: .default)
 
     /// Açıklama ve dipnot metni: 12pt, .regular, üçüncül renk (relativeTo: .caption)
     static let caption = Font.system(size: 12, weight: .regular, design: .default)
@@ -69,7 +54,7 @@ enum ZenithiumFont {
 
     /// Yayın içindeki ana okuma sayısı.
     static func arcValue(size: CGFloat) -> Font {
-        .system(size: size, weight: .bold, design: .default)
+        .system(size: size, weight: .bold, design: .rounded)
             .monospacedDigit()
     }
 
@@ -95,13 +80,13 @@ enum ZenithiumFont {
 extension View {
 
     func heroNumeral() -> some View {
-        modifier(ZenithiumFont.Scaled(size: 64, relativeTo: .largeTitle, weight: .semibold, design: .default))
+        modifier(ZenithiumFont.Scaled(size: 68, relativeTo: .largeTitle, weight: .bold, design: .rounded))
             .tracking(-1.5)
             .monospacedDigit()
     }
 
     func heroUnit() -> some View {
-        modifier(ZenithiumFont.Scaled(size: 17, relativeTo: .headline, weight: .medium, design: .default))
+        modifier(ZenithiumFont.Scaled(size: 20, relativeTo: .headline, weight: .medium, design: .default))
             .foregroundStyle(ZenithiumColor.textSecondary)
     }
 
@@ -111,12 +96,12 @@ extension View {
     }
 
     func sectionTitle() -> some View {
-        modifier(ZenithiumFont.Scaled(size: 17, relativeTo: .headline, weight: .semibold, design: .default))
+        modifier(ZenithiumFont.Scaled(size: 22, relativeTo: .headline, weight: .semibold, design: .default))
             .foregroundStyle(ZenithiumColor.textPrimary)
     }
 
     func metricNumeral() -> some View {
-        modifier(ZenithiumFont.Scaled(size: 30, relativeTo: .title2, weight: .medium, design: .default))
+        modifier(ZenithiumFont.Scaled(size: 30, relativeTo: .title2, weight: .semibold, design: .rounded))
             .tracking(-0.5)
             .monospacedDigit()
     }
@@ -147,10 +132,11 @@ extension View {
     }
 
     func zenithiumEyebrow() -> some View {
-        modifier(ZenithiumFont.Scaled(size: 11, relativeTo: .caption2, weight: .semibold, design: .monospaced))
+        modifier(ZenithiumFont.Scaled(size: 11, relativeTo: .caption2, weight: .bold, design: .default))
             .textCase(.uppercase)
-            .tracking(0.8)
-            .foregroundStyle(ZenithiumColor.textTertiary)
+            .environment(\.locale, Locale(identifier: "tr_TR"))
+            .tracking(1.2)
+            .foregroundStyle(ZenithiumColor.textSecondary)
     }
 
     func zenithiumCaption() -> some View {
@@ -199,8 +185,8 @@ enum ZenithiumFormat {
         let total = max(0, Int(seconds.rounded()))
         let hours = total / 3600
         let minutes = (total % 3600) / 60
-        if hours == 0 { return "\(minutes)dk" }
-        return "\(hours)sa \(minutes)dk"
+        if hours == 0 { return "\(minutes) dk" }
+        return "\(hours) sa \(minutes) dk"
     }
 
     /// Dakika:saniye — koşu splitleri ve roxzone için.

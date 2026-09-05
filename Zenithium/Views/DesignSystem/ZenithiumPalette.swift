@@ -97,14 +97,14 @@ extension ZenithiumPalette {
 
     /// The app's identity. Anodised titanium against a blue-leaning near-black.
     static let dark = ZenithiumPalette(
-        background: Color(red: 0x07 / 255, green: 0x09 / 255, blue: 0x0E / 255),
-        surface: Color(red: 0x0D / 255, green: 0x11 / 255, blue: 0x1A / 255),
-        surfaceElevated: Color(red: 0x13 / 255, green: 0x1A / 255, blue: 0x26 / 255),
-        hairline: Color(red: 0x1F / 255, green: 0x28 / 255, blue: 0x36 / 255),
-        hairlineSoft: Color(red: 0x15 / 255, green: 0x1C / 255, blue: 0x28 / 255),
+        background: Color(red: 0x08 / 255, green: 0x09 / 255, blue: 0x0C / 255),
+        surface: Color(red: 0x12 / 255, green: 0x14 / 255, blue: 0x1A / 255),
+        surfaceElevated: Color(red: 0x19 / 255, green: 0x1C / 255, blue: 0x24 / 255),
+        hairline: Color(red: 0xFF / 255, green: 0xFF / 255, blue: 0xFF / 255).opacity(0.07),
+        hairlineSoft: Color(red: 0xFF / 255, green: 0xFF / 255, blue: 0xFF / 255).opacity(0.045),
 
-        spectrumIndigo: Color(red: 0x2E / 255, green: 0x2A / 255, blue: 0x7A / 255),
-        spectrumViolet: Color(red: 0x6E / 255, green: 0x3B / 255, blue: 0x9E / 255),
+        spectrumIndigo: Color(red: 0x77 / 255, green: 0x7D / 255, blue: 0xF2 / 255),
+        spectrumViolet: Color(red: 0xA5 / 255, green: 0x8A / 255, blue: 0xEC / 255),
         spectrumMagenta: Color(red: 0xBE / 255, green: 0x3F / 255, blue: 0x79 / 255),
         spectrumAmber: Color(red: 0xE2 / 255, green: 0x7B / 255, blue: 0x3C / 255),
         spectrumTeal: Color(red: 0x2F / 255, green: 0xB8 / 255, blue: 0xA6 / 255),
@@ -112,7 +112,7 @@ extension ZenithiumPalette {
 
         textPrimary: Color(red: 0xE9 / 255, green: 0xED / 255, blue: 0xF5 / 255),
         textSecondary: Color(red: 0x8C / 255, green: 0x96 / 255, blue: 0xAB / 255),
-        textTertiary: Color(red: 0x59 / 255, green: 0x62 / 255, blue: 0x7A / 255),
+        textTertiary: Color(red: 0x81 / 255, green: 0x8B / 255, blue: 0x9F / 255),
 
         green: Color(red: 0x3F / 255, green: 0xCF / 255, blue: 0x8E / 255),
         yellow: Color(red: 0xF0 / 255, green: 0xB2 / 255, blue: 0x3F / 255),

@@ -75,8 +75,8 @@ enum ZenithiumRadius {
     /// 12pt — cards (legacy).
     static let large: CGFloat = 12
 
-    /// 14pt — Şartname Kart köşesi (14pt)
-    static let card: CGFloat = 14
+    /// 20pt — vurgulu yüzey.
+    static let card: CGFloat = 20
 
     /// 20pt — sheets and full-bleed panels, where the radius has to survive being large.
     static let xLarge: CGFloat = 20

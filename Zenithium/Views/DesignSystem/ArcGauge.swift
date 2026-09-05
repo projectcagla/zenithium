@@ -1,29 +1,13 @@
-//
-//  ArcGauge.swift
-//  Zenithium
-//
-//  İmza bileşen: açık yay ve işaretli zirve.
-//
-//  ASSUMPTION DESIGN-3: kapalı halka yerine 200 derecelik açık yay.
-//  Gerekçe isimden geliyor — zenith bir yayın en yüksek noktasıdır, ve uygulamanın ölçtüğü
-//  her şey zaten bir yaydır: sirkadiyen eğri yükselip alçalır, zorlanma gün boyunca tırmanır,
-//  uyku bir gecelik kavistir. Kapalı halka ayrıca herkesin: Apple Activity, Whoop, Garmin.
-//  Alttaki 160 derecelik açıklık aynı zamanda işlevsel — sayı yayın kucağına oturur, halkanın
-//  içine sıkışmaz, ve AX5 boyutunda kırpılmak yerine aşağı doğru genişler.
-//
-//  Erişilebilirlik değişmedi: yay tek bir öğe, etiketi ve değeri var, bant sözle söyleniyor.
-//
-
 import SwiftUI
 
 /// Yayın geometrisi. Tek yerde tanımlı, böylece her yay aynı yayın üstünde durur.
 enum ArcGeometry {
 
     /// Yayın başladığı açı. 170° sol-alt, saat yönünde tepeden geçer.
-    static let startDegrees: Double = 170
+    static let startDegrees: Double = 135
 
     /// Toplam süpürme. 200° → altta 160°'lik açıklık kalır.
-    static let sweepDegrees: Double = 200
+    static let sweepDegrees: Double = 270
 
     /// 0…1 ilerleme için mutlak açı.
     static func degrees(atProgress progress: Double) -> Double {
@@ -71,8 +55,8 @@ struct ArcGauge<Center: View>: View {
 
     @ViewBuilder let center: () -> Center
 
-    @ScaledMetric(relativeTo: .largeTitle) private var strokeWidth: CGFloat = 16
-    @ScaledMetric(relativeTo: .largeTitle) private var diameter: CGFloat = 232
+    @ScaledMetric(relativeTo: .largeTitle) private var strokeWidth: CGFloat = 12
+    @ScaledMetric(relativeTo: .largeTitle) private var diameter: CGFloat = 180
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -103,13 +87,13 @@ struct ArcGauge<Center: View>: View {
 
             // Sayı yayın kucağına oturur — merkezden biraz aşağıda, açıklığın hizasında.
             center()
-                .frame(maxWidth: diameter - strokeWidth * 2.4)
+                .frame(maxWidth: diameter - strokeWidth * 2)
                 .multilineTextAlignment(.center)
-                .offset(y: diameter * 0.06)
+                .offset(y: -diameter * 0.015)
         }
         .frame(width: diameter, height: diameter)
         .animation(
-            reduceMotion ? nil : .spring(response: 0.72, dampingFraction: 0.82),
+            reduceMotion ? nil : .easeInOut(duration: 0.55),
             value: drawnProgress
         )
         .onAppear { hasAppeared = true }
@@ -195,21 +179,7 @@ private struct AnimatableArc: View, Animatable {
                 style: style
             )
 
-            // Zirve işareti — yayın ulaştığı en yüksek nokta.
-            if let apexColor {
-                let apex = ArcGeometry.point(
-                    atDegrees: ArcGeometry.degrees(atProgress: progress),
-                    center: center,
-                    radius: radius
-                )
-                let dotRadius = strokeWidth * 0.42
-                let ring = Path(ellipseIn: CGRect(
-                    x: apex.x - dotRadius, y: apex.y - dotRadius,
-                    width: dotRadius * 2, height: dotRadius * 2
-                ))
-                context.fill(ring, with: .color(ZenithiumColor.background))
-                context.stroke(ring, with: .color(apexColor), lineWidth: 2.5)
-            }
+
         }
     }
 }
@@ -223,7 +193,9 @@ struct RecoveryArc: View {
     let band: RecoveryBand
     let confidence: Double
 
-    @ScaledMetric(relativeTo: .largeTitle) private var numeralSize: CGFloat = 62
+    @ScaledMetric(relativeTo: .largeTitle) private var numeralSize: CGFloat = 68
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ArcGauge(
@@ -234,17 +206,17 @@ struct RecoveryArc: View {
             accessibilityLabel: "Toparlanma",
             accessibilityValue: accessibilityValue
         ) {
-            VStack(spacing: ZenithiumSpacing.none) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("%")
+                    .font(ZenithiumFont.heroUnit)
+                    .foregroundStyle(ZenithiumColor.textSecondary)
                 Text(ZenithiumFormat.score(score))
                     .font(ZenithiumFont.arcValue(size: numeralSize))
                     .foregroundStyle(ZenithiumColor.textPrimary)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                     .contentTransition(.numericText())
-                    .animation(.snappy, value: score)
-                Text("%")
-                    .font(ZenithiumFont.unit)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: score)
             }
         }
         .sensoryFeedback(.impact(weight: .light), trigger: band)
@@ -265,7 +237,7 @@ struct StrainArc: View {
     let strain: Double
     let ceiling: Double?
 
-    @ScaledMetric(relativeTo: .largeTitle) private var numeralSize: CGFloat = 62
+    @ScaledMetric(relativeTo: .largeTitle) private var numeralSize: CGFloat = 68
 
     /// Yay her zaman 0–21 ölçeğini gösterir; tavan onun üstünde bir işaret olarak durur.
     ///
@@ -291,6 +263,8 @@ struct StrainArc: View {
         return strain > ceiling
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         ArcGauge(
             progress: progress,
@@ -308,7 +282,7 @@ struct StrainArc: View {
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                     .contentTransition(.numericText())
-                    .animation(.snappy, value: strain)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: strain)
                 if let ceiling {
                     Text("hedef \(ZenithiumFormat.strain(ceiling))")
                         .font(ZenithiumFont.unit)
@@ -340,6 +314,8 @@ struct ScoreArc: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var numeralSize: CGFloat = 58
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         ArcGauge(
             progress: score / 100,
@@ -356,7 +332,7 @@ struct ScoreArc: View {
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                     .contentTransition(.numericText())
-                    .animation(.snappy, value: score)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: score)
                 if let caption {
                     Text(caption)
                         .font(ZenithiumFont.unit)

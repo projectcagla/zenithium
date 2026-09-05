@@ -97,8 +97,8 @@ enum ZenithiumColor {
     /// süpüren bir gradyan, sayının sahip olmadığı bir ölçeği ima ederdi.
     static func arcGradient(for band: RecoveryBand) -> Gradient {
         Gradient(colors: [
-            spectrumIndigo.opacity(0.55),
-            spectrumViolet.opacity(0.75),
+            color(for: band).opacity(0.45),
+            color(for: band).opacity(0.75),
             color(for: band),
             color(for: band)
         ])
@@ -161,9 +161,9 @@ enum ZenithiumColor {
     static func color(for stage: SleepStage) -> Color {
         switch stage {
         case .asleepDeep: return spectrumIndigo
-        case .asleepREM: return spectrumViolet
+        case .asleepREM: return spectrumTeal
         case .asleepCore, .asleepUnspecified: return asset(.coreSleep)
-        case .awake: return spectrumAmber
+        case .awake: return red
         case .inBed: return hairline
         }
     }

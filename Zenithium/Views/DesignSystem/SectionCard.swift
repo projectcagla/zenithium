@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SectionCard<Content: View>: View {
 
+    @Environment(\.displayScale) private var displayScale
+
     var title: String?
     var subtitle: String?
     @ViewBuilder let content: () -> Content
@@ -19,8 +21,7 @@ struct SectionCard<Content: View>: View {
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
                     if let title {
                         Text(title)
-                            .font(ZenithiumFont.sectionTitle)
-                            .foregroundStyle(ZenithiumColor.textPrimary)
+                            .sectionTitle()
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let subtitle {
@@ -45,7 +46,7 @@ struct SectionCard<Content: View>: View {
         }
         .overlay {
             RoundedRectangle(cornerRadius: ZenithiumRadius.card, style: .continuous)
-                .strokeBorder(ZenithiumColor.hairline, lineWidth: 1)
+                .strokeBorder(ZenithiumColor.hairline, lineWidth: 1 / displayScale)
         }
     }
 }
