@@ -1,22 +1,16 @@
-//
-//  TodayView.swift
-//  Zenithium
-//
-//  The Today screen — "how recovered am I". Spec §1, §10.
-//  Redesigned to strict Design Specification:
-//  - Exactly ONE Tier 1 hero (Recovery score Arc + 64pt heroNumeral + single rationale)
-//  - Tier 2 supporting metrics strip (HRV, RHR, Sleep, Temp in quiet L1 strip)
-//  - Exactly ONE L2 card in first fold (Daily recommendation / prescription)
-//  - Circadian 5-row list moved to CircadianDetailView, thin 24h strip remains
-//  - All secondary sections are L1 SectionBlock
-//
-
 import SwiftUI
+import SwiftData
 
 struct TodayView: View {
 
     @State var viewModel: TodayViewModel
     var embedInNavigation: Bool = true
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Query private var baselineStates: [BaselineState]
+    @State private var metricHistory: [String: [Double]] = [:]
+    @State private var showingProfile = false
 
     @Namespace private var todayNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -28,6 +22,7 @@ struct TodayView: View {
             NavigationStack {
                 mainContent
                     .navigationTitle("Bugün")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
                     .refreshable { await viewModel.refresh() }
             }
@@ -68,11 +63,11 @@ struct TodayView: View {
 
             if showingReason, let content = viewModel.state.value {
                 ReasonView(
-                    recommendation: viewModel.recommendations.first ?? fallbackRecommendation(content),
+                    recommendation: dailyRecommendation(content),
                     embedInNavigation: false,
                     namespace: todayNamespace,
                     onDismiss: {
-                        withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                             showingReason = false
                         }
                     }
@@ -87,41 +82,54 @@ struct TodayView: View {
     @ViewBuilder
     private func loadedBody(_ content: TodayViewModel.Content) -> some View {
         VStack(spacing: ZenithiumSpacing.sectionSpacing) {
-            // 1. KADEME (KAHRAMAN): Toparlanma Skoru Dairesi (64pt sayı, ortalanmış, kartsız)
+            HStack {
+                Button { showingProfile = true } label: {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 26, weight: .light))
+                        .foregroundStyle(ZenithiumColor.textSecondary)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel("Profil özeti")
+                Spacer()
+                Text(content.record.dayStart.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))))
+                    .zenithiumCaption()
+            }
             recoveryHero(content)
-
-            // 2. KADEME: Günün Tek Önerisi (TEK L2 KART) → Dokununca Neden ekranına
-            prescriptionCard(content)
-
-            // 3. KADEME: 4 Destekleyici Metrik (HRV, İstirahat, Uyku, Sıcaklık — kartsız yatay akış + .micro taban bandı)
             supportingMetricsStrip(content)
-
-            // 4. KADEME: Karar İzi (Dikey 3 Adımlı Çizgi, kartsız L1)
-            evidenceSection(content)
-
-            // SİRKADİYEN RİTİM: 24 Saatlik İnce Şerit (Sessiz bant)
-            if let circadian = content.circadian {
-                circadianStripSection(circadian)
+            prescriptionCard(content)
+            if let circadian = content.circadian { circadianStripSection(circadian) }
+            DisclosureGroup("Ölçümler ve karar ayrıntıları") {
+                VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+                    overnightSection(content)
+                    evidenceSection(content)
+                    if !viewModel.recommendations.isEmpty { recommendationsSection }
+                }
+                .padding(.top, ZenithiumSpacing.xl)
             }
-
-            // DÜN GECE: Ham Biyometrik Ölçümler (L1 SectionBlock)
-            overnightSection(content)
-
-            // KANIT İZİ: Belirleyiciler & Deterministik Karar İzi (L1 SectionBlock)
-            evidenceSection(content)
-
-            // BİLİMSEL ÖNERİLER (L1 SectionBlock)
-            if !viewModel.recommendations.isEmpty {
-                recommendationsSection
-            }
-
+            .font(ZenithiumFont.secondary)
+            .tint(ZenithiumColor.textSecondary)
             disclaimerFooter
         }
         .padding(.top, ZenithiumSpacing.s)
-        .animation(.snappy, value: viewModel.briefing)
-        .animation(.snappy, value: viewModel.athleticDecision)
-        .animation(.snappy, value: viewModel.prescription)
-        .animation(.snappy, value: viewModel.recommendations)
+        .task(id: content.record.computedAt) { loadMetricHistory(before: content.record.dayStart) }
+        .sheet(isPresented: $showingProfile) {
+            NavigationStack {
+                VStack(alignment: .leading, spacing: ZenithiumSpacing.xl) {
+                    Text("Sana göre bir ritim").screenTitle()
+                    Text(content.profile.trainingLens.displayName).sectionTitle()
+                    Text("Toparlanma, uyku ve antrenman verilerin bu merceğe göre yorumlanıyor. Profil tercihlerini Daha fazla → Ayarlar bölümünden düzenleyebilirsin.")
+                        .zenithiumSecondary()
+                    QualityChip(quality: content.record.dataQuality, reasons: content.record.dataQualityReasons)
+                    Spacer()
+                }
+                .padding(ZenithiumSpacing.screenEdge)
+                .background(ZenithiumColor.background)
+                .navigationTitle("Profil")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Bitti") { showingProfile = false } } }
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 
     // MARK: - 1. KADEME (KAHRAMAN) — Toparlanma Skoru
@@ -131,114 +139,113 @@ struct TodayView: View {
         let rationale = viewModel.athleticDecision?.value.primaryRationale ?? content.guidance
 
         return VStack(spacing: ZenithiumSpacing.m) {
-            // Büyük Açık Yay (Hero Numeral 64pt)
-            RecoveryArc(
-                score: content.score,
-                band: content.band,
-                confidence: confidence
-            )
-            .matchedGeometryEffect(id: "today-reason-score", in: todayNamespace)
-            .padding(.top, ZenithiumSpacing.xs)
-
-            // Band Sembolü + Band Adı (Renk körlüğü için sembol + metin)
-            HStack(spacing: ZenithiumSpacing.xs) {
-                Circle()
-                    .fill(ZenithiumColor.color(for: content.band))
-                    .frame(width: 8, height: 8)
-                Text(content.band.displayName)
-                    .sectionTitle()
-                    .foregroundStyle(ZenithiumColor.color(for: content.band))
-                Text("•")
-                    .zenithiumCaption()
-                Text("%\(Int(content.score.rounded()))")
-                    .zenithiumCaption()
-                    .monospacedDigit()
+            Text("TOPARLANMA").zenithiumEyebrow()
+            if !showingReason {
+                RecoveryArc(score: content.score, band: content.band, confidence: confidence)
+                    .matchedGeometryEffect(id: "today-reason-score", in: todayNamespace)
+            } else {
+                Color.clear.frame(height: 180)
             }
-            .accessibilityElement(children: .combine)
-
-            // Altında TEK bir cümle: neden bu skor
+            Text(recoveryTitle(content.band))
+                .font(ZenithiumFont.eyebrow)
+                .tracking(1.2)
+                .foregroundStyle(ZenithiumColor.color(for: content.band))
             Text(rationale)
                 .zenithiumBody()
-                .foregroundStyle(ZenithiumColor.textSecondary)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, ZenithiumSpacing.s)
-
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                .accessibilityLabel(rationale)
             if confidence < 0.70 {
-                HStack(alignment: .center, spacing: ZenithiumSpacing.xs) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(ZenithiumColor.yellow)
-                    Text("Taban çizgisi kalibrasyonda (%\(Int(confidence * 100)) güven düzeyi).")
-                        .zenithiumCaption()
-                }
-                .padding(.top, 2)
+                Label("Kişisel tabanın gelişiyor · \(ZenithiumFormat.percent(confidence)) güven", systemImage: "circle.dotted")
+                    .zenithiumCaption()
             }
         }
         .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .contain)
+        .padding(.bottom, ZenithiumSpacing.s)
+    }
+
+    private func recoveryTitle(_ band: RecoveryBand) -> String {
+        switch band {
+        case .green: return "YÜKSEK TOPARLANMA"
+        case .yellow: return "DENGELİ TOPARLANMA"
+        case .red: return "TOPARLANMAYA ALAN AÇ"
+        }
     }
 
     // MARK: - 2. KADEME — Dört Destekleyici Ölçüm Şeridi (L1 Sessiz Şerit)
 
     private func supportingMetricsStrip(_ content: TodayViewModel.Content) -> some View {
-        HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 20))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
+        return layout {
             supportingMetricItem(
-                id: "hrv",
-                label: "HRV",
+                id: "hrv", label: "HRV",
                 value: content.record.heartRateVariability.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
-                unit: "ms",
-                bandValues: [content.record.heartRateVariability ?? 49.0],
-                baseline: 52.0,
-                sigma: 6.0,
-                description: "Gece boyunca ölçülen kalp atış hızı değişkenliği (rMSSD). Otonom sinir sistemi dengesini ve parasempatik aktiviteyi yansıtır."
+                unit: "ms", bandValues: history("hrv", current: content.record.heartRateVariability),
+                baseline: baseline(.heartRateVariability)?.mean,
+                sigma: baseline(.heartRateVariability)?.standardDeviation,
+                description: "Apple Sağlık'ta kaydedilen HRV (SDNN). Koridor, mevcut 60 günlük ağırlıklı kişisel tabanı gösterir. Tek ölçüm bir tanı değildir."
             )
-
-            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
-
+            ribbonDivider
             supportingMetricItem(
-                id: "rhr",
-                label: "İstirahat",
+                id: "rhr", label: "Dinlenme",
                 value: content.record.restingHeartRate.map { ZenithiumFormat.metric($0, digits: 0) } ?? "—",
-                unit: "bpm",
-                bandValues: [content.record.restingHeartRate ?? 54.0],
-                baseline: 53.0,
-                sigma: 3.5,
-                description: "Uyku sırasındaki en düşük dinlenme kalp atış hızı. Kardiyovasküler toparlanma ve sistemik yorgunluğun birincil göstergesidir."
+                unit: "bpm", bandValues: history("rhr", current: content.record.restingHeartRate),
+                baseline: baseline(.restingHeartRate)?.mean,
+                sigma: baseline(.restingHeartRate)?.standardDeviation,
+                description: "Dinlenme nabzının kişisel tabanına göre seyri. Koridor, mevcut 60 günlük ağırlıklı ortalaman ve ±1 standart sapmadır."
             )
-
-            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
-
+            ribbonDivider
             supportingMetricItem(
-                id: "sleep",
-                label: "Uyku",
-                value: content.record.sleepScore.map { ZenithiumFormat.score($0) } ?? "—",
-                unit: "%",
-                bandValues: [content.record.sleepScore ?? 100.0],
-                baseline: 85.0,
-                sigma: 8.0,
-                description: "Uyku süresi, evre dağılımı (derin, REM) ve gece bölünmelerinin ağırlıklı bileşik skoru."
+                id: "sleep", label: "Uyku",
+                value: content.record.sleepDurationSeconds > 0 ? ZenithiumFormat.metric(content.record.sleepDurationSeconds / 3600, digits: 1) : "—",
+                unit: "sa", bandValues: history("sleep", current: content.record.sleepDurationSeconds > 0 ? content.record.sleepDurationSeconds / 3600 : nil),
+                baseline: nil, sigma: nil,
+                description: "Kaydedilen toplam uyku süresi. Bu ölçüm için kişisel taban modeli bulunmadığından yalnızca gerçek gece süreleri gösterilir."
             )
-
-            Divider().overlay(ZenithiumColor.hairlineSoft).frame(height: 60)
-
+            ribbonDivider
             supportingMetricItem(
-                id: "temp",
-                label: "Sıcaklık",
-                value: content.record.wristTemperatureDelta.map {
-                    let converted = content.profile.unitPreference.temperatureDelta(fromCelsius: $0)
-                    return ZenithiumFormat.signed(converted, digits: 1)
-                } ?? "—",
-                unit: content.profile.unitPreference.temperatureDeltaSymbol,
-                bandValues: [content.record.wristTemperatureDelta ?? -0.3],
-                baseline: 0.0,
-                sigma: 0.35,
-                description: "Taban çizgisine göre bilek cilt sıcaklığı sapması. İmmün yanıt veya aşırı antrenman yükünü erken haber verir."
+                id: "temp", label: "Bilek",
+                value: content.record.wristTemperatureDelta.map { ZenithiumFormat.signed($0, digits: 1) } ?? "—",
+                unit: "Δ°C", bandValues: history("temp", current: content.record.wristTemperatureDelta),
+                baseline: baseline(.wristTemperature).map { _ in 0 },
+                sigma: baseline(.wristTemperature)?.standardDeviation,
+                description: "Bilek sıcaklığının kişisel tabana göre farkı. Sıfır çizgisi tabanı, koridor ölçülen değişkenliği gösterir."
             )
         }
-        .padding(.vertical, ZenithiumSpacing.m)
-        .overlay(alignment: .top) { Divider().overlay(ZenithiumColor.hairlineSoft) }
-        .overlay(alignment: .bottom) { Divider().overlay(ZenithiumColor.hairlineSoft) }
+    }
+
+    @ViewBuilder private var ribbonDivider: some View {
+        if !dynamicTypeSize.isAccessibilitySize {
+            Rectangle().fill(ZenithiumColor.hairline).frame(width: 0.5, height: 70)
+        }
+    }
+
+    private func baseline(_ metric: MetricKind) -> BaselineSnapshot? {
+        baselineStates.compactMap(\.snapshot).first { $0.metric == metric && $0.isSeeded }
+    }
+
+    private func history(_ id: String, current: Double?) -> [Double] {
+        guard let current, current.isFinite else { return [] }
+        return (metricHistory[id] ?? []) + [current]
+    }
+
+    private func loadMetricHistory(before date: Date) {
+        let start = Calendar.autoupdatingCurrent.date(byAdding: .day, value: -60, to: date) ?? date
+        var query = FetchDescriptor<BiometricDayRecord>(
+            predicate: #Predicate { $0.dayStart >= start && $0.dayStart < date },
+            sortBy: [SortDescriptor(\.dayStart, order: .reverse)]
+        )
+        query.fetchLimit = 60
+        guard let rows = try? modelContext.fetch(query) else { metricHistory = [:]; return }
+        let ordered = rows.reversed()
+        metricHistory = [
+            "hrv": ordered.compactMap(\.hrvSDNN),
+            "rhr": ordered.compactMap(\.restingHR),
+            "sleep": ordered.filter { $0.sleepDurationSeconds > 0 }.map { $0.sleepDurationSeconds / 3600 },
+            "temp": ordered.compactMap(\.wristTempDelta)
+        ]
     }
 
     private func supportingMetricItem(
@@ -247,12 +254,12 @@ struct TodayView: View {
         value: String,
         unit: String,
         bandValues: [Double],
-        baseline: Double,
-        sigma: Double,
+        baseline: Double?,
+        sigma: Double?,
         description: String
     ) -> some View {
         Button {
-            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                 selectedMetricForDetail = SupportingMetricDetail(
                     id: id,
                     label: label,
@@ -266,9 +273,9 @@ struct TodayView: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                Text(label.uppercased())
-                    .font(ZenithiumFont.label)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
+                Text(label.uppercased(with: Locale(identifier: "tr_TR")))
+                    .font(ZenithiumFont.eyebrow)
+                    .foregroundStyle(ZenithiumColor.textSecondary)
                     .lineLimit(1)
                 HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
                     Text(value)
@@ -326,86 +333,49 @@ struct TodayView: View {
         let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
         let action = decision?.action ?? defaultAction(for: content.score, ceiling: content.ceiling)
 
-        return Button {
-            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
-                showingReason = true
-            }
-        } label: {
-            SectionCard(
-                title: "Günün Önerisi",
-                subtitle: actionTitle(action)
-            ) {
-                VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                    // Eylem ve Yük Tavanı
-                    HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                            HStack(spacing: 6) {
-                                Text(actionBadgeText(action))
-                                    .font(ZenithiumFont.label)
-                                    .foregroundStyle(actionColor(action))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        Capsule().fill(actionColor(action).opacity(0.16))
-                                    )
-                                    .matchedGeometryEffect(id: "today-reason-hero", in: todayNamespace)
-
-                                Spacer()
-                            }
-
-                            Text(decision?.headline ?? content.headline)
-                                .zenithiumBody()
-                                .foregroundStyle(ZenithiumColor.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        if let ceiling = content.ceiling {
-                            Spacer(minLength: 12)
-                            VStack(alignment: .trailing, spacing: ZenithiumSpacing.none) {
-                                Text("TAVAN")
-                                    .zenithiumEyebrow()
-                                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                                    Text(ZenithiumFormat.strain(ceiling))
-                                        .metricNumeral()
-                                        .foregroundStyle(ZenithiumColor.accent)
-                                    Text("/21")
-                                        .metricUnit()
-                                }
-                            }
+        return SectionCard(title: "Günün kararı") {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+                HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(actionTitle(action))
+                            .font(ZenithiumFont.label)
+                            .foregroundStyle(actionColor(action))
+                            .matchedGeometryEffect(id: "today-reason-hero", in: todayNamespace, isSource: !showingReason)
+                        Text(decision?.headline ?? content.headline).zenithiumBody()
+                    }
+                    Spacer(minLength: 0)
+                    if let ceiling = content.ceiling {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("TAVAN").zenithiumEyebrow()
+                            Text(ZenithiumFormat.strain(ceiling)).metricNumeral()
+                            Text("/ 21").zenithiumCaption()
                         }
                     }
-
-                    // Egzersiz Reçetesi
-                    if let prescription = viewModel.prescription {
-                        Divider().overlay(ZenithiumColor.hairlineSoft)
-                        PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
-                    }
-
-                    // Güven Çubuğu
-                    Divider().overlay(ZenithiumColor.hairlineSoft)
-                    HStack(spacing: ZenithiumSpacing.s) {
-                        Text("Karar Güveni")
-                            .zenithiumCaption()
-                        Spacer()
-                        Text("%\(Int((confidence * 100).rounded()))")
-                            .zenithiumCaption()
-                            .monospacedDigit()
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(ZenithiumColor.hairline)
-                                .frame(height: 4)
-                            Capsule()
-                                .fill(confidenceColor(confidence))
-                                .frame(width: max(8, geo.size.width * CGFloat(confidence)), height: 4)
-                        }
-                    }
-                    .frame(height: 4)
                 }
+                if let prescription = viewModel.prescription {
+                    DisclosureGroup("Antrenman ve alternatifler") {
+                        PrescriptionCard(prescription: prescription, plan: viewModel.planPosition)
+                            .padding(.top, 12)
+                    }
+                    .font(ZenithiumFont.secondary)
+                    .tint(ZenithiumColor.accent)
+                }
+                Button {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { showingReason = true }
+                } label: {
+                    HStack {
+                        Label("Bu kararın nedeni", systemImage: "arrow.up.right")
+                        Spacer()
+                        Text("\(ZenithiumFormat.percent(confidence)) güven")
+                    }
+                    .font(ZenithiumFont.caption)
+                    .foregroundStyle(ZenithiumColor.textSecondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - SİRKADİYEN RİTİM (24 Saatlik İnce Şerit)
@@ -602,8 +572,18 @@ struct TodayView: View {
         }
     }
 
-    private func fallbackRecommendation(_ content: TodayViewModel.Content) -> Recommendation {
-        viewModel.recommendations.first ?? PreviewFixtures.sampleRecommendation
+    private func dailyRecommendation(_ content: TodayViewModel.Content) -> Recommendation {
+        let result = viewModel.athleticDecision
+        return Recommendation(
+            id: "daily-decision", domain: .training, strength: .observation,
+            headline: result?.value.headline ?? content.headline,
+            body: result?.value.primaryRationale ?? content.guidance,
+            confidence: result?.confidence ?? ConfidenceScore(value: content.recovery.confidence),
+            evidence: result?.evidence ?? [],
+            limitations: result?.limitations ?? [],
+            wouldChangeIf: ["Yeni uyku, toparlanma veya antrenman verisi kaydedildiğinde karar yeniden değerlendirilir."],
+            disclaimerTier: .training
+        )
     }
 
     private func metricDetailOverlay(_ metric: SupportingMetricDetail) -> some View {
@@ -611,7 +591,7 @@ struct TodayView: View {
             Color.black.opacity(0.72)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                         selectedMetricForDetail = nil
                     }
                 }
@@ -619,7 +599,7 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(metric.label.uppercased())
+                        Text(metric.label.uppercased(with: Locale(identifier: "tr_TR")))
                             .zenithiumEyebrow()
                         HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
                             Text(metric.value)
@@ -634,15 +614,17 @@ struct TodayView: View {
                     Spacer()
 
                     Button {
-                        withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                             selectedMetricForDetail = nil
                         }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(ZenithiumColor.textTertiary)
+                            .frame(width: 44, height: 44)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Ölçüm ayrıntısını kapat")
                 }
 
                 BaselineBand(
@@ -653,7 +635,6 @@ struct TodayView: View {
                     style: .full
                 )
                 .matchedGeometryEffect(id: "baseline-\(metric.id)", in: todayNamespace)
-                .frame(height: 180)
 
                 Text(metric.description)
                     .zenithiumBody()
@@ -680,8 +661,8 @@ struct SupportingMetricDetail: Identifiable, Equatable {
     let value: String
     let unit: String
     let bandValues: [Double]
-    let baseline: Double
-    let sigma: Double
+    let baseline: Double?
+    let sigma: Double?
     let description: String
 }
 

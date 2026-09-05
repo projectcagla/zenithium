@@ -17,6 +17,7 @@ struct PrescriptionCard: View {
     var plan: PlanPosition?
     var wrappedInCard: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsRationale = false
     @State private var selected: PrescribedSession?
 
@@ -50,7 +51,7 @@ struct PrescriptionCard: View {
                 footer
 
                 Button {
-                    withAnimation(.easeOut(duration: 0.18)) { showsRationale.toggle() }
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { showsRationale.toggle() }
                 } label: {
                     HStack(spacing: ZenithiumSpacing.xs) {
                         Text(showsRationale ? "Gerekçeyi gizle" : "Neden bu?")
@@ -142,7 +143,7 @@ struct PrescriptionCard: View {
             HStack(spacing: ZenithiumSpacing.s) {
                 ForEach(prescription.everySession) { session in
                     Button {
-                        withAnimation(.easeOut(duration: 0.15)) {
+                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) {
                             selected = session
                         }
                     } label: {

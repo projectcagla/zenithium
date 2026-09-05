@@ -1,18 +1,9 @@
-//
-//  SleepView.swift
-//  Zenithium
-//
-//  The Sleep screen. Spec §5.2, §10.
-//  Redesigned to strict Design Specification:
-//  - Tier 1 Hero: Hypnogram (full width, borderless/cardless, quiet time axis, deep sleep emphasized)
-//  - Tier 2: Stages (single stacked bar — not 4 cards) and Timing (in bed / asleep / awake — quiet row)
-//  - Single L2 Card: Sleep debt and tonight's sleep target
-//  - Secondary sections: L1 SectionBlock
-//
-
 import SwiftUI
 
 struct SleepView: View {
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State var viewModel: SleepViewModel
     var embedInNavigation: Bool = true
@@ -79,47 +70,47 @@ struct SleepView: View {
     // MARK: - 1. KADEME (KAHRAMAN) — Hipnogram & Uyku Skoru
 
     private func hypnogramHero(_ content: SleepViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.m) {
-            // Uyku Yayı / Skoru
-            ScoreArc(
-                score: content.score,
-                gradient: ZenithiumColor.sleepGradient,
-                tint: ZenithiumColor.spectrumMagenta,
-                caption: ZenithiumFormat.duration(seconds: content.record.sleepDurationSeconds),
-                accessibilityLabel: "Uyku puanı",
-                accessibilityValue: "100 üzerinden \(ZenithiumFormat.score(content.score)), \(ZenithiumFormat.spokenDuration(seconds: content.record.sleepDurationSeconds)) uykuda"
-            )
-            .padding(.top, ZenithiumSpacing.xs)
-
-            // Altında TEK bir sakin cümle
-            Text(rationaleSentence(content))
-                .zenithiumBody()
-                .foregroundStyle(ZenithiumColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, ZenithiumSpacing.s)
-
-            // Tam Genişlik Kartsız Hipnogram
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                Text("GECELİK HİPNOGRAM")
-                    .zenithiumEyebrow()
-
-                HypnogramView(record: content.record)
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.xl) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                HStack {
+                    Text("DÜN GECE").zenithiumEyebrow()
+                    Spacer()
+                    if let efficiency = content.record.sleepEfficiency {
+                        Label("\(ZenithiumFormat.percent(efficiency)) verim", systemImage: "moon.fill")
+                            .font(ZenithiumFont.caption)
+                            .foregroundStyle(ZenithiumColor.spectrumTeal)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(Capsule().fill(ZenithiumColor.spectrumTeal.opacity(0.1)))
+                    }
+                }
+                let minutes = max(0, Int(content.record.sleepDurationSeconds / 60))
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("\(minutes / 60)").heroNumeral()
+                        Text("sa").heroUnit()
+                        Text("\(minutes % 60)").heroNumeral()
+                        Text("dk").heroUnit()
+                    }
+                    Text(ZenithiumFormat.duration(seconds: content.record.sleepDurationSeconds))
+                        .screenTitle()
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Toplam uyku")
+                .accessibilityValue(ZenithiumFormat.spokenDuration(seconds: content.record.sleepDurationSeconds))
+                Text(rationaleSentence(content)).zenithiumSecondary()
+                Text("Uyku puanı · \(ZenithiumFormat.score(content.score)) / 100")
+                    .zenithiumCaption()
             }
-            .padding(.top, ZenithiumSpacing.xs)
+            HypnogramView(record: content.record)
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .contain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func rationaleSentence(_ content: SleepViewModel.Content) -> String {
-        let duration = ZenithiumFormat.duration(seconds: content.record.sleepDurationSeconds)
-        let deep = ZenithiumFormat.duration(seconds: content.record.deepSeconds)
         if content.shortfallHours < 0.2 {
-            return "\(duration) kesintisiz uyku; \(deep) derin uyku ile toparlanma tamamlandı."
-        } else {
-            return "\(duration) uyundu. Hedefin \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat altında kalındığı için toparlanma sınırlı."
+            return "Uyku süren, hesaplanan gece ihtiyacına ulaştı."
         }
+        return "Hesaplanan ihtiyacına göre \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat daha az uyudun."
     }
 
     // MARK: - 2. KADEME — Evreler ve Zamanlama (L1 Sessiz Şeritler)
@@ -189,7 +180,7 @@ struct SleepView: View {
 
     private func debtAndNeedCard(_ content: SleepViewModel.Content) -> some View {
         SectionCard(
-            title: "Bu Gecenin Uyku Hedefi",
+            title: "Bu gece için",
             subtitle: needCaption(content)
         ) {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
@@ -222,12 +213,14 @@ struct SleepView: View {
                 }
 
                 BaselineBand(
-                    values: [content.sleep.asleepHours],
-                    baseline: content.sleep.needHours,
-                    sigma: 0.8,
+                    values: content.history.sorted { $0.dayStart < $1.dayStart }.map { $0.sleepShortfallHours(against: content.profile.baselineSleepNeedHours) },
+                    baseline: 0,
+                    sigma: 0,
                     unit: "sa",
-                    style: .inline
+                    style: .inline,
+                    referenceLabel: "Uyku açığı olmayan gece"
                 )
+                Text("Son gecelerin uyku açığı · 0 sa çizgisine göre").zenithiumCaption()
 
                 if content.shortfallHours > 0.1 {
                     Divider().overlay(ZenithiumColor.hairlineSoft)
@@ -235,7 +228,7 @@ struct SleepView: View {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 13))
                             .foregroundStyle(ZenithiumColor.yellow)
-                        Text("Dün geceden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saatlik uyku açığı var. Bu gecenin hedefi borcu kademeli dengeleyecek şekilde güncellendi.")
+                        Text("Dün geceden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saatlik uyku açığı var. Uyku ihtiyacı; taban süre, modele yansıyan borç ve şekerleme payını içerir.")
                             .zenithiumCaption()
                             .foregroundStyle(ZenithiumColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

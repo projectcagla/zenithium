@@ -12,6 +12,8 @@ import SwiftUI
 
 struct SleepStageBarView: View {
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let stages: [SleepViewModel.StageSlice]
 
     private var occupied: [SleepViewModel.StageSlice] {
@@ -29,30 +31,29 @@ struct SleepStageBarView: View {
 
     private var stackedBar: some View {
         GeometryReader { proxy in
-            HStack(spacing: ZenithiumSpacing.xxs) {
+            HStack(spacing: 0) {
                 ForEach(occupied) { slice in
-                    RoundedRectangle(cornerRadius: ZenithiumRadius.small, style: .continuous)
+                    Rectangle()
                         .fill(ZenithiumColor.color(for: slice.stage))
-                        .frame(width: max(proxy.size.width * slice.share - 2, 2))
+                        .frame(width: max(proxy.size.width * slice.share, 0))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: 14)
+        .frame(height: 8)
+        .clipShape(Capsule())
         .accessibilityHidden(true)
     }
 
     private var legend: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: ZenithiumSpacing.l) { legendRows }
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) { legendRows }
-        }
+        let columns = Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4)
+        return LazyVGrid(columns: columns, alignment: .leading, spacing: 16) { legendRows }
     }
 
     @ViewBuilder
     private var legendRows: some View {
-        ForEach(occupied) { slice in
-            HStack(spacing: ZenithiumSpacing.s) {
+        ForEach(stages) { slice in
+            VStack(alignment: .leading, spacing: 6) {
                 RoundedRectangle(cornerRadius: ZenithiumRadius.small, style: .continuous)
                     .fill(ZenithiumColor.color(for: slice.stage))
                     .frame(width: 10, height: 10)
@@ -61,6 +62,9 @@ struct SleepStageBarView: View {
                     Text(slice.stage.displayName)
                         .font(ZenithiumFont.caption)
                         .foregroundStyle(ZenithiumColor.textSecondary)
+                    Text(ZenithiumFormat.percent(slice.share))
+                        .font(ZenithiumFont.dataValue)
+                        .foregroundStyle(ZenithiumColor.textPrimary)
                     Text(ZenithiumFormat.duration(seconds: slice.seconds))
                         .font(ZenithiumFont.caption.monospacedDigit())
                         .foregroundStyle(ZenithiumColor.textPrimary)
