@@ -6,8 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TrendsView: View {
+
+    @Query private var baselineStates: [BaselineState]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State var viewModel: TrendsViewModel
     var embedInNavigation: Bool = true
@@ -61,7 +65,7 @@ struct TrendsView: View {
         VStack(spacing: ZenithiumSpacing.m) {
             Picker("Aralık", selection: rangeBinding) {
                 ForEach(TrendRange.allCases) { range in
-                    Text(range.displayName)
+                    Text("\(range.days)G")
                         .accessibilityLabel(range.accessibilityName)
                         .tag(range)
                 }
@@ -77,7 +81,7 @@ struct TrendsView: View {
                             isSelected: metric == viewModel.metric,
                             namespace: trendsNamespace
                         ) {
-                            withAnimation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82)) {
+                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.28)) {
                                 viewModel.select(metric: metric)
                             }
                         }
@@ -100,138 +104,77 @@ struct TrendsView: View {
 
     @ViewBuilder
     private func loadedBody(_ content: TrendsViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.sectionSpacing) {
-            // 1. KADEME (KAHRAMAN): Tam Genişlik Kartsız Grafik (Üstte Seçili Değer & Tarih)
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
-                Text(content.metric.displayName.uppercased())
-                    .zenithiumEyebrow()
-
-                let values = content.points.map(\.value)
-                let avg = content.average ?? (values.last ?? 50.0)
-                let variance = values.isEmpty ? 4.0 : (values.map { pow($0 - avg, 2) }.reduce(0, +) / Double(values.count))
-                let sigma = max(sqrt(variance), 2.0)
-
-                BaselineBand(
-                    values: values,
-                    baseline: avg,
-                    sigma: sigma,
-                    unit: content.metric.unitSymbol,
-                    style: .full
-                )
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // TEK L2 KART: Değişim Özeti
-            changeSummaryCard(content)
-        }
-        .animation(reduceMotion ? .none : .spring(response: 0.35, dampingFraction: 0.82), value: content.metric)
-    }
-
-    /// Detaylı Swift Charts grafiği
-    private func trendChartDetailed(_ content: TrendsViewModel.Content) -> some View {
-        TrendChart(content: content)
-            .zenithiumChart(yValues: 3...4, showBaseline: true)
-    }
-
-    private func changeSummaryCard(_ content: TrendsViewModel.Content) -> some View {
-        let trendDirection = trendSlopeDirection(content)
-
-        return SectionBlock(
-            title: "Değişim Özeti",
-            subtitle: "\(content.range.displayName) içindeki seyir"
-        ) {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                        Text("Ortalama")
+        let reference = reference(for: content)
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.sectionSpacing) {
+            Text(content.metric.displayName.uppercased(with: Locale(identifier: "tr_TR"))).zenithiumEyebrow()
+            TrendChart(content: content, baseline: reference.mean, sigma: reference.sigma, referenceLabel: reference.label)
+            statistics(content, baseline: reference.mean)
+            SectionBlock(title: "Kendi ritmini izle") {
+                Text("\(reference.label). Koridor ±1 standart sapmayı gösterir; bir sağlık sınırı değildir.")
+                    .zenithiumSecondary()
+                if !content.bloodEvents.isEmpty {
+                    Label("Kesikli dikey çizgiler tahlil günlerini gösterir.", systemImage: "drop")
+                        .zenithiumCaption()
+                    ForEach(content.bloodEvents) { event in
+                        Text("\(event.date.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "tr_TR")))) · \(event.panelName)")
                             .zenithiumCaption()
-                        if let average = content.average {
-                            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                                Text(ZenithiumFormat.metric(average, digits: content.metric.fractionDigits))
-                                    .metricNumeral()
-                                Text(content.metric.unitSymbol)
-                                    .metricUnit()
-                            }
-                        } else {
-                            Text("—").metricNumeral()
-                        }
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: ZenithiumSpacing.xxs) {
-                        Text("Eğilim")
-                            .zenithiumCaption()
-                        HStack(spacing: ZenithiumSpacing.xs) {
-                            Image(systemName: trendDirection.symbol)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(trendDirection.color)
-                            Text(trendDirection.text)
-                                .sectionTitle()
-                                .foregroundStyle(trendDirection.color)
-                        }
                     }
                 }
-
-                Divider().overlay(ZenithiumColor.hairlineSoft)
-
-                HStack(spacing: ZenithiumSpacing.none) {
-                    if let minimum = content.minimum {
-                        summaryMiniStat(
-                            label: "En Düşük",
-                            value: ZenithiumFormat.metric(minimum, digits: content.metric.fractionDigits),
-                            unit: content.metric.unitSymbol
-                        )
-                    }
-                    Spacer()
-                    if let maximum = content.maximum {
-                        summaryMiniStat(
-                            label: "En Yüksek",
-                            value: ZenithiumFormat.metric(maximum, digits: content.metric.fractionDigits),
-                            unit: content.metric.unitSymbol
-                        )
-                    }
-                    Spacer()
-                    summaryMiniStat(
-                        label: "Veri Günü",
-                        value: "\(content.points.count)",
-                        unit: "gün"
-                    )
-                }
-            }
-        }
-    }
-
-    private func summaryMiniStat(label: String, value: String, unit: String) -> some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-            Text(label)
-                .zenithiumCaption()
-            HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                Text(value)
-                    .sectionTitle()
-                    .monospacedDigit()
-                Text(unit)
+                Text("\(content.points.count) ölçüm günü · Grafikte bir güne dokunarak değerini incele.")
                     .zenithiumCaption()
             }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: content.metric)
     }
 
-    private func trendSlopeDirection(_ content: TrendsViewModel.Content) -> (symbol: String, color: Color, text: String) {
-        guard content.points.count >= 2,
-              let first = content.points.first?.value,
-              let last = content.points.last?.value else {
-            return ("arrow.right", ZenithiumColor.textTertiary, "Yatay")
+    private func reference(for content: TrendsViewModel.Content) -> (mean: Double?, sigma: Double?, label: String) {
+        let kind: MetricKind?
+        switch content.metric {
+        case .heartRateVariability: kind = .heartRateVariability
+        case .restingHeartRate: kind = .restingHeartRate
+        default: kind = nil
         }
-        let delta = last - first
-        let threshold = abs(first) * 0.03
-        if delta > threshold {
-            return ("arrow.up.right", ZenithiumColor.green, "Yukarı")
-        } else if delta < -threshold {
-            return ("arrow.down.right", ZenithiumColor.yellow, "Aşağı")
-        } else {
-            return ("arrow.right", ZenithiumColor.textSecondary, "Dengeli")
+        if let kind {
+            if let snapshot = baselineStates.compactMap(\.snapshot).first(where: { $0.metric == kind && $0.isSeeded }) {
+                return (snapshot.mean, snapshot.standardDeviation, "Mevcut 60 günlük ağırlıklı kişisel taban")
+            }
+            return (nil, nil, "Kişisel taban henüz oluşmadı")
+        }
+        let values = content.points.map(\.value).filter(\.isFinite)
+        guard let average = content.average, values.count > 1 else { return (content.average, nil, "Seçili dönem ortalaması") }
+        let variance = values.reduce(0) { $0 + pow($1 - average, 2) } / Double(values.count)
+        return (average, sqrt(variance), "Seçili \(content.range.days) günün ortalaması")
+    }
+
+    private func statistics(_ content: TrendsViewModel.Content, baseline: Double?) -> some View {
+        let columns = Array(repeating: GridItem(.flexible(), alignment: .leading), count: dynamicTypeSize.isAccessibilitySize ? 2 : 4)
+        let delta = content.points.last.flatMap { point in baseline.map { point.value - $0 } }
+        return LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
+            stat("Ortalama", value: content.average, content: content)
+            stat("En düşük", value: content.minimum, content: content)
+            stat("En yüksek", value: content.maximum, content: content)
+            stat("Taban farkı", value: delta, content: content, signed: true)
         }
     }
+
+    private func stat(_ label: String, value: Double?, content: TrendsViewModel.Content, signed: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label).zenithiumCaption()
+            Text(value.map { signed ? ZenithiumFormat.signed($0, digits: content.metric.fractionDigits) : formatted($0, metric: content.metric) } ?? "—")
+                .modifier(ZenithiumFont.Scaled(size: 28, relativeTo: .title2, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.65)
+            Text(content.metric.unitSymbol == "%" ? (signed ? "puan" : "yüzde") : content.metric.unitSymbol)
+                .zenithiumCaption()
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func formatted(_ value: Double, metric: TrendMetric) -> String {
+        let number = ZenithiumFormat.metric(value, digits: metric.fractionDigits)
+        return metric.unitSymbol == "%" ? "%" + number : number
+    }
+
 }
 
 /// A metric selector chip.
@@ -249,7 +192,7 @@ private struct MetricPill: View {
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, ZenithiumSpacing.m)
-                .padding(.vertical, ZenithiumSpacing.s)
+                .padding(.vertical, ZenithiumSpacing.m)
                 .background {
                     if isSelected {
                         Capsule(style: .continuous)
@@ -257,15 +200,8 @@ private struct MetricPill: View {
                             .matchedGeometryEffect(id: "trend-pill-selection", in: namespace)
                     } else {
                         Capsule(style: .continuous)
-                            .fill(ZenithiumColor.surface)
+                            .fill(Color.clear)
                     }
-                }
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            isSelected ? ZenithiumColor.accent : ZenithiumColor.hairline,
-                            lineWidth: 1
-                        )
                 }
                 .foregroundStyle(isSelected ? ZenithiumColor.accent : ZenithiumColor.textSecondary)
         }

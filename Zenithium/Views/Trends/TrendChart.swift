@@ -17,10 +17,14 @@ import Accessibility
 struct TrendChart: View {
 
     let content: TrendsViewModel.Content
+    var baseline: Double? = nil
+    var sigma: Double? = nil
+    var referenceLabel: String = "Kişisel taban"
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var scrubbedPoint: TrendPoint?
 
-    @ScaledMetric(relativeTo: .body) private var chartHeight: CGFloat = 200
+    @ScaledMetric(relativeTo: .body) private var chartHeight: CGFloat = 240
 
     private var tint: Color {
         switch content.metric {
@@ -34,7 +38,7 @@ struct TrendChart: View {
 
     private var displayPoints: [TrendPoint] {
         ZenithiumChartDownsampler.downsample(
-            content.points,
+            content.points.sorted { $0.date < $1.date },
             maxPoints: 400,
             x: { $0.date.timeIntervalSince1970 },
             y: { $0.value }
@@ -47,12 +51,6 @@ struct TrendChart: View {
 
             Chart {
                 ForEach(displayPoints) { point in
-                    AreaMark(
-                        x: .value("Gün", point.date),
-                        y: .value(content.metric.displayName, point.value)
-                    )
-                    .foregroundStyle(ZenithiumChartGradient.area(for: tint))
-
                     LineMark(
                         x: .value("Gün", point.date),
                         y: .value(content.metric.displayName, point.value)
@@ -69,17 +67,7 @@ struct TrendChart: View {
                     )
                     .foregroundStyle(tint)
                     .symbolSize(ZenithiumChartLastPoint.symbolSize)
-                    .annotation(position: .top, alignment: .trailing) {
-                        Text(ZenithiumFormat.metric(last.value, digits: 1))
-                            .font(ZenithiumFont.caption.monospacedDigit())
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                    }
-                }
 
-                if let average = content.average {
-                    RuleMark(y: .value("Ortalama", average))
-                        .foregroundStyle(ZenithiumColor.textTertiary.opacity(0.6))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                 }
 
                 ForEach(content.bloodEvents) { event in
@@ -100,8 +88,19 @@ struct TrendChart: View {
                     .symbolSize(90)
                 }
             }
-            .chartYScale(domain: content.axisRange)
+            .chartYScale(domain: chartRange)
+            .chartPlotStyle { plot in
+                plot.background {
+                    BaselineBand(values: [], baseline: baseline, sigma: sigma, unit: content.metric.unitSymbol, style: .full, tint: tint, valueRange: chartRange, showsAxisLabels: false, showsSeries: false, referenceLabel: referenceLabel)
+                        .accessibilityHidden(true)
+                }
+            }
             .zenithiumChart(yValues: 3...4, showBaseline: true)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisValueLabel(format: .dateTime.day().month(.abbreviated).locale(Locale(identifier: "tr_TR")))
+                }
+            }
             .chartOverlay { proxy in
                 GeometryReader { geometry in
                     Rectangle()
@@ -114,28 +113,50 @@ struct TrendChart: View {
             // Dynamic Type büyüdüğünde eksen etiketleri ve grafik rahat nefes alır.
             .frame(minHeight: chartHeight)
             .accessibilityChartDescriptor(descriptor)
+            .accessibilityAdjustableAction { direction in
+                let points = displayPoints
+                guard !points.isEmpty else { return }
+                let current = points.firstIndex { $0.id == scrubbedPoint?.id } ?? (points.count - 1)
+                switch direction {
+                case .increment: scrubbedPoint = points[min(current + 1, points.count - 1)]
+                case .decrement: scrubbedPoint = points[max(current - 1, 0)]
+                @unknown default: break
+                }
+            }
         }
+        .onChange(of: content) { _, _ in scrubbedPoint = nil }
+    }
+
+    private var chartRange: ClosedRange<Double> {
+        if let fixed = content.metric.fixedRange { return fixed }
+        var values = content.points.map(\.value).filter(\.isFinite)
+        if let baseline, let sigma { values += [baseline - sigma, baseline + sigma] }
+        let lower = values.min() ?? 0
+        let upper = values.max() ?? 1
+        let padding = max((upper - lower) * 0.15, max(abs(upper) * 0.03, 0.1))
+        return (lower - padding)...(upper + padding)
     }
 
     /// The readout above the chart, which is also what the scrub updates. Keeping it outside
     /// the plot means it never overlaps the line or clips at AX5.
     private var scrubReadout: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.s) {
+        VStack(alignment: .leading, spacing: 6) {
             let point = scrubbedPoint ?? content.points.last
             if let point {
-                Text(ZenithiumFormat.metric(point.value, digits: content.metric.fractionDigits))
-                    .metricNumeral()
-                    .minimumScaleFactor(0.8)
-                if !content.metric.unitSymbol.isEmpty {
-                    Text(content.metric.unitSymbol)
-                        .metricUnit()
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    if content.metric.unitSymbol == "%" { Text("%").heroUnit() }
+                    Text(ZenithiumFormat.metric(point.value, digits: content.metric.fractionDigits))
+                        .heroNumeral().lineLimit(1).minimumScaleFactor(0.6)
+                        .contentTransition(.numericText())
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: point.value)
+                    if !content.metric.unitSymbol.isEmpty && content.metric.unitSymbol != "%" {
+                        Text(content.metric.unitSymbol).heroUnit()
+                    }
                 }
-                Spacer(minLength: 8)
-                Text(point.date.formatted(date: .abbreviated, time: .omitted))
+                Text(point.date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "tr_TR"))))
                     .zenithiumCaption()
             }
         }
-        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(scrubbedPoint == nil ? "En son değer" : "Seçili değer")
         .accessibilityValue(readoutAccessibilityValue)

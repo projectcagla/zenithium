@@ -1,19 +1,10 @@
-//
-//  TrainingLoadView.swift
-//  Zenithium
-//
-//  The training-load screen. Faz 14.
-//
-//  Three questions in four cards, in the order they get asked: where is the ratio, how did
-//  it get there, how fit versus how fatigued, and what shape was the week. The band scale is
-//  the one place on this screen carrying colour, because it is the only reading that changes
-//  what the user does today.
-//
-
 import SwiftUI
 import Charts
 
 struct TrainingLoadView: View {
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @ScaledMetric private var chartHeight: CGFloat = 180
     @State var viewModel: TrainingLoadViewModel
@@ -48,7 +39,7 @@ struct TrainingLoadView: View {
             ) { content in
                 loadedBody(content)
             }
-            .padding(.horizontal, ZenithiumSpacing.l)
+            .padding(.horizontal, ZenithiumSpacing.screenEdge)
             .padding(.bottom, ZenithiumSpacing.xxl)
             .padding(.top, ZenithiumSpacing.s)
         }
@@ -63,13 +54,13 @@ struct TrainingLoadView: View {
             ratioHero(content)
 
             // 2. KADEME: Yük dengesi kartı (TEK L2 KART)
-            balanceCard(content)
 
             // 3. KADEME: Günlük yük çubukları (Swift Charts, kartsız L1)
             chartCard(content)
 
             // 4. KADEME: Yorgunluk ve zindelik ayrımı (kartsız L1)
             formCard(content)
+            balanceCard(content)
 
             // 5. KADEME: Bu hafta özeti (kartsız L1)
             weekCard(content)
@@ -91,6 +82,8 @@ struct TrainingLoadView: View {
             HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.m) {
                 Text(content.output.ratio.map { ZenithiumFormat.metric($0, digits: 2) } ?? "—")
                     .heroNumeral()
+                    .contentTransition(.numericText())
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: content.output.ratio)
                     .foregroundStyle(content.output.ratio == nil ? ZenithiumColor.textTertiary : ZenithiumColor.textPrimary)
 
                 if let band = content.band {
@@ -105,6 +98,15 @@ struct TrainingLoadView: View {
             }
 
             bandScale(content.output.ratio)
+            HStack {
+                Text("Azalan yük")
+                Spacer()
+                Text("Üretken")
+                Spacer()
+                Text("Ani artış")
+            }
+            .zenithiumCaption()
+            Text("7 günlük akut / 28 günlük kronik yük").zenithiumCaption()
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Yük oranı")
@@ -118,8 +120,8 @@ struct TrainingLoadView: View {
             title: "Yük Dengesi",
             subtitle: content.band?.displayName ?? "Hesaplanıyor"
         ) {
-            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
-                Image(systemName: content.band == .productive ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                Image(systemName: content.band == nil ? "circle.dotted" : (content.band == .productive ? "checkmark.circle.fill" : "chart.bar.xaxis"))
                     .font(.system(size: 20))
                     .foregroundStyle(content.band.map(tint(for:)) ?? ZenithiumColor.accent)
                     .accessibilityHidden(true)
@@ -128,6 +130,12 @@ struct TrainingLoadView: View {
                     .zenithiumCallout()
                     .foregroundStyle(ZenithiumColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                if let ceiling = content.sweetSpotCeiling {
+                    Text("Modelin üretken pencere için hesapladığı günlük tavan: \(ZenithiumFormat.strain(ceiling))")
+                        .zenithiumCaption()
+                }
+                Text("Yük oranı tek başına sakatlık olasılığını ölçmez; toparlanma ve hissettiğin yorgunlukla birlikte değerlendirilir.")
+                    .zenithiumCaption()
             }
         }
         .accessibilityElement(children: .combine)
@@ -199,10 +207,15 @@ struct TrainingLoadView: View {
     // MARK: - 3. KADEME: Günlük Yük Çubukları (Swift Charts, Kartsız L1)
 
     private func chartCard(_ content: TrainingLoadViewModel.Content) -> some View {
-        SectionBlock(title: "Günlük yük", subtitle: "Çubuklar günün yükü, çizgi yük oranı") {
-            let displaySeries = ZenithiumChartDownsampler.downsample(content.series, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.load })
-            let displayRatios = ZenithiumChartDownsampler.downsample(content.ratioPoints, maxPoints: 400, x: { $0.dayStart.timeIntervalSince1970 }, y: { $0.ratio })
+        SectionBlock(title: "Son 28 gün", subtitle: "Günlük zorlanma · solda yük, sağda akut/kronik oran") {
+            let displaySeries = Array(content.series.suffix(28))
+            let displayRatios = content.ratioPoints.filter { $0.dayStart >= (displaySeries.first?.dayStart ?? .distantFuture) }
 
+            HStack(spacing: 16) {
+                Label("Günlük zorlanma", systemImage: "square.fill").foregroundStyle(ZenithiumColor.accent)
+                Label("Yük oranı", systemImage: "line.diagonal").foregroundStyle(ZenithiumColor.spectrumAmber)
+            }
+            .font(ZenithiumFont.caption)
             Chart {
                 ForEach(displaySeries) { day in
                     BarMark(
@@ -238,6 +251,16 @@ struct TrainingLoadView: View {
                 }
             }
             .zenithiumChart(yValues: 3...4, showBaseline: true)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4))
+                AxisMarks(position: .trailing, values: [0.5, 1, 1.5, 2].map { $0 * content.ratioScale }) { axis in
+                    AxisValueLabel {
+                        if let value = axis.as(Double.self) {
+                            Text(ZenithiumFormat.metric(value / content.ratioScale, digits: 1))
+                        }
+                    }
+                }
+            }
             // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
             // The daily load, described so VoiceOver can play the block as a tone rather
@@ -246,7 +269,7 @@ struct TrainingLoadView: View {
                 SeriesChartDescriptor(
                     title: "Günlük yük",
                     seriesName: "Yük",
-                    points: content.series.map { DescribedPoint(date: $0.dayStart, value: $0.load) },
+                    points: displaySeries.map { DescribedPoint(date: $0.dayStart, value: $0.load) },
                     formatValue: { ZenithiumFormat.metric($0, digits: 0) },
                     summary: content.summary
                 )
@@ -261,7 +284,8 @@ struct TrainingLoadView: View {
     private func formCard(_ content: TrainingLoadViewModel.Content) -> some View {
         let values = content.output.fitnessFatigue
         return SectionBlock(title: "Kondisyon ve yorgunluk", subtitle: "Yavaş ve hızlı yükün farkı") {
-            HStack(spacing: ZenithiumSpacing.m) {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 20)) : AnyLayout(HStackLayout(spacing: 12))
+            layout {
                 MetricTile(
                     label: "Kondisyon",
                     value: ZenithiumFormat.metric(values.fitness, digits: 1),
