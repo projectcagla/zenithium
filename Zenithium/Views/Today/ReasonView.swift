@@ -1,25 +1,12 @@
-//
-//  ReasonView.swift
-//  Zenithium
-//
-//  Şartname: "Neden?" Ekranı.
-//  Ritim: Tek iddia → yedi eşit adım. Kart YOK (tamamen kartsız L1 akış).
-//  Adımlar:
-//    1 Senin verin
-//    2 Hesap
-//    3 Literatür
-//    4 Ne göstermiyor
-//    5 Uygulanabilirlik
-//    6 Güven
-//    7 Ne değişirse
-//
-
 import SwiftUI
 
 struct ReasonView: View {
 
     let recommendation: Recommendation?
     let state: ViewState<Recommendation>
+    var calculationSteps: [String] = []
+    var relatedRecommendations: [Recommendation] = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var namespace: Namespace.ID? = nil
     var onDismiss: (() -> Void)? = nil
 
@@ -31,12 +18,16 @@ struct ReasonView: View {
         recommendation: Recommendation,
         embedInNavigation: Bool = true,
         namespace: Namespace.ID? = nil,
+        calculationSteps: [String] = [],
+        relatedRecommendations: [Recommendation] = [],
         onDismiss: (() -> Void)? = nil
     ) {
         self.recommendation = recommendation
         self.state = .loaded(recommendation)
         self.embedInNavigation = embedInNavigation
         self.namespace = namespace
+        self.calculationSteps = calculationSteps
+        self.relatedRecommendations = relatedRecommendations
         self.onDismiss = onDismiss
     }
 
@@ -44,12 +35,16 @@ struct ReasonView: View {
         state: ViewState<Recommendation>,
         embedInNavigation: Bool = true,
         namespace: Namespace.ID? = nil,
+        calculationSteps: [String] = [],
+        relatedRecommendations: [Recommendation] = [],
         onDismiss: (() -> Void)? = nil
     ) {
         self.state = state
         self.recommendation = state.value
         self.embedInNavigation = embedInNavigation
         self.namespace = namespace
+        self.calculationSteps = calculationSteps
+        self.relatedRecommendations = relatedRecommendations
         self.onDismiss = onDismiss
     }
 
@@ -87,6 +82,8 @@ struct ReasonView: View {
                                 .foregroundStyle(ZenithiumColor.textTertiary)
                         }
                         .buttonStyle(.plain)
+                        .frame(width: 44, height: 44)
+                        .accessibilityLabel("Neden ekranını kapat")
                         Spacer()
                         Text("Neden?")
                             .font(ZenithiumFont.sectionTitle)
@@ -119,129 +116,168 @@ struct ReasonView: View {
             .padding(.top, ZenithiumSpacing.s)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
     @ViewBuilder
     private func loadedContent(_ item: Recommendation) -> some View {
-        VStack(alignment: .leading, spacing: 32) {
-            // [L1] KAHRAMAN — iddianın kendisi (sectionTitle) + güç rozeti
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(item.headline)
-                        .sectionTitle()
-                        .foregroundStyle(ZenithiumColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: 8)
-
-                    if let namespace {
-                        strengthBadge(item.strength)
-                            .matchedGeometryEffect(id: "today-reason-hero", in: namespace)
-                    } else {
-                        strengthBadge(item.strength)
+        VStack(alignment: .leading, spacing: ZenithiumSpacing.sectionSpacing) {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
+                Text("KARARIN ARKASINDA").zenithiumEyebrow()
+                Text(item.headline).screenTitle().fixedSize(horizontal: false, vertical: true)
+                if let namespace {
+                    confidenceRing(item)
+                        .matchedGeometryEffect(id: "today-reason-score", in: namespace)
+                        .frame(maxWidth: .infinity)
+                    strengthBadge(item.strength)
+                        .matchedGeometryEffect(id: "today-reason-hero", in: namespace)
+                } else {
+                    confidenceRing(item).frame(maxWidth: .infinity)
+                    strengthBadge(item.strength)
+                }
+                Text(item.body).zenithiumSecondary()
+            }
+            SectionBlock(title: "01 · Senin verin") {
+                if item.evidence.isEmpty {
+                    Text("Bu karar için ayrıntılı ölçüm kanıtı sağlanmadı.").zenithiumSecondary()
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(item.evidence) { node in
+                            evidenceRow(node, isLast: node.id == item.evidence.last?.id)
+                        }
                     }
                 }
-
-                Text(item.body)
-                    .zenithiumSecondary()
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            // [L1] Yedi adım, hepsi L1, aralarında hairlineSoft çizgi
-            VStack(alignment: .leading, spacing: 16) {
-                if let namespace {
-                    stepRow(
-                        number: 1,
-                        title: "Senin verin",
-                        content: userEvidenceText(item)
-                    )
-                    .matchedGeometryEffect(id: "today-reason-score", in: namespace)
+            SectionBlock(title: "02 · Hesap") {
+                if calculationSteps.isEmpty {
+                    Text("Bu kayıtta ayrıntılı hesap adımları bulunmuyor.").zenithiumSecondary()
                 } else {
-                    stepRow(
-                        number: 1,
-                        title: "Senin verin",
-                        content: userEvidenceText(item)
-                    )
+                    ForEach(Array(calculationSteps.enumerated()), id: \.offset) { index, step in
+                        Text("\(index + 1). \(step)").zenithiumSecondary()
+                    }
                 }
-
-                stepDivider
-
-                stepRow(
-                    number: 2,
-                    title: "Hesap",
-                    content: "Biyometrik modeller ve taban sapma eşikleri analiz edilerek deterministik olarak üretildi."
-                )
-
-                stepDivider
-
-                stepRow(
-                    number: 3,
-                    title: "Literatür",
-                    content: literatureText(item)
-                )
-
-                stepDivider
-
-                stepRow(
-                    number: 4,
-                    title: "Ne göstermiyor",
-                    content: limitationsText(item)
-                )
-
-                stepDivider
-
-                stepRow(
-                    number: 5,
-                    title: "Uygulanabilirlik",
-                    content: item.populationNote ?? "Çalışma kohortu genel sporcu ve bireysel fizyoloji popülasyonu ile uyumludur."
-                )
-
-                stepDivider
-
-                stepRow(
-                    number: 6,
-                    title: "Güven",
-                    content: "Ölçüm ve kanıt güveni: %\(Int((item.confidence.value * 100).rounded()))"
-                )
-
-                stepDivider
-
-                stepRow(
-                    number: 7,
-                    title: "Ne değişirse",
-                    content: item.wouldChangeIf.joined(separator: " • ")
-                )
             }
+            SectionBlock(title: "03 · Bilimsel kaynaklar") {
+                if item.references.isEmpty {
+                    Text("Bu günlük karara tekil bir kaynak bağlanmamış.").zenithiumSecondary()
+                    ForEach(relatedRecommendations.filter { !$0.references.isEmpty }) { related in
+                        DisclosureGroup(related.headline) {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text(related.body).zenithiumSecondary()
+                                ForEach(related.references) { reference in referenceRow(reference) }
+                            }
+                            .padding(.top, 12)
+                        }
+                        .font(ZenithiumFont.secondary)
+                        .tint(ZenithiumColor.accent)
+                    }
+                } else {
+                    ForEach(item.references) { reference in
+                        referenceRow(reference)
+                    }
+                }
+            }
+            SectionBlock(title: "04 · Ne göstermiyor") {
+                Text(limitationsText(item)).zenithiumSecondary()
+            }
+            SectionBlock(title: "05 · Sana uygulanabilirliği") {
+                Text(item.populationNote ?? "Bu kayıt için kişiye uygulanabilirlik notu sağlanmadı.").zenithiumSecondary()
+            }
+            SectionBlock(title: "06 · Güven") {
+                Text("Ölçüm ve kanıt güveni: \(ZenithiumFormat.percent(item.confidence.value)) · \(item.confidence.rating.displayName)").zenithiumSecondary()
+                ForEach(item.confidence.penaltyReasons, id: \.self) { reason in
+                    Text(reason).zenithiumCaption()
+                }
+                Text("Güven puanı, önerinin kesin gerçekleşme olasılığı değildir.").zenithiumCaption()
+            }
+            SectionBlock(title: "07 · Ne değişirse") {
+                ForEach(item.wouldChangeIf, id: \.self) { condition in
+                    Label(condition, systemImage: "arrow.triangle.2.circlepath").zenithiumSecondary()
+                }
+            }
+            Text(SafetyCopy.disclaimer(for: item.disclaimerTier) ?? SafetyCopy.disclaimerFooter)
+                .zenithiumCaption()
+                .padding(.top, ZenithiumSpacing.s)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var stepDivider: some View {
-        Rectangle()
-            .fill(ZenithiumColor.hairlineSoft)
-            .frame(height: 1)
+    private func confidenceRing(_ item: Recommendation) -> some View {
+        ArcGauge(
+            progress: item.confidence.value,
+            gradient: Gradient(colors: [ZenithiumColor.spectrumIndigo, ZenithiumColor.accent]),
+            trackColor: ZenithiumColor.accent.opacity(0.10),
+            accessibilityLabel: "Karar güveni",
+            accessibilityValue: ZenithiumFormat.percent(item.confidence.value)
+        ) {
+            VStack(spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text("%").heroUnit()
+                    Text(ZenithiumFormat.score(item.confidence.value * 100))
+                        .heroNumeral().lineLimit(1).minimumScaleFactor(0.6)
+                        .contentTransition(.numericText())
+                }
+                Text("GÜVEN").zenithiumEyebrow()
+            }
+        }
     }
 
-    private func stepRow(number: Int, title: String, content: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text("\(number)")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+    private func evidenceRow(_ node: EvidenceNode, isLast: Bool) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(spacing: 8) {
+                Image(systemName: evidenceSymbol(node.sourceCategory))
+                    .font(.system(size: 15))
                     .foregroundStyle(ZenithiumColor.accent)
-
-                Text(title)
-                    .zenithiumLabel()
-                    .foregroundStyle(ZenithiumColor.textTertiary)
-                    .textCase(.uppercase)
+                    .frame(width: 28, height: 28)
+                Rectangle().fill(isLast ? Color.clear : ZenithiumColor.hairline).frame(width: 1)
             }
-
-            Text(content)
-                .zenithiumSecondary()
-                .foregroundStyle(ZenithiumColor.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(evidenceTitle(node.sourceCategory)).zenithiumEyebrow()
+                Text(node.summary).zenithiumBody()
+                Text("\(node.timestamp.formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(Locale(identifier: "tr_TR")))) · \(node.sampleCount) örnek")
+                    .zenithiumCaption()
+            }
+            .padding(.bottom, 24)
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func evidenceSymbol(_ source: String) -> String {
+        let key = source.lowercased()
+        if key.contains("sleep") || key.contains("uyku") { return "moon" }
+        if key.contains("load") || key.contains("yük") || key.contains("strain") { return "chart.bar" }
+        if key.contains("lab") || key.contains("blood") { return "drop" }
+        return "waveform.path.ecg"
+    }
+
+    private func evidenceTitle(_ source: String) -> String {
+        let key = source.lowercased()
+        if key.contains("sleep") { return "Uyku" }
+        if key.contains("recovery") { return "Toparlanma" }
+        if key.contains("load") || key.contains("strain") { return "Antrenman yükü" }
+        if key.contains("lab") || key.contains("blood") { return "Laboratuvar" }
+        return source
+    }
+
+    private func referenceRow(_ reference: Reference) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(reference.citation).zenithiumSecondary().textSelection(.enabled)
+            Text(reference.grade.displayName).zenithiumCaption()
+            if let doi = reference.doi, let url = URL(string: "https://doi.org/" + doi) {
+                Link("DOI · " + doi, destination: url).font(ZenithiumFont.caption).tint(ZenithiumColor.accent)
+            }
+            if let pmid = reference.pmid, let url = URL(string: "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/") {
+                Link("PubMed · " + pmid, destination: url).font(ZenithiumFont.caption).tint(ZenithiumColor.accent)
+            }
+            Text(reference.doesNotShow).zenithiumCaption()
+            if reference.needsVerification {
+                Label("Kaynak ayrıntıları doğrulanmayı bekliyor", systemImage: "exclamationmark.circle")
+                    .zenithiumCaption()
+            }
+        }
+        .padding(.bottom, 12)
     }
 
     private func strengthBadge(_ strength: ClaimStrength) -> some View {
@@ -263,26 +299,12 @@ struct ReasonView: View {
             .clipShape(Capsule())
     }
 
-    private func userEvidenceText(_ item: Recommendation) -> String {
-        if item.evidence.isEmpty {
-            return "Kişisel toparlanma ve uyku tabanı ölçümleri."
-        }
-        return item.evidence.map { "\($0.sourceCategory): \($0.summary)" }.joined(separator: " • ")
-    }
-
-    private func literatureText(_ item: Recommendation) -> String {
-        if item.references.isEmpty {
-            return "Hakemli spor bilimleri literatürü ve konsensüs kılavuzları."
-        }
-        return item.references.map { "\($0.authors) (\($0.year))" }.joined(separator: "; ")
-    }
-
     private func limitationsText(_ item: Recommendation) -> String {
-        if item.limitations.isEmpty {
-            return "Optik fotopletismografi ve tek eksenli ivmeölçer hassasiyet kısıtları geçerlidir."
-        }
-        return item.limitations.map { "[\($0.code)] \($0.explanation)" }.joined(separator: " ")
+        item.limitations.isEmpty
+            ? "Bu kayıtta özel bir sınırlama belirtilmedi. Ölçümler ve modeller tıbbi tanı yerine geçmez."
+            : item.limitations.map(\.explanation).joined(separator: "\n\n")
     }
+
 }
 
 #Preview("Neden · dolu") {

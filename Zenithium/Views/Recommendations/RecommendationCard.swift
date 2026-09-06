@@ -14,6 +14,7 @@ import UIKit
 struct RecommendationCard: View {
 
     let recommendation: Recommendation
+    var showsSurface: Bool = true
     @State private var isTraceExpanded = false
     @State private var copiedLocator: String?
 
@@ -85,13 +86,13 @@ struct RecommendationCard: View {
                 .padding(.top, 2)
             }
         }
-        .padding(ZenithiumSpacing.l)
-        .background(ZenithiumColor.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(ZenithiumColor.hairline, lineWidth: 1)
-        )
+        .padding(showsSurface ? ZenithiumSpacing.cardPadding : 0)
+        .background {
+            if showsSurface {
+                RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.surface)
+                    .overlay(RoundedRectangle(cornerRadius: ZenithiumRadius.card).strokeBorder(ZenithiumColor.hairline, lineWidth: 0.5))
+            }
+        }
     }
 
     // MARK: - Header

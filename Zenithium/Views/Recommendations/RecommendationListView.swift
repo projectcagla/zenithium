@@ -11,6 +11,7 @@ import SwiftUI
 struct RecommendationListView: View {
 
     let recommendations: [Recommendation]
+    var showsSurfaces: Bool = true
 
     var body: some View {
         if !recommendations.isEmpty {
@@ -28,7 +29,7 @@ struct RecommendationListView: View {
 
                 VStack(spacing: ZenithiumSpacing.m) {
                     ForEach(recommendations) { recommendation in
-                        RecommendationCard(recommendation: recommendation)
+                        RecommendationCard(recommendation: recommendation, showsSurface: showsSurfaces)
                     }
                 }
             }

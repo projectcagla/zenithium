@@ -13,6 +13,8 @@ import SwiftUI
 
 struct MuscleMapView: View {
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State var viewModel: MuscleMapViewModel
     var embedInNavigation: Bool = true
     @State private var isLoggingSession = false
@@ -81,6 +83,7 @@ struct MuscleMapView: View {
             .padding(.bottom, ZenithiumSpacing.xxl)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
@@ -91,13 +94,14 @@ struct MuscleMapView: View {
             mapSection(content)
 
             // 2. KADEME: En Çok Yorulan Üç Kas (L1 Sessiz Liste)
-            fatiguedMusclesSection(content)
+            listSection(content)
+            weeklyBalanceCard(content)
+            DisclosureGroup("Toparlanma süreleri") { fatiguedMusclesSection(content).padding(.top, 16) }
+                .font(ZenithiumFont.secondary).tint(ZenithiumColor.textSecondary)
 
             // TEK L2 KART: Sonraki Seans Önerisi
             recommendationCard(content)
 
-            // KATMAN 4: Tüm Gruplar (L1 SectionBlock)
-            listSection(content)
 
             // KATMAN 5: Ağrı ve Seans Kayıtları (L1 SectionBlock)
             if !viewModel.painInsights.isEmpty || !viewModel.painEntries.isEmpty {
@@ -111,33 +115,40 @@ struct MuscleMapView: View {
     // MARK: - 1. KADEME (KAHRAMAN): Anatomik Siluet (Kartsız)
 
     private func mapSection(_ content: MuscleMapViewModel.Content) -> some View {
-        VStack(spacing: ZenithiumSpacing.m) {
-            Picker("Vücut görünümü", selection: $viewModel.selectedSide) {
-                ForEach(BodySide.allCases, id: \.self) { side in
-                    Text(side.displayName).tag(side)
+        VStack(spacing: ZenithiumSpacing.l) {
+            HStack {
+                Text("KAS HAZIRLIĞI").zenithiumEyebrow()
+                Spacer()
+                Text("\(content.readiness.count) bölge").zenithiumCaption()
+            }
+            if dynamicTypeSize.isAccessibilitySize {
+                Picker("Vücut görünümü", selection: $viewModel.selectedSide) {
+                    ForEach(BodySide.allCases, id: \.self) { side in Text(side.displayName).tag(side) }
+                }
+                .pickerStyle(.segmented)
+                bodyFigure(viewModel.selectedSide, content: content)
+            } else {
+                HStack(alignment: .top, spacing: ZenithiumSpacing.xl) {
+                    ForEach(BodySide.allCases, id: \.self) { side in bodyFigure(side, content: content) }
                 }
             }
-            .pickerStyle(.segmented)
-            .accessibilityLabel("Vücut görünümü")
-
-            BodyMapCanvas(
-                side: viewModel.selectedSide,
-                content: content,
-                hasSessions: !viewModel.sessions.isEmpty,
-                onSelect: { viewModel.selectedMuscle = $0 },
-                onLogPain: { painTarget = $0 }
-            )
-            .id(viewModel.selectedSide)
-            .aspectRatio(BodyGeometry.aspectRatio, contentMode: .fit)
-            .frame(maxWidth: 300)
-            .frame(maxWidth: .infinity)
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.96).combined(with: .opacity),
-                removal: .scale(scale: 0.96).combined(with: .opacity)
-            ))
-            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: viewModel.selectedSide)
-
             readinessLegend
+            Text("Bir bölgeye dokun, ağrı ya da hassasiyetini kaydet.")
+                .zenithiumCaption()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func bodyFigure(_ side: BodySide, content: MuscleMapViewModel.Content) -> some View {
+        VStack(spacing: 12) {
+            BodyMapCanvas(
+                side: side, content: content,
+                hasSessions: !viewModel.sessions.isEmpty || content.readiness.contains { $0.contributingSessionCount > 0 },
+                onSelect: { painTarget = $0 }, onLogPain: { painTarget = $0 }
+            )
+            .aspectRatio(BodyGeometry.aspectRatio, contentMode: .fit)
+            .frame(maxWidth: 230)
+            Text(side.displayName).zenithiumEyebrow()
         }
         .frame(maxWidth: .infinity)
     }
@@ -148,7 +159,7 @@ struct MuscleMapView: View {
                 HStack(spacing: ZenithiumSpacing.xs) {
                     Image(systemName: band.symbolName)
                         .imageScale(.small)
-                        .foregroundStyle(ZenithiumColor.color(for: band))
+                        .foregroundStyle(muscleTint(band))
                         .accessibilityHidden(true)
                     Text(legendLabel(for: band))
                         .zenithiumCaption()
@@ -181,7 +192,7 @@ struct MuscleMapView: View {
                 ForEach(topFatigued) { item in
                     HStack(spacing: ZenithiumSpacing.s) {
                         Image(systemName: item.band.symbolName)
-                            .foregroundStyle(ZenithiumColor.color(for: item.band))
+                            .foregroundStyle(muscleTint(item.band))
                             .accessibilityHidden(true)
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -199,7 +210,7 @@ struct MuscleMapView: View {
 
                         Text("%\(ZenithiumFormat.score(item.readiness))")
                             .sectionTitle()
-                            .foregroundStyle(ZenithiumColor.color(for: item.band))
+                            .foregroundStyle(muscleTint(item.band))
                             .monospacedDigit()
 
                         Text(item.trainingLabel)
@@ -217,60 +228,33 @@ struct MuscleMapView: View {
 
     // MARK: - TEK L2 KART: Sonraki Seans Önerisi
 
-    private func areLegsFatigued(_ readiness: [MuscleReadiness]) -> Bool {
-        let legMuscles: Set<MuscleGroup> = [.quads, .hamstrings, .calves]
-        for item in readiness {
-            if legMuscles.contains(item.muscle) && item.readiness < 70 {
-                return true
-            }
-        }
-        return false
-    }
-
-    private func isUpperReady(_ readiness: [MuscleReadiness]) -> Bool {
-        let upperMuscles: Set<MuscleGroup> = [.chest, .lats, .shoulders]
-        for item in readiness {
-            if upperMuscles.contains(item.muscle) && item.readiness >= 75 {
-                return true
-            }
-        }
-        return false
-    }
-
     private func recommendationCard(_ content: MuscleMapViewModel.Content) -> some View {
-        let legsFatigued = areLegsFatigued(content.readiness)
-        let upperReady = isUpperReady(content.readiness)
-
-        let adviceTitle: String
-        let adviceDetail: String
-        if legsFatigued && upperReady {
-            adviceTitle = "Bacakları Dinlendir, Üst Gövde Hazır"
-            adviceDetail = "Alt ekstremite kas grupları toparlanma fazında. Bugün göğüs, sırt veya omuz odaklı bir üst gövde seansı optimum toparlanma dengesi sağlar."
-        } else if legsFatigued {
-            adviceTitle = "Aktif Toparlanma veya Dinlenme"
-            adviceDetail = "Büyük kas grupları yoğun yorgunluk taşıyor. Hafif aerobik toparlanma veya mobilite çalışması önerilir."
-        } else {
-            adviceTitle = "Tüm Kas Grupları Dengede"
-            adviceDetail = "Kas gruplarında belirgin bir lokal yorgunluk birikimi yok. Planlı kuvvet seansına tam kapasiteyle girilebilir."
-        }
-
-        return SectionBlock(
-            title: "Sonraki Seans Önerisi",
-            subtitle: adviceTitle
-        ) {
-            HStack(alignment: .top, spacing: ZenithiumSpacing.m) {
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.system(size: 24))
-                    .foregroundStyle(ZenithiumColor.accent)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-                    Text(adviceDetail)
-                        .zenithiumBody()
-                        .foregroundStyle(ZenithiumColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        SectionBlock(title: "Sonraki seans için") {
+            if let ready = content.mostReady.first, ready.contributingSessionCount > 0 {
+                Text("En yüksek hazırlık: \(ready.muscle.displayName), %\(ZenithiumFormat.score(ready.readiness)). Günün toparlanması ve kendi hislerinle birlikte değerlendir.")
+                    .zenithiumSecondary()
+            } else {
+                Text("Kas hazırlığı kaydedilen yükten tahmin edilir. Ağrı ve hassasiyetini ekleyerek antrenman geçmişini tamamlayabilirsin.")
+                    .zenithiumSecondary()
             }
+        }
+    }
+
+    private func weeklyBalanceCard(_ content: MuscleMapViewModel.Content) -> some View {
+        let balance = StrengthEngine.balance(from: viewModel.sessions, now: content.computedAt)
+        return SectionCard(title: "Haftalık hacim dengesi", subtitle: "Son 7 gün · kayıtlı kuvvet seansları") {
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 20)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 16))
+            layout {
+                MetricTile(label: "İtme", value: ZenithiumFormat.metric(balance.pushSets, digits: 0), unit: "set")
+                MetricTile(label: "Çekme", value: ZenithiumFormat.metric(balance.pullSets, digits: 0), unit: "set")
+                MetricTile(label: "İtme / çekme", value: balance.pushPullRatio.map { ZenithiumFormat.metric($0, digits: 2) } ?? "—")
+            }
+            if balance.pushSets == 0 || balance.pullSets == 0 {
+                Text("İtme ve çekme karşılaştırması için her iki yönde de kayıt gerekli.").zenithiumSecondary()
+            } else if let summary = balance.summary {
+                Text(summary).zenithiumSecondary()
+            }
+            Text("Bu oran program dağılımını gösterir; tek başına sakatlık riski anlamına gelmez.").zenithiumCaption()
         }
     }
 
@@ -318,7 +302,7 @@ struct MuscleMapView: View {
                     }
                 }
 
-                Text("Vücut haritasında bir bölgeye uzun bas, ağrı kaydet.")
+                Text("Vücut haritasından veya kas listesindeki artı düğmesinden ağrı kaydet.")
                     .zenithiumCaption()
             }
         }
@@ -326,26 +310,41 @@ struct MuscleMapView: View {
 
     /// Every one of the 16 groups, reachable via linear list for accessibility.
     private func listSection(_ content: MuscleMapViewModel.Content) -> some View {
-        SectionBlock(
-            title: "Tüm Kas Grupları",
-            subtitle: "16 bölgenin toparlanma dökümü",
-            showTopDivider: true
-        ) {
-            VStack(spacing: ZenithiumSpacing.none) {
-                ForEach(content.readiness) { readiness in
-                    Button {
-                        viewModel.selectedMuscle = readiness.muscle
-                    } label: {
-                        MuscleRow(readiness: readiness)
+        let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 24)) : AnyLayout(HStackLayout(alignment: .top, spacing: 20))
+        return layout {
+            readinessColumn("Hazır", items: content.readiness.filter { $0.band == .green })
+            readinessColumn("Dinlenen", items: content.readiness.filter { $0.band != .green })
+        }
+    }
+
+    private func readinessColumn(_ title: String, items: [MuscleReadiness]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("\(title) · \(items.count)").zenithiumEyebrow()
+            if items.isEmpty { Text("Bu grupta kas yok").zenithiumCaption() }
+            ForEach(items) { readiness in
+                HStack(spacing: 4) {
+                    Button { viewModel.selectedMuscle = readiness.muscle } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(readiness.muscle.displayName).font(ZenithiumFont.label)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
+                            Text("%\(ZenithiumFormat.score(readiness.readiness))")
+                                .font(ZenithiumFont.dataValue).foregroundStyle(muscleTint(readiness.band))
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
-
-                    if readiness.muscle != MuscleGroup.allCases.last {
-                        Divider().overlay(ZenithiumColor.hairlineSoft)
+                    .accessibilityLabel("\(readiness.muscle.displayName), yüzde \(ZenithiumFormat.score(readiness.readiness)) hazır, ayrıntıyı aç")
+                    Button { painTarget = readiness.muscle } label: {
+                        Image(systemName: "plus.circle").font(.system(size: 17))
+                            .foregroundStyle(ZenithiumColor.textSecondary)
+                            .frame(width: 44, height: 44)
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(readiness.muscle.displayName) ağrı kaydı")
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var sessionSection: some View {
@@ -371,6 +370,14 @@ struct MuscleMapView: View {
                 }
             }
         }
+    }
+}
+
+private func muscleTint(_ band: RecoveryBand) -> Color {
+    switch band {
+    case .green: return ZenithiumColor.spectrumTeal
+    case .yellow: return ZenithiumColor.yellow
+    case .red: return ZenithiumColor.red
     }
 }
 
@@ -414,9 +421,9 @@ private struct BodyMapCanvas: View {
                             context.fill(path, with: .color(ZenithiumColor.surface.opacity(0.4)))
                             context.stroke(path, with: .color(ZenithiumColor.hairline), lineWidth: 1.0)
                         } else {
-                            let tint = ZenithiumColor.color(for: band)
+                            let tint = muscleTint(band)
                             let fraction = MathSupport.clamp(value / 100, 0, 1)
-                            let intensity = 0.28 + 0.52 * fraction
+                            let intensity = 0.36 + 0.24 * fraction
 
                             context.fill(
                                 path,
@@ -460,7 +467,7 @@ private struct BodyMapCanvas: View {
                         .accessibilityLabel(region.muscle.displayName)
                         .accessibilityValue(accessibilityValue(for: readiness))
                         .accessibilityAddTraits(.isButton)
-                        .accessibilityHint("\(region.muscle.displayName) ayrıntısını açar")
+                        .accessibilityHint("\(region.muscle.displayName) ağrı kaydını açar")
                         .accessibilityAction(named: "Ağrı kaydet") { onLogPain(region.muscle) }
                 }
             }
@@ -482,7 +489,7 @@ private struct MuscleRow: View {
         HStack(spacing: ZenithiumSpacing.m) {
             Image(systemName: readiness.band.symbolName)
                 .imageScale(.small)
-                .foregroundStyle(ZenithiumColor.color(for: readiness.band))
+                .foregroundStyle(muscleTint(readiness.band))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
@@ -496,7 +503,7 @@ private struct MuscleRow: View {
 
             Spacer(minLength: 8)
 
-            Text(ZenithiumFormat.score(readiness.readiness) + "%")
+            Text("%" + ZenithiumFormat.score(readiness.readiness))
                 .font(ZenithiumFont.callout.monospacedDigit())
                 .foregroundStyle(ZenithiumColor.textPrimary)
 

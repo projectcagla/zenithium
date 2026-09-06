@@ -45,10 +45,25 @@ struct PainLoggerView: View {
                                 .font(ZenithiumFont.body.monospacedDigit())
                                 .foregroundStyle(crossesThreshold ? ZenithiumColor.yellow : ZenithiumColor.textSecondary)
                         }
-                        Slider(value: $severity, in: 0...10, step: 1)
-                            .tint(crossesThreshold ? ZenithiumColor.yellow : ZenithiumColor.accent)
-                            .accessibilityLabel("Şiddet")
-                            .accessibilityValue("\(Int(severity.rounded())) / 10")
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 8) {
+                            ForEach(1...10, id: \.self) { level in
+                                Button { severity = Double(level) } label: {
+                                    Text("\(level)")
+                                        .font(ZenithiumFont.dataValue)
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .background(RoundedRectangle(cornerRadius: 10).fill(Int(severity) == level ? ZenithiumColor.accent.opacity(0.2) : ZenithiumColor.surfaceElevated))
+                                        .foregroundStyle(Int(severity) == level ? ZenithiumColor.accent : ZenithiumColor.textSecondary)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Ağrı şiddeti \(level) / 10")
+                                .accessibilityAddTraits(Int(severity) == level ? .isSelected : [])
+                            }
+                        }
+                        Button("Ağrı yok · 0") { severity = 0 }
+                            .font(ZenithiumFont.caption)
+                            .frame(minHeight: 44)
+                            .buttonStyle(.plain)
+
                     }
                 } header: {
                     Text(muscle.displayName)

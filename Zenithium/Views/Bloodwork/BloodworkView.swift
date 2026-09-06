@@ -1,19 +1,13 @@
-//
-//  BloodworkView.swift
-//  Zenithium
-//
-//  The Bloodwork screen. Spec §12 & Design Specification.
-//  Kahraman: Sakin bir liste (L1, kartsız). Renk YALNIZCA referans dışı değerde.
-//  Normal değerler sessiz gri. Her satırda: belirteç adı, değer, birim, referans aralığı, son test tarihi.
-//  Tek L2: Aksiyon gerektiren bulgular özeti (varsa — yoksa tek bir sessiz L1 satır).
-//
-
 import SwiftUI
 
 struct BloodworkView: View {
 
     @State var viewModel: BloodworkViewModel
     var embedInNavigation: Bool = true
+    @State private var selectedPanel: BiomarkerPanel?
+    @Namespace private var panelNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isAddingEntry = false
     @State private var isImportingReport = false
 
@@ -80,6 +74,7 @@ struct BloodworkView: View {
             .padding(.top, ZenithiumSpacing.s)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
@@ -104,43 +99,74 @@ struct BloodworkView: View {
             headerHero(content)
 
             // 2. KADEME: Aksiyon Gerektiren Bulgular Özeti (TEK L2 KART)
-            actionableFindingsSection(content.observations)
+            actionableFindingsSection(content)
 
             // 3. KADEME: Sistemlere Göre Gruplanmış Biyobelirteçler (kartsız L1 SectionBlock)
-            ForEach(content.panels) { group in
+            panelPicker
+            ForEach(content.panels.filter { selectedPanel == nil || $0.panel == selectedPanel }) { group in
                 panelBlock(title: group.panel.displayName, series: group.series)
             }
 
             let ungrouped = content.series.filter { $0.marker.panel == nil }
-            if !ungrouped.isEmpty {
+            if !ungrouped.isEmpty && selectedPanel == nil {
                 panelBlock(title: "Diğer Belirteçler", series: ungrouped)
             }
+            if let selectedPanel, !content.panels.contains(where: { $0.panel == selectedPanel }) {
+                Text("Bu kategoride henüz sonuç yok. Yeni bir tahlil sonucu ekleyebilirsin.")
+                    .zenithiumSecondary()
+            }
         }
+    }
+
+    private var panelPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                panelPill(nil, title: "Tümü")
+                ForEach(BiomarkerPanel.allCases, id: \.self) { panel in
+                    panelPill(panel, title: panel == .inflammation ? "Enflamasyon" : panel.displayName)
+                }
+            }
+        }
+    }
+
+    private func panelPill(_ panel: BiomarkerPanel?, title: String) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { selectedPanel = panel }
+        } label: {
+            Text(title)
+                .font(ZenithiumFont.label)
+                .padding(.horizontal, 14).frame(minHeight: 44)
+                .foregroundStyle(selectedPanel == panel ? ZenithiumColor.accent : ZenithiumColor.textSecondary)
+                .background {
+                    if selectedPanel == panel {
+                        Capsule().fill(ZenithiumColor.accent.opacity(0.12))
+                            .matchedGeometryEffect(id: "panel-selection", in: panelNamespace)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedPanel == panel ? .isSelected : [])
     }
 
     // MARK: - 1. KADEME (KAHRAMAN): Son Test ve Durum Özeti (Kartsız)
 
     private func headerHero(_ content: BloodworkViewModel.Content) -> some View {
-        let lastDate = content.series.flatMap(\.entries).map(\.drawnAt).max()
-        let actionableCount = content.observations.filter(\.requiresClinician).count
-
-        return VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
-            Text("KAN TAHLİLİ")
-                .zenithiumEyebrow()
-
-            if let lastDate {
-                Text(lastDate.formatted(date: .abbreviated, time: .omitted))
-                    .heroNumeral()
-                    .foregroundStyle(ZenithiumColor.textPrimary)
-            } else {
-                Text("Kayıt yok")
-                    .heroNumeral()
-                    .foregroundStyle(ZenithiumColor.textSecondary)
+        let lastDate = content.series.compactMap(\.latest).map(\.drawnAt).max()
+        let assessed = content.series.compactMap(\.latest).filter { $0.referenceRange.isBounded }
+        let within = assessed.filter { $0.referenceRange.contains($0.value) }.count
+        return VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+            Text("REFERANS ARALIĞINDA").zenithiumEyebrow()
+            let layout = dynamicTypeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 8))
+            layout {
+                Text(assessed.isEmpty ? "—" : "\(within)").heroNumeral()
+                Text("/ \(assessed.count) belirteç").heroUnit()
             }
-
-            Text(actionableCount > 0 ? "\(actionableCount) bulgu hekim değerlendirmesi gerektiriyor" : "\(content.series.count) biyobelirteç izleniyor, değerler dengede")
-                .zenithiumBody()
-                .foregroundStyle(actionableCount > 0 ? ZenithiumColor.yellow : ZenithiumColor.textSecondary)
+            if let lastDate {
+                Text("Son tahlil · \(lastDate.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "tr_TR"))))")
+                    .zenithiumCaption()
+            }
+            Text("\(content.series.count) belirteç izleniyor. Bu özet, her belirtecin en son sonucu ve laboratuvar referansıyla oluşturulur.")
+                .zenithiumSecondary()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -148,52 +174,27 @@ struct BloodworkView: View {
 
     // MARK: - TEK L2 KART / SESSİZ L1 SATIR: Aksiyon Gerektiren Bulgular
 
-    @ViewBuilder
-    private func actionableFindingsSection(_ observations: [LabObservation]) -> some View {
-        let actionable = observations.filter(\.requiresClinician)
-
-        if !actionable.isEmpty {
-            SectionCard(
-                title: "Aksiyon Gerektiren Bulgular",
-                subtitle: "Referans aralığı dışı gözlemler — teşhis değil"
-            ) {
-                VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                    ForEach(actionable) { observation in
-                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                            HStack(alignment: .top, spacing: ZenithiumSpacing.s) {
-                                Image(systemName: "exclamationmark.circle")
-                                    .font(.system(size: 14))
-                                    .foregroundStyle(ZenithiumColor.yellow)
-                                    .accessibilityHidden(true)
-                                Text(observation.message)
-                                    .zenithiumBody()
-                                    .foregroundStyle(ZenithiumColor.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            if observation.requiresClinician {
-                                Text(SafetyCopy.clinicianPrompt)
-                                    .zenithiumCaption()
-                                    .foregroundStyle(ZenithiumColor.textSecondary)
-                                    .padding(.leading, 22)
-                            }
-                        }
-                    }
+    private func actionableFindingsSection(_ content: BloodworkViewModel.Content) -> some View {
+        let actionable = content.observations.filter(\.requiresClinician)
+        let outside = content.series.compactMap(\.latest).filter { $0.referenceRange.isBounded && !$0.referenceRange.contains($0.value) }
+        let unknown = content.series.compactMap(\.latest).filter { !$0.referenceRange.isBounded }.count
+        return SectionCard(title: outside.isEmpty ? "Panel özeti" : "Referans dışı sonuçlar") {
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
+                if !outside.isEmpty {
+                    Label("\(outside.count) belirteç laboratuvar referansının dışında", systemImage: "exclamationmark.circle")
+                        .zenithiumBody()
+                        .foregroundStyle(ZenithiumColor.yellow)
+                } else {
+                    Text("Referansı bulunan son sonuçlarda aralık dışı değer görünmüyor.").zenithiumBody()
                 }
+                if unknown > 0 {
+                    Text("\(unknown) belirteç için referans aralığı bulunmuyor.").zenithiumCaption()
+                }
+                ForEach(actionable) { observation in
+                    Text(observation.message).zenithiumSecondary()
+                }
+                Text(SafetyCopy.clinicianPrompt).zenithiumCaption()
             }
-        } else {
-            // Hiç referans dışı bulgu yoksa tek bir sessiz L1 satırı
-            HStack(spacing: ZenithiumSpacing.s) {
-                Image(systemName: "checkmark.circle")
-                    .font(.system(size: 14))
-                    .foregroundStyle(ZenithiumColor.green)
-                    .accessibilityHidden(true)
-                Text("Tüm belirteçler referans aralığında")
-                    .zenithiumBody()
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-                Spacer()
-            }
-            .padding(.vertical, ZenithiumSpacing.xs)
-            .padding(.horizontal, ZenithiumSpacing.xs)
         }
     }
 
@@ -243,79 +244,55 @@ private struct MarkerSummaryRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: ZenithiumSpacing.m) {
-            // Sol Taraf: Belirteç Adı + Referans Aralığı ve Tarih
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                Text(series.marker.displayName)
-                    .zenithiumLabel()
-                    .foregroundStyle(ZenithiumColor.textPrimary)
-
-                HStack(spacing: ZenithiumSpacing.xs) {
-                    if let latest = series.latest {
-                        let range = latest.referenceRange
-                        if let minVal = range.minimum, let maxVal = range.maximum {
-                            Text("Ref: \(ZenithiumFormat.metric(minVal, digits: series.marker.fractionDigits))–\(ZenithiumFormat.metric(maxVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
-                                .zenithiumCaption()
-                                .monospacedDigit()
-                        } else if let minVal = range.minimum {
-                            Text("Ref: >\(ZenithiumFormat.metric(minVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
-                                .zenithiumCaption()
-                                .monospacedDigit()
-                        } else if let maxVal = range.maximum {
-                            Text("Ref: <\(ZenithiumFormat.metric(maxVal, digits: series.marker.fractionDigits)) \(latest.unitSymbol)")
-                                .zenithiumCaption()
-                                .monospacedDigit()
-                        }
-                        Text("·")
-                            .zenithiumCaption()
-                        Text(latest.drawnAt.formatted(date: .abbreviated, time: .omitted))
-                            .zenithiumCaption()
-                    } else {
-                        Text("Kayıt yok")
-                            .zenithiumCaption()
-                    }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(series.marker.displayName).zenithiumBody()
+                Spacer(minLength: 4)
+                if let latest = series.latest {
+                    Text(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits))
+                        .metricNumeral().foregroundStyle(valueColor)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Text(latest.unitSymbol).metricUnit()
                 }
+                Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(ZenithiumColor.textSecondary)
             }
-
-            Spacer(minLength: 8)
-
-            // Sağ Taraf: Değer ve Birim (Referans dışı ise kehribar/kırmızı renkli)
             if let latest = series.latest {
-                VStack(alignment: .trailing, spacing: ZenithiumSpacing.xxs) {
-                    HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                        Text(ZenithiumFormat.metric(latest.value, digits: series.marker.fractionDigits))
-                            .sectionTitle()
-                            .foregroundStyle(valueColor)
-                            .monospacedDigit()
-                        Text(latest.unitSymbol)
-                            .metricUnit()
-                            .foregroundStyle(isOutOfRange ? valueColor : ZenithiumColor.textSecondary)
-                    }
-
-                    if isOutOfRange {
-                        HStack(spacing: 2) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(valueColor)
-                            Text("Aralık Dışı")
-                                .zenithiumEyebrow()
-                                .foregroundStyle(valueColor)
-                        }
-                    }
+                if let low = latest.referenceRange.minimum, let high = latest.referenceRange.maximum, high > low {
+                    let optimal: ClosedRange<Double>? = {
+                        guard let lower = latest.optimalRange.minimum, let upper = latest.optimalRange.maximum, upper > lower else { return nil }
+                        return lower...upper
+                    }()
+                    BaselineBand(values: [latest.value], baseline: (low + high) / 2, sigma: (high - low) / 2, unit: latest.unitSymbol, style: .inline, tint: ZenithiumColor.textSecondary, referenceLabel: "Laboratuvar referansı", horizontalRange: true, secondaryRange: optimal)
+                }
+                HStack(alignment: .top) {
+                    Text(referenceText(latest.referenceRange)).zenithiumCaption()
+                    Spacer()
+                    Text(latest.drawnAt.formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "tr_TR"))))
+                        .zenithiumCaption()
+                }
+                if isOutOfRange {
+                    Label("Referans dışında", systemImage: "exclamationmark.triangle")
+                        .font(ZenithiumFont.caption).foregroundStyle(valueColor)
                 }
             }
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(ZenithiumColor.textTertiary)
-                .accessibilityHidden(true)
         }
-        .padding(.vertical, ZenithiumSpacing.s)
+        .padding(.vertical, ZenithiumSpacing.l)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(series.marker.accessibilityName)
         .accessibilityValue(accessibilityValue)
         .accessibilityAddTraits(.isButton)
+    }
+
+    private func referenceText(_ range: MarkerRange) -> String {
+        let digits = series.marker.fractionDigits
+        if let lower = range.minimum, let upper = range.maximum {
+            return "Referans \(ZenithiumFormat.metric(lower, digits: digits))–\(ZenithiumFormat.metric(upper, digits: digits))"
+        }
+        if let lower = range.minimum { return "Referans ≥ \(ZenithiumFormat.metric(lower, digits: digits))" }
+        if let upper = range.maximum { return "Referans ≤ \(ZenithiumFormat.metric(upper, digits: digits))" }
+        return "Referans aralığı yok"
     }
 
     private var accessibilityValue: String {

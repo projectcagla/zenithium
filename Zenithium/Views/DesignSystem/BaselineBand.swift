@@ -15,6 +15,8 @@ struct BaselineBand: View {
     var showsSeries: Bool = true
     var highlightsDeviation: Bool = true
     var referenceLabel: String = "Kişisel taban"
+    var horizontalRange: Bool = false
+    var secondaryRange: ClosedRange<Double>? = nil
 
     private var finiteValues: [Double] { values.filter(\.isFinite) }
     private var validBaseline: Double? { baseline.flatMap { $0.isFinite ? $0 : nil } }
@@ -34,7 +36,9 @@ struct BaselineBand: View {
 
     var body: some View {
         Group {
-            if style == .full && showsAxisLabels {
+            if horizontalRange {
+                clinicalDrawing.frame(height: 44)
+            } else if style == .full && showsAxisLabels {
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
                     HStack(spacing: ZenithiumSpacing.s) {
                         drawing.frame(height: 220)
@@ -118,9 +122,34 @@ struct BaselineBand: View {
         }
     }
 
+    private var clinicalDrawing: some View {
+        Canvas { context, size in
+            guard let baseline = validBaseline, let spread, let value = finiteValues.last else { return }
+            let lower = baseline - spread
+            let upper = baseline + spread
+            let pad = max(spread * 0.4, 0.01)
+            let minimum = min(lower, value, secondaryRange?.lowerBound ?? lower) - pad
+            let maximum = max(upper, value, secondaryRange?.upperBound ?? upper) + pad
+            func x(_ value: Double) -> CGFloat { 4 + CGFloat((value - minimum) / (maximum - minimum)) * max(0, size.width - 8) }
+            let y = size.height / 2
+            let track = CGRect(x: 0, y: y - 2, width: size.width, height: 4)
+            context.fill(Path(roundedRect: track, cornerRadius: 2), with: .color(ZenithiumColor.hairline))
+            context.fill(Path(roundedRect: CGRect(x: x(lower), y: y - 5, width: x(upper) - x(lower), height: 10), cornerRadius: 3), with: .color(tint.opacity(0.16)))
+            if let secondaryRange {
+                context.fill(Path(roundedRect: CGRect(x: x(secondaryRange.lowerBound), y: y - 5, width: x(secondaryRange.upperBound) - x(secondaryRange.lowerBound), height: 10), cornerRadius: 3), with: .color(tint.opacity(0.22)))
+            }
+            let pointColor = value < lower || value > upper ? ZenithiumColor.yellow : ZenithiumColor.textPrimary
+            var marker = Path()
+            marker.move(to: CGPoint(x: x(value), y: y - 10))
+            marker.addLine(to: CGPoint(x: x(value), y: y + 10))
+            context.stroke(marker, with: .color(pointColor), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+        }
+    }
+
     private var accessibilityDescription: String {
         let current = finiteValues.last.map { "Son değer \(ZenithiumFormat.metric($0, digits: 1)) \(unit)." } ?? "Ölçüm yok."
         guard let baseline = validBaseline, let spread else { return current + " Kişisel taban henüz oluşmadı." }
+        if horizontalRange { return "\(current) \(referenceLabel): \(ZenithiumFormat.metric(baseline - spread, digits: 1))–\(ZenithiumFormat.metric(baseline + spread, digits: 1)) \(unit)." }
         return "\(current) \(referenceLabel): \(ZenithiumFormat.metric(baseline, digits: 1)), koridor ±\(ZenithiumFormat.metric(spread, digits: 1)) \(unit)."
     }
 }
