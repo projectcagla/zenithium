@@ -1,5 +1,7 @@
 #!/bin/bash
-# Sunum kapsamı ve kaynak denetimi. --swift: Xcode derlemesi olmadan üç hedefin tür denetimi.
+# --swift: Debug/Release tür denetimi. --compile: nesne/modül üretimi ve test kaynak denetimi.
+# --tests: yalnızca Debug uygulama modülü ve test kaynaklarının tür denetimi.
+# İki seçenek de xcodebuild, simülatör, imzalama veya test çalıştırması yapmaz.
 set -euo pipefail
 cd -- "$(dirname -- "$0")"
 python3 - "$@" <<'PY'
@@ -47,7 +49,7 @@ for script in ['check-assets.py', 'check-pbxproj.py', 'check-target-sources.py',
 subprocess.run(['git','diff','--check',base],check=True,cwd=root)
 print('NOT: Önceden mevcut çalışma alanı dosyası değişikliği bu teslimata dahil değildir.')
 print('NOT: Kaynak taraması, çalışma zamanı veya görsel doğrulamanın yerine geçmez.')
-if '--swift' in sys.argv:
+if any(flag in sys.argv for flag in ['--swift', '--compile', '--tests']):
     lines = (root/'project.yml').read_text().splitlines()
     def sources(target):
         inside = False
@@ -66,12 +68,56 @@ if '--swift' in sys.argv:
                     if path.is_dir(): found.update(path.rglob('*.swift'))
                     elif path.suffix == '.swift': found.add(path)
                 elif re.match(r'^    \S',line): in_sources = False
-        return sorted(map(str,found))
+        result = sorted(map(str,found))
+        require(bool(result), f'{target}: proje tanımından kaynaklar bulundu')
+        return result
     with tempfile.TemporaryDirectory(prefix='zenithium-astra-') as tmp:
+        compile_sources = '--compile' in sys.argv
+        tests_only = '--tests' in sys.argv and not compile_sources
         for target, sdk_name, triple in [('Zenithium','iphoneos','arm64-apple-ios18.0'), ('ZenithiumWidgets','iphoneos','arm64-apple-ios18.0'), ('ZenithiumWatch','watchos','arm64_32-apple-watchos11.0')]:
+            if tests_only and target != 'Zenithium': continue
             sdk = subprocess.check_output(['xcrun','--sdk',sdk_name,'--show-sdk-path'],text=True).strip()
-            command = ['xcrun','swiftc','-typecheck','-swift-version','6','-strict-concurrency=complete','-module-name',target,'-target',triple,'-sdk',sdk,'-module-cache-path',tmp+'/modules'] + sources(target)
-            subprocess.run(command,check=True,cwd=root)
-            print(f'GEÇTİ: {target}, Swift 6 strict concurrency tür denetimi')
+            inputs = sources(target)
+            for configuration in (['Debug'] if tests_only else ['Debug', 'Release']):
+                output = Path(tmp)/configuration
+                output.mkdir(exist_ok=True)
+                command = ['xcrun','swiftc','-swift-version','6','-strict-concurrency=complete',
+                           '-enable-upcoming-feature','ExistentialAny','-parse-as-library',
+                           '-module-name',target,'-target',triple,'-sdk',sdk,
+                           '-module-cache-path',tmp+'/modules']
+                if configuration == 'Debug':
+                    command += ['-D','DEBUG','-Onone','-enable-testing']
+                else:
+                    command += ['-O','-warnings-as-errors']
+                if target == 'ZenithiumWidgets':
+                    command += ['-application-extension']
+                if compile_sources:
+                    command += ['-whole-module-optimization','-emit-object','-emit-module',
+                                '-emit-module-path',str(output/(target+'.swiftmodule')),
+                                '-o',str(output/(target+'.o'))]
+                elif tests_only:
+                    command += ['-emit-module','-emit-module-path',str(output/(target+'.swiftmodule'))]
+                else:
+                    command += ['-typecheck']
+                print(f'DENETLENİYOR: {target} {configuration}', flush=True)
+                subprocess.run(command+inputs,check=True,cwd=root)
+                mode = 'nesne ve modül derlemesi' if compile_sources else ('modül derlemesi' if tests_only else 'tür denetimi')
+                print(f'GEÇTİ: {target} {configuration}, Swift 6 strict concurrency {mode}', flush=True)
+        if compile_sources or tests_only:
+            sdk = subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],text=True).strip()
+            platform = subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-platform-path'],text=True).strip()
+            swiftc = Path(subprocess.check_output(['xcrun','--find','swiftc'],text=True).strip())
+            plugins = swiftc.parent.parent/'lib/swift/host/plugins/testing'
+            require((plugins/'libTestingMacros.dylib').is_file(), 'Swift Testing derleyici eklentisi bulundu')
+            command = ['xcrun','swiftc','-typecheck','-swift-version','6','-strict-concurrency=complete',
+                       '-enable-upcoming-feature','ExistentialAny','-D','DEBUG','-parse-as-library',
+                       '-module-name','ZenithiumTests','-target','arm64-apple-ios18.0','-sdk',sdk,
+                       '-I',tmp+'/Debug','-I',platform+'/Developer/usr/lib',
+                       '-F',platform+'/Developer/Library/Frameworks',
+                       '-plugin-path',str(plugins),
+                       '-module-cache-path',tmp+'/modules']
+            subprocess.run(command+sources('ZenithiumTests'),check=True,cwd=root)
+            print('GEÇTİ: ZenithiumTests kaynaklarının Debug modülüyle tür denetimi', flush=True)
+            print('NOT: Nesne/modül derlemesi; varlık derleme, bağlama, imzalama ve paketleme yapılmadı.')
         print('NOT: xcodebuild, preflight, simülatör ve ekran görüntüsü kullanılmadı. Testler çalıştırılmadı.')
 PY
