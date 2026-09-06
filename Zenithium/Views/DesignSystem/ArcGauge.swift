@@ -3,10 +3,10 @@ import SwiftUI
 /// Yayın geometrisi. Tek yerde tanımlı, böylece her yay aynı yayın üstünde durur.
 enum ArcGeometry {
 
-    /// Yayın başladığı açı. 170° sol-alt, saat yönünde tepeden geçer.
+    /// Yayın başladığı açı. 135° sol-alt, saat yönünde tepeden geçer.
     static let startDegrees: Double = 135
 
-    /// Toplam süpürme. 200° → altta 160°'lik açıklık kalır.
+    /// Toplam süpürme. 270° → altta 90°'lik açıklık kalır.
     static let sweepDegrees: Double = 270
 
     /// 0…1 ilerleme için mutlak açı.
@@ -81,17 +81,17 @@ struct ArcGauge<Center: View>: View {
                 trackColor: trackColor,
                 apexColor: apexColor,
                 markers: markers,
-                strokeWidth: strokeWidth
+                strokeWidth: min(strokeWidth, 18)
             )
-            .frame(width: diameter, height: diameter)
+            .frame(width: min(diameter, 260), height: min(diameter, 260))
 
             // Sayı yayın kucağına oturur — merkezden biraz aşağıda, açıklığın hizasında.
             center()
-                .frame(maxWidth: diameter - strokeWidth * 2)
+                .frame(maxWidth: min(diameter, 260) - strokeWidth * 2)
                 .multilineTextAlignment(.center)
-                .offset(y: -diameter * 0.015)
+                .offset(y: -min(diameter, 260) * 0.015)
         }
-        .frame(width: diameter, height: diameter)
+        .frame(width: min(diameter, 260), height: min(diameter, 260))
         .animation(
             reduceMotion ? nil : .easeInOut(duration: 0.55),
             value: drawnProgress

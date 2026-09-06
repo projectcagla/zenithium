@@ -25,17 +25,17 @@ struct MetricTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ZenithiumSpacing.xs) {
             Text(label)
-                .font(ZenithiumFont.label)
+                .zenithiumLabel()
                 .foregroundStyle(ZenithiumColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xs) {
-                Text(value)
-                    .font(ZenithiumFont.metricValue)
+                Text(unit == "%" && !value.hasPrefix("%") ? "%" + value : value)
+                    .metricNumeral()
                     .foregroundStyle(tint)
                     .monospacedDigit()
                     .minimumScaleFactor(0.8)
-                if let unit {
+                if let unit, unit != "%" {
                     Text(unit)
                         .font(ZenithiumFont.unit)
                         .foregroundStyle(ZenithiumColor.textSecondary)

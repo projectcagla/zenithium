@@ -4,20 +4,20 @@ enum ZenithiumFont {
 
     // MARK: - 11 Tipografi Token'ı (Şartname Yasa 3 Açık Punto Rampası)
 
-    /// Kahraman sayı: 64pt, .semibold, tracking -1.5, tabular (relativeTo: .largeTitle)
+    /// Kahraman sayı: 68pt, .bold, rounded, tracking -1.5, tabular (relativeTo: .largeTitle)
     static let heroNumeral = Font.system(size: 68, weight: .bold, design: .rounded)
         .monospacedDigit()
 
-    /// Kahraman birim: 17pt, .medium, ikincil renk (relativeTo: .headline)
+    /// Kahraman birim: 20pt, .medium, ikincil renk (relativeTo: .headline)
     static let heroUnit = Font.system(size: 20, weight: .medium, design: .default)
 
     /// Ekran başlığı: 28pt, .bold, tracking -0.5 (relativeTo: .title)
     static let screenTitle = Font.system(size: 28, weight: .bold, design: .default)
 
-    /// Bölüm başlığı: 17pt, .semibold (relativeTo: .headline)
+    /// Bölüm başlığı: 22pt, .semibold (relativeTo: .headline)
     static let sectionTitle = Font.system(size: 22, weight: .semibold, design: .default)
 
-    /// Metrik sayısı: 30pt, .medium, tracking -0.5, tabular (relativeTo: .title2)
+    /// Metrik sayısı: 30pt, .semibold, tracking -0.5, tabular (relativeTo: .title2)
     static let metricNumeral = Font.system(size: 30, weight: .semibold, design: .rounded)
         .monospacedDigit()
 
@@ -33,7 +33,7 @@ enum ZenithiumFont {
     /// Etiket: 12pt, .medium (relativeTo: .caption)
     static let label = Font.system(size: 12, weight: .medium, design: .default)
 
-    /// Bölüm üstü teknik etiket (eyebrow): 11pt, .semibold, BÜYÜK HARF, tracking +0.8, monospaced, üçüncül (relativeTo: .caption2)
+    /// Bölüm üstü teknik etiket (eyebrow): 11pt, .bold, BÜYÜK HARF, tracking +1.2, ikincil (relativeTo: .caption2)
     static let eyebrow = Font.system(size: 11, weight: .bold, design: .default)
 
     /// Açıklama ve dipnot metni: 12pt, .regular, üçüncül renk (relativeTo: .caption)

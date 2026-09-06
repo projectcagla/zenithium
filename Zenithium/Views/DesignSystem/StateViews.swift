@@ -73,7 +73,7 @@ struct CalibratingView: View {
         ) {
             VStack(spacing: ZenithiumSpacing.l) {
                 // İlerleme çubuğu yerine kalibre olan günlerin noktaları (7 veya 14 nokta)
-                HStack(spacing: 8) {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(10)), count: min(max(daysRequired, 1), 7)), spacing: 10) {
                     ForEach(0..<max(daysRequired, 1), id: \.self) { index in
                         Circle()
                             .fill(index < daysCollected ? ZenithiumColor.accent : ZenithiumColor.hairline)
@@ -89,7 +89,7 @@ struct CalibratingView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(ZenithiumColor.green)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Şimdiden güvenilir:")
+                            Text("Ölçüm geldikçe görülebilenler:")
                                 .font(ZenithiumFont.caption)
                                 .foregroundStyle(ZenithiumColor.textSecondary)
                             Text("Uyku süresi, anlık nabız, solunum hızı")
@@ -244,9 +244,9 @@ struct NoDataView: View {
             }
 
             // Hayalet iskelet (skeleton): verinin nereye geleceğini gösteren %6 opaklıkta sessiz yer tutucular
-            ghostSkeleton(layout)
-                .opacity(0.06)
+            SkeletonView(layout: layout, label: "", showsLabel: false)
                 .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 
@@ -289,47 +289,7 @@ struct NoDataView: View {
         }
     }
 
-    @ViewBuilder
-    private func ghostSkeleton(_ layout: SkeletonLayout) -> some View {
-        VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-            switch layout {
-            case .scored:
-                HStack {
-                    Spacer()
-                    Circle()
-                        .stroke(ZenithiumColor.textPrimary, lineWidth: 8)
-                        .frame(width: 120, height: 120)
-                    Spacer()
-                }
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 50)
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
-                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
-                    RoundedRectangle(cornerRadius: ZenithiumRadius.card).fill(ZenithiumColor.textPrimary).frame(height: 40)
-                }
-            case .chart:
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 160)
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 70)
-            case .cards:
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 60)
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 60)
-                RoundedRectangle(cornerRadius: ZenithiumRadius.card)
-                    .fill(ZenithiumColor.textPrimary)
-                    .frame(height: 60)
-            }
-        }
-        .padding(.horizontal, ZenithiumSpacing.m)
-    }
+
 }
 
 /// A typed failure, with the affordance the error itself says it deserves.

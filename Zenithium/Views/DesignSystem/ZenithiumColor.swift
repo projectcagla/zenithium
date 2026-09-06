@@ -160,7 +160,7 @@ enum ZenithiumColor {
 
     static func color(for stage: SleepStage) -> Color {
         switch stage {
-        case .asleepDeep: return spectrumIndigo
+        case .asleepDeep: return spectrumViolet
         case .asleepREM: return spectrumTeal
         case .asleepCore, .asleepUnspecified: return asset(.coreSleep)
         case .awake: return red
