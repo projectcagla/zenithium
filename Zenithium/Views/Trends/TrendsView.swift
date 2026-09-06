@@ -10,11 +10,16 @@ import SwiftData
 
 struct TrendsView: View {
 
-    @Query private var baselineStates: [BaselineState]
+    @Environment(\.modelContext) private var modelContext
+    @State private var baselineSnapshots: [BaselineSnapshot] = []
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State var viewModel: TrendsViewModel
     var embedInNavigation: Bool = true
+    var initialMetric: TrendMetric? = nil
+    var transitionNamespace: Namespace.ID? = nil
+    var transitionID: String? = nil
+    var transitionPreview: SupportingMetricDetail? = nil
 
     @Namespace private var trendsNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -28,13 +33,21 @@ struct TrendsView: View {
                     .refreshable { await viewModel.load() }
             }
             .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.3)
-            .task { await viewModel.onAppear() }
+            .task { await appear() }
             .onDisappear { viewModel.onDisappear() }
         } else {
             mainContent
                 .zenithiumBackground(tint: ZenithiumColor.spectrumViolet, intensity: 0.3)
-                .task { await viewModel.onAppear() }
+                .task { await appear() }
                 .onDisappear { viewModel.onDisappear() }
+        }
+    }
+
+    private func appear() async {
+        if let initialMetric, initialMetric != viewModel.metric {
+            viewModel.select(metric: initialMetric)
+        } else {
+            await viewModel.onAppear()
         }
     }
 
@@ -42,6 +55,16 @@ struct TrendsView: View {
         ScrollView {
             VStack(spacing: ZenithiumSpacing.l) {
                 controls
+                if viewModel.state.isLoading, let transitionPreview, let transitionNamespace, let transitionID {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(transitionPreview.label).zenithiumEyebrow()
+                        Text(transitionPreview.value).heroNumeral()
+                        BaselineBand(values: transitionPreview.bandValues, baseline: transitionPreview.baseline,
+                                     sigma: transitionPreview.sigma, unit: transitionPreview.unit, style: .full)
+                            .matchedGeometryEffect(id: transitionID, in: transitionNamespace)
+                        Text("Geçmiş okunuyor…").zenithiumCaption()
+                    }
+                } else {
                 ViewStateContainer(
                     state: viewModel.state,
                     loadingLabel: "Geçmiş yükleniyor",
@@ -52,12 +75,14 @@ struct TrendsView: View {
                 ) { content in
                     loadedBody(content)
                 }
+                }
             }
             .padding(.horizontal, ZenithiumSpacing.screenEdge)
             .padding(.bottom, ZenithiumSpacing.xxl)
             .padding(.top, ZenithiumSpacing.s)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
@@ -107,7 +132,7 @@ struct TrendsView: View {
         let reference = reference(for: content)
         VStack(alignment: .leading, spacing: ZenithiumSpacing.sectionSpacing) {
             Text(content.metric.displayName.uppercased(with: Locale(identifier: "tr_TR"))).zenithiumEyebrow()
-            TrendChart(content: content, baseline: reference.mean, sigma: reference.sigma, referenceLabel: reference.label)
+            TrendChart(content: content, baseline: reference.mean, sigma: reference.sigma, referenceLabel: reference.label, transitionNamespace: transitionNamespace, transitionID: transitionID)
             statistics(content, baseline: reference.mean)
             SectionBlock(title: "Kendi ritmini izle") {
                 Text("\(reference.label). Koridor ±1 standart sapmayı gösterir; bir sağlık sınırı değildir.")
@@ -124,6 +149,9 @@ struct TrendsView: View {
                     .zenithiumCaption()
             }
         }
+        .task(id: content) {
+            baselineSnapshots = ((try? modelContext.fetch(FetchDescriptor<BaselineState>())) ?? []).compactMap(\.snapshot)
+        }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: content.metric)
     }
 
@@ -135,7 +163,7 @@ struct TrendsView: View {
         default: kind = nil
         }
         if let kind {
-            if let snapshot = baselineStates.compactMap(\.snapshot).first(where: { $0.metric == kind && $0.isSeeded }) {
+            if let snapshot = baselineSnapshots.first(where: { $0.metric == kind && $0.isSeeded }) {
                 return (snapshot.mean, snapshot.standardDeviation, "Mevcut 60 günlük ağırlıklı kişisel taban")
             }
             return (nil, nil, "Kişisel taban henüz oluşmadı")

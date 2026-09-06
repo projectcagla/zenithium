@@ -1,8 +1,12 @@
 import SwiftUI
+import SwiftData
 import Charts
 
 struct TrainingLoadView: View {
 
+    @Environment(\.modelContext) private var modelContext
+    @State private var cardiovascularSeries: [DailyLoad] = []
+    @State private var showsCardiovascular = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -44,6 +48,7 @@ struct TrainingLoadView: View {
             .padding(.top, ZenithiumSpacing.s)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
@@ -70,6 +75,7 @@ struct TrainingLoadView: View {
                 .foregroundStyle(ZenithiumColor.textTertiary)
                 .frame(maxWidth: .infinity)
         }
+        .task(id: content.output) { loadCardiovascularSeries(content) }
     }
 
     // MARK: - 1. KADEME (KAHRAMAN): Akut/Kronik Oran Göstergesi (Kartsız)
@@ -207,76 +213,84 @@ struct TrainingLoadView: View {
     // MARK: - 3. KADEME: Günlük Yük Çubukları (Swift Charts, Kartsız L1)
 
     private func chartCard(_ content: TrainingLoadViewModel.Content) -> some View {
-        SectionBlock(title: "Son 28 gün", subtitle: "Günlük zorlanma · solda yük, sağda akut/kronik oran") {
-            let displaySeries = Array(content.series.suffix(28))
-            let displayRatios = content.ratioPoints.filter { $0.dayStart >= (displaySeries.first?.dayStart ?? .distantFuture) }
-
+        let displaySeries = Array(content.series.suffix(28))
+        let displayRatios = content.ratioPoints.filter { $0.dayStart >= (displaySeries.first?.dayStart ?? .distantFuture) }
+        let barPeak = max(displaySeries.map(\.load).max() ?? 1, 1)
+        let cardiovascularPeak = max(cardiovascularSeries.map(\.load).max() ?? 1, 1)
+        let cardiovascularScale = barPeak / cardiovascularPeak
+        let lineScale = showsCardiovascular ? cardiovascularScale : content.ratioScale
+        return SectionBlock(title: "Son 28 gün", subtitle: "Günlük zorlanma ve yükün seyri") {
+            Picker("Trend çizgisi", selection: $showsCardiovascular) {
+                Text("Kalp yükü").tag(true)
+                Text("Yük oranı").tag(false)
+            }
+            .pickerStyle(.segmented)
             HStack(spacing: 16) {
-                Label("Günlük zorlanma", systemImage: "square.fill").foregroundStyle(ZenithiumColor.accent)
-                Label("Yük oranı", systemImage: "line.diagonal").foregroundStyle(ZenithiumColor.spectrumAmber)
+                Label("Zorlanma · sol", systemImage: "square.fill").foregroundStyle(ZenithiumColor.accent)
+                Label(showsCardiovascular ? "Kalp yükü · sağ" : "Oran · sağ", systemImage: "line.diagonal")
+                    .foregroundStyle(ZenithiumColor.spectrumAmber)
             }
             .font(ZenithiumFont.caption)
             Chart {
                 ForEach(displaySeries) { day in
-                    BarMark(
-                        x: .value("Gün", day.dayStart, unit: .day),
-                        y: .value("Yük", day.load)
-                    )
-                    .foregroundStyle(ZenithiumColor.accent.opacity(0.55))
+                    BarMark(x: .value("Gün", day.dayStart, unit: .day), y: .value("Zorlanma", day.load))
+                        .foregroundStyle(ZenithiumColor.accent.opacity(0.55))
                 }
-
-                ForEach(displayRatios) { point in
-                    LineMark(
-                        x: .value("Gün", point.dayStart, unit: .day),
-                        y: .value("Oran", point.ratio * content.ratioScale),
-                        series: .value("Seri", "oran")
-                    )
-                    .foregroundStyle(ZenithiumColor.spectrumAmber)
-                    .lineStyle(ZenithiumChartLine.strokeStyle)
-                    .interpolationMethod(.monotone)
-                }
-
-                if let lastRatio = displayRatios.last {
-                    PointMark(
-                        x: .value("Gün", lastRatio.dayStart, unit: .day),
-                        y: .value("Oran", lastRatio.ratio * content.ratioScale)
-                    )
-                    .foregroundStyle(ZenithiumColor.spectrumAmber)
-                    .symbolSize(ZenithiumChartLastPoint.symbolSize)
-                    .annotation(position: .top, alignment: .trailing) {
-                        Text(ZenithiumFormat.metric(lastRatio.ratio, digits: 2))
-                            .font(ZenithiumFont.caption.monospacedDigit())
-                            .foregroundStyle(ZenithiumColor.textSecondary)
+                if showsCardiovascular {
+                    ForEach(cardiovascularSeries) { point in
+                        LineMark(x: .value("Gün", point.dayStart, unit: .day), y: .value("Kalp yükü", point.load * cardiovascularScale), series: .value("Seri", "Kalp yükü"))
+                            .foregroundStyle(ZenithiumColor.spectrumAmber)
+                            .lineStyle(ZenithiumChartLine.strokeStyle)
+                            .interpolationMethod(.linear)
+                    }
+                } else {
+                    ForEach(displayRatios) { point in
+                        LineMark(x: .value("Gün", point.dayStart, unit: .day), y: .value("Oran", point.ratio * content.ratioScale), series: .value("Seri", "Yük oranı"))
+                            .foregroundStyle(ZenithiumColor.spectrumAmber)
+                            .lineStyle(ZenithiumChartLine.strokeStyle)
+                            .interpolationMethod(.monotone)
                     }
                 }
             }
             .zenithiumChart(yValues: 3...4, showBaseline: true)
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4))
-                AxisMarks(position: .trailing, values: [0.5, 1, 1.5, 2].map { $0 * content.ratioScale }) { axis in
+                AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { axis in
                     AxisValueLabel {
                         if let value = axis.as(Double.self) {
-                            Text(ZenithiumFormat.metric(value / content.ratioScale, digits: 1))
+                            Text(ZenithiumFormat.metric(value / lineScale, digits: showsCardiovascular ? 0 : 1))
                         }
                     }
                 }
             }
-            // Saf çizim (Swift Charts): @ScaledMetric ile minHeight kullanılır.
             .frame(minHeight: chartHeight)
-            // The daily load, described so VoiceOver can play the block as a tone rather
-            // than reading only its one-line summary. Yol haritası v4, B8.
             .accessibilityChartDescriptor(
-                SeriesChartDescriptor(
-                    title: "Günlük yük",
-                    seriesName: "Yük",
-                    points: displaySeries.map { DescribedPoint(date: $0.dayStart, value: $0.load) },
-                    formatValue: { ZenithiumFormat.metric($0, digits: 0) },
-                    summary: content.summary
-                )
+                SeriesChartDescriptor(title: "Günlük zorlanma", seriesName: "Zorlanma",
+                                      points: displaySeries.map { DescribedPoint(date: $0.dayStart, value: $0.load) },
+                                      formatValue: { ZenithiumFormat.strain($0) }, summary: content.summary)
             )
-            .accessibilityLabel("Günlük yük ve yük oranı")
-            .accessibilityValue(content.summary)
+            if showsCardiovascular {
+                if let last = cardiovascularSeries.last {
+                    Text("Son kalp yükü: \(ZenithiumFormat.metric(last.load, digits: 0)) TRIMP · nabız ve süreye dayalı kayıtlı yük")
+                        .zenithiumCaption()
+                } else {
+                    Text("Bu aralıkta kayıtlı kalp yükü bulunmuyor.").zenithiumCaption()
+                }
+            }
         }
+    }
+
+    private func loadCardiovascularSeries(_ content: TrainingLoadViewModel.Content) {
+        guard let end = content.series.last?.dayStart,
+              let start = Calendar.autoupdatingCurrent.date(byAdding: .day, value: -27, to: end) else { return }
+        var query = FetchDescriptor<BiometricDayRecord>(
+            predicate: #Predicate { $0.dayStart >= start && $0.dayStart <= end },
+            sortBy: [SortDescriptor(\.dayStart)]
+        )
+        query.fetchLimit = 28
+        cardiovascularSeries = ((try? modelContext.fetch(query)) ?? [])
+            .filter { $0.trimp.isFinite && $0.trimp >= 0 }
+            .map { DailyLoad(dayStart: $0.dayStart, load: $0.trimp) }
     }
 
     // MARK: - 4. KADEME: Kondisyon ve Yorgunluk (Kartsız L1)

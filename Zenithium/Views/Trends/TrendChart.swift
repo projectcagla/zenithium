@@ -20,6 +20,8 @@ struct TrendChart: View {
     var baseline: Double? = nil
     var sigma: Double? = nil
     var referenceLabel: String = "Kişisel taban"
+    var transitionNamespace: Namespace.ID? = nil
+    var transitionID: String? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var scrubbedPoint: TrendPoint?
@@ -112,6 +114,7 @@ struct TrendChart: View {
             // Saf çizim (Swift Charts): sabit 200pt yerine @ScaledMetric ile minHeight kullanılır,
             // Dynamic Type büyüdüğünde eksen etiketleri ve grafik rahat nefes alır.
             .frame(minHeight: chartHeight)
+            .modifier(ChartContinuity(namespace: transitionNamespace, id: transitionID))
             .accessibilityChartDescriptor(descriptor)
             .accessibilityAdjustableAction { direction in
                 let points = displayPoints
@@ -217,5 +220,17 @@ extension TrendChart {
         }
         let digits = content.metric.fractionDigits
         return "\(content.points.count) gün. Ortalama \(ZenithiumFormat.metric(average, digits: digits)), en düşük \(ZenithiumFormat.metric(minimum, digits: digits)), en yüksek \(ZenithiumFormat.metric(maximum, digits: digits))."
+    }
+}
+
+private struct ChartContinuity: ViewModifier {
+    let namespace: Namespace.ID?
+    let id: String?
+    func body(content: Content) -> some View {
+        if let namespace, let id {
+            content.matchedGeometryEffect(id: id, in: namespace)
+        } else {
+            content
+        }
     }
 }

@@ -8,7 +8,8 @@ struct TodayView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @Query private var baselineStates: [BaselineState]
+    @State private var baselineSnapshots: [BaselineSnapshot] = []
+    @State private var metricTrendsViewModel: TrendsViewModel?
     @State private var metricHistory: [String: [Double]] = [:]
     @State private var showingProfile = false
 
@@ -54,6 +55,7 @@ struct TodayView: View {
                 .padding(.bottom, ZenithiumSpacing.xxl)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .accessibilityHidden(showingReason || selectedMetricForDetail != nil)
             .background(ZenithiumColor.background.ignoresSafeArea())
 
             if let metric = selectedMetricForDetail {
@@ -66,6 +68,8 @@ struct TodayView: View {
                     recommendation: dailyRecommendation(content),
                     embedInNavigation: false,
                     namespace: todayNamespace,
+                    calculationSteps: viewModel.athleticDecision?.calculationSteps ?? [],
+                    relatedRecommendations: viewModel.recommendations,
                     onDismiss: {
                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                             showingReason = false
@@ -77,6 +81,8 @@ struct TodayView: View {
                 .zIndex(20)
             }
         }
+        .toolbar(showingReason || selectedMetricForDetail != nil ? .hidden : .visible, for: .navigationBar)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
     }
 
     @ViewBuilder
@@ -218,12 +224,12 @@ struct TodayView: View {
 
     @ViewBuilder private var ribbonDivider: some View {
         if !dynamicTypeSize.isAccessibilitySize {
-            Rectangle().fill(ZenithiumColor.hairline).frame(width: 0.5, height: 70)
+            Rectangle().fill(ZenithiumColor.hairline).frame(width: 0.5, height: 88)
         }
     }
 
     private func baseline(_ metric: MetricKind) -> BaselineSnapshot? {
-        baselineStates.compactMap(\.snapshot).first { $0.metric == metric && $0.isSeeded }
+        baselineSnapshots.first { $0.metric == metric && $0.isSeeded }
     }
 
     private func history(_ id: String, current: Double?) -> [Double] {
@@ -232,6 +238,7 @@ struct TodayView: View {
     }
 
     private func loadMetricHistory(before date: Date) {
+        baselineSnapshots = ((try? modelContext.fetch(FetchDescriptor<BaselineState>())) ?? []).compactMap(\.snapshot)
         let start = Calendar.autoupdatingCurrent.date(byAdding: .day, value: -60, to: date) ?? date
         var query = FetchDescriptor<BiometricDayRecord>(
             predicate: #Predicate { $0.dayStart >= start && $0.dayStart < date },
@@ -259,6 +266,12 @@ struct TodayView: View {
         description: String
     ) -> some View {
         Button {
+            if id == "hrv" || id == "rhr" {
+                let store = ZenithiumStore(modelContainer: modelContext.container)
+                metricTrendsViewModel = TrendsViewModel(repository: store, bloodMarkers: store)
+            } else {
+                metricTrendsViewModel = nil
+            }
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                 selectedMetricForDetail = SupportingMetricDetail(
                     id: id,
@@ -272,20 +285,19 @@ struct TodayView: View {
                 )
             }
         } label: {
-            VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(label.uppercased(with: Locale(identifier: "tr_TR")))
                     .font(ZenithiumFont.eyebrow)
                     .foregroundStyle(ZenithiumColor.textSecondary)
                     .lineLimit(1)
-                HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
-                    Text(value)
-                        .font(ZenithiumFont.metricNumeral)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                    Text(unit)
-                        .font(ZenithiumFont.metricUnit)
-                        .foregroundStyle(ZenithiumColor.textTertiary)
-                }
+                Text(value)
+                    .metricNumeral()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.numericText())
+                Text(unit)
+                    .font(ZenithiumFont.metricUnit)
+                    .foregroundStyle(ZenithiumColor.textSecondary)
                 if selectedMetricForDetail?.id != id {
                     BaselineBand(
                         values: bandValues,
@@ -518,7 +530,7 @@ struct TodayView: View {
 
     private var recommendationsSection: some View {
         SectionBlock(title: "Bilimsel Öneriler", showTopDivider: true) {
-            RecommendationListView(recommendations: viewModel.recommendations)
+            RecommendationListView(recommendations: viewModel.recommendations, showsSurfaces: false)
         }
     }
 
@@ -586,7 +598,33 @@ struct TodayView: View {
         )
     }
 
+    @ViewBuilder
     private func metricDetailOverlay(_ metric: SupportingMetricDetail) -> some View {
+        if let metricTrendsViewModel {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Trendler").sectionTitle()
+                    Spacer()
+                    Button {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { selectedMetricForDetail = nil }
+                    } label: {
+                        Image(systemName: "xmark").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Trendleri kapat")
+                }
+                .padding(.horizontal, ZenithiumSpacing.screenEdge)
+                TrendsView(viewModel: metricTrendsViewModel, embedInNavigation: false,
+                           initialMetric: metric.id == "hrv" ? .heartRateVariability : .restingHeartRate,
+                           transitionNamespace: todayNamespace, transitionID: "baseline-\(metric.id)", transitionPreview: metric)
+            }
+            .background(ZenithiumColor.background.ignoresSafeArea())
+            .transition(.opacity)
+        } else {
+            metricHistoryOverlay(metric)
+        }
+    }
+
+    private func metricHistoryOverlay(_ metric: SupportingMetricDetail) -> some View {
         ZStack {
             Color.black.opacity(0.72)
                 .ignoresSafeArea()

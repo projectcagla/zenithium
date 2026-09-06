@@ -43,6 +43,7 @@ struct SleepView: View {
             .padding(.bottom, ZenithiumSpacing.xxl)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .transaction { if reduceMotion { $0.animation = nil; $0.disablesAnimations = true } }
         .background(ZenithiumColor.background.ignoresSafeArea())
     }
 
