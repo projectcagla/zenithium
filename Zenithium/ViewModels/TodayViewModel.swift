@@ -74,6 +74,7 @@ final class TodayViewModel {
     /// Fits the critical-speed model so an endurance prescription can name a pace band
     /// rather than only a duration.
     private let workoutSource: (any HealthDataProviding)?
+    private let preferences: (any PersonalPreferenceRepository)?
 
     init(
         coordinator: any RecalculationDriving,
@@ -86,6 +87,7 @@ final class TodayViewModel {
         cycleSource: (any HealthDataProviding)? = nil,
         goals: (any GoalEventRepository)? = nil,
         workoutSource: (any HealthDataProviding)? = nil,
+        preferences: (any PersonalPreferenceRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.coordinator = coordinator
@@ -98,6 +100,7 @@ final class TodayViewModel {
         self.cycleSource = cycleSource
         self.goals = goals
         self.workoutSource = workoutSource
+        self.preferences = preferences
         self.nowProvider = nowProvider
     }
 
@@ -130,7 +133,7 @@ final class TodayViewModel {
         guard await ensureAuthorized() else { return }
         do {
             let result = try await coordinator.recalculate(now: nowProvider())
-            apply(result)
+            await apply(result)
         } catch {
             if let mapped = ViewState<Content>.from(error) {
                 state = mapped
@@ -158,7 +161,7 @@ final class TodayViewModel {
             let stream = await self.coordinator.results()
             for await result in stream {
                 guard !Task.isCancelled else { return }
-                self.apply(result)
+                await self.apply(result)
             }
         }
     }
@@ -176,7 +179,12 @@ final class TodayViewModel {
         return true
     }
 
-    private func apply(_ result: RecalculationResult) {
+    private func apply(_ result: RecalculationResult) async {
+        briefingTask?.cancel()
+        briefing = nil
+        athleticDecision = nil
+        prescription = nil
+        recommendations = []
         switch result.recovery.availability {
         case .calibrating(let collected, let required):
             state = .calibrating(
@@ -189,7 +197,21 @@ final class TodayViewModel {
             state = .noData(reason: .recoveryUnavailable(reason))
 
         case .scored:
-            startBriefing(for: result)
+            do {
+                var choices = PersonalPreferences()
+                if let preferences { choices = try await preferences.load() }
+                else { choices.decision = .progressive }
+                let context = await briefingContext(for: result)
+                planPosition = await nextPlanPosition(for: result)
+                prescription = await suggestion(for: result, context: context, preference: choices.decision)
+                athleticDecision = await synthesizeDecision(for: result, context: context, preference: choices.decision)
+                recommendations = await synthesizeRecommendations(for: result, context: context)
+                guard !Task.isCancelled else { return }
+                startBriefing(context: context)
+            } catch {
+                state = .failed(.persistenceReadFailed(detail: error.localizedDescription))
+                return
+            }
             let band = result.recovery.band ?? .yellow
             state = .loaded(
                 Content(
@@ -215,25 +237,13 @@ final class TodayViewModel {
     /// Deliberately not awaited by `apply`: the recovery card must appear the moment the
     /// numbers exist, and the briefing — which may wait on a language model — arrives
     /// afterwards. A pass that lands while one is in flight replaces it.
-    private func startBriefing(for result: RecalculationResult) {
+    private func startBriefing(context: BriefingContext) {
         briefingTask?.cancel()
         briefingTask = Task { [weak self] in
             guard let self else { return }
-            let context = await self.briefingContext(for: result)
-            guard !Task.isCancelled else { return }
             let written = await self.narrator.briefing(for: context)
             guard !Task.isCancelled else { return }
             self.briefing = written
-
-            let plan = await self.nextPlanPosition(for: result)
-            let suggestion = await self.suggestion(for: result, context: context)
-            let decision = await self.synthesizeDecision(for: result, context: context)
-            let recommendations = await self.synthesizeRecommendations(for: result, context: context)
-            guard !Task.isCancelled else { return }
-            self.planPosition = plan
-            self.prescription = suggestion
-            self.athleticDecision = decision
-            self.recommendations = recommendations
         }
     }
 
@@ -331,7 +341,8 @@ final class TodayViewModel {
     /// Synthesizes the deterministic athletic decision trace.
     private func synthesizeDecision(
         for result: RecalculationResult,
-        context: BriefingContext
+        context: BriefingContext,
+        preference: DecisionPreference
     ) async -> EngineResult<AthleticDecision>? {
         var load: TrainingLoadOutput?
         var daysCount = 14
@@ -384,7 +395,7 @@ final class TodayViewModel {
         if let workoutSource {
             ecgRecords = (try? await workoutSource.fetchECGRecords(days: 30, now: nowProvider())) ?? []
         }
-        let disabledIDs = ClinicalModifierRegistry.disabledModifierIDs()
+        let disabledIDs = ClinicalPreferences.disabledModifierIDs()
         let clinicalContext = ClinicalContextEngine.assess(
             markers: markers,
             ecgRecords: ecgRecords,
@@ -404,7 +415,9 @@ final class TodayViewModel {
             dataQuality: dataQuality,
             calibration: calibration,
             lens: result.profile.trainingLens,
-            clinical: clinicalContext
+            clinical: clinicalContext,
+            preference: preference,
+            evaluatedAt: context.date
         )
 
         return DecisionEngine.decide(input: input)
@@ -417,7 +430,8 @@ final class TodayViewModel {
     /// disagree about what kind of day this is.
     private func suggestion(
         for result: RecalculationResult,
-        context: BriefingContext
+        context: BriefingContext,
+        preference: DecisionPreference
     ) async -> Prescription? {
         var load: TrainingLoadOutput?
         if let records {
@@ -450,7 +464,8 @@ final class TodayViewModel {
                     phaseBaselineHRV: context.cyclePhaseHRVMean,
                     todayHRV: result.record.heartRateVariability
                 )
-            }
+            },
+            preference: preference
         )
     }
 

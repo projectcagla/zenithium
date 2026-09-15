@@ -20,6 +20,7 @@ struct ZenithiumApp: App {
             Group {
                 if let dependencies {
                     RootView(dependencies: dependencies)
+                        .id(dependencies.presentationID)
                         .modelContainer(dependencies.modelContainer)
                         .task { await dependencies.start() }
                 } else if let launchError {

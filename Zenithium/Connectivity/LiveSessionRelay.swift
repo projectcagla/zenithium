@@ -75,6 +75,19 @@ final class LiveSessionRelay {
 
     init() {}
 
+    func stopAndClear() async {
+        session?.delegate = nil
+        session = nil
+        bridge = nil
+        pendingChunks = nil
+        snapshot = nil
+        replayedSession = nil
+        for activity in Activity<LiveSessionAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        activityID = nil
+    }
+
     /// Start listening. Safe to call more than once.
     func start() {
         guard WCSession.isSupported() else {

@@ -154,6 +154,30 @@ actor ZenithiumStore {
         }
     }
 
+    /// Deletes all app-owned rows in one context transaction. HealthKit originals are separate.
+    func eraseAll() throws {
+        do {
+            try modelContext.transaction {
+                try modelContext.delete(model: BloodMarker.self)
+                try modelContext.delete(model: HealthDocumentLog.self)
+                try modelContext.delete(model: JournalDayLog.self)
+                try modelContext.delete(model: StrengthSessionLog.self)
+                try modelContext.delete(model: HybridSessionLog.self)
+                try modelContext.delete(model: GoalEventLog.self)
+                try modelContext.delete(model: PainEntryLog.self)
+                try modelContext.delete(model: SupplementCourseLog.self)
+                try modelContext.delete(model: MuscleFatigueSnapshot.self)
+                try modelContext.delete(model: BiometricDayRecord.self)
+                try modelContext.delete(model: BaselineState.self)
+                try modelContext.delete(model: UserProfile.self)
+                try modelContext.save()
+            }
+        } catch {
+            modelContext.rollback()
+            throw ZenithiumError.persistenceWriteFailed(detail: error.localizedDescription)
+        }
+    }
+
     // MARK: - Day records
 
     func dayRecord(for dayStart: Date) throws -> BiometricDaySnapshot? {

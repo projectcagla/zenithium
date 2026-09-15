@@ -13,6 +13,7 @@ import SwiftUI
 import Charts
 
 struct EnduranceView: View {
+    @Environment(\.displayUnits) private var units
 
     @ScaledMetric private var chartHeight: CGFloat = 150
     @State var viewModel: EnduranceViewModel
@@ -68,7 +69,7 @@ struct EnduranceView: View {
                 Text("Kritik tempo")
                     .font(ZenithiumFont.label)
                     .foregroundStyle(ZenithiumColor.textSecondary)
-                Text(ZenithiumFormat.pace(secondsPerKilometre: model.criticalPace))
+                Text(ZenithiumFormat.pace(secondsPerKilometre: model.criticalPace, units: units))
                     .font(ZenithiumFont.arcValue(size: 44))
                     .foregroundStyle(ZenithiumColor.textPrimary)
 
@@ -127,7 +128,7 @@ struct EnduranceView: View {
                                 .font(ZenithiumFont.headline)
                                 .foregroundStyle(ZenithiumColor.textPrimary)
                             Spacer()
-                            Text("\(ZenithiumFormat.pace(secondsPerKilometre: band.fastPace)) – \(ZenithiumFormat.pace(secondsPerKilometre: band.slowPace))")
+                            Text("\(ZenithiumFormat.pace(secondsPerKilometre: band.fastPace, units: units)) – \(ZenithiumFormat.pace(secondsPerKilometre: band.slowPace, units: units))")
                                 .font(ZenithiumFont.callout.monospacedDigit())
                                 .foregroundStyle(ZenithiumColor.textSecondary)
                         }
@@ -161,7 +162,7 @@ struct EnduranceView: View {
                             Text(ZenithiumFormat.longClock(seconds: prediction.seconds))
                                 .font(ZenithiumFont.body.monospacedDigit())
                                 .foregroundStyle(prediction.isReliable ? ZenithiumColor.textPrimary : ZenithiumColor.textTertiary)
-                            Text(ZenithiumFormat.pace(secondsPerKilometre: prediction.pace))
+                            Text(ZenithiumFormat.pace(secondsPerKilometre: prediction.pace, units: units))
                                 .font(ZenithiumFont.caption.monospacedDigit())
                                 .foregroundStyle(ZenithiumColor.textTertiary)
                                 .frame(width: 68, alignment: .trailing)
@@ -293,8 +294,8 @@ struct EnduranceView: View {
                             )
                             MetricTile(
                                 label: "En sıcağı",
-                                value: ZenithiumFormat.metric(peak, digits: 0),
-                                unit: "°C",
+                                value: ZenithiumFormat.metric(units == .metric ? peak : peak * 1.8 + 32, digits: 0),
+                                unit: units.temperatureDeltaSymbol,
                                 accessibilityLabelText: "En yüksek seans sıcaklığı"
                             )
                         }
@@ -309,12 +310,13 @@ struct EnduranceView: View {
 
     // MARK: - Volume
     private func volumeCard(_ weeks: [EnduranceViewModel.WeeklyDistance]) -> some View {
+        let units = units
         let displayWeeks = ZenithiumChartDownsampler.downsample(weeks, maxPoints: 400, x: { $0.weekStart.timeIntervalSince1970 }, y: { $0.distance })
-        return SectionCard(title: "Haftalık hacim", subtitle: "Kilometre") {
+        return SectionCard(title: "Haftalık hacim", subtitle: units.distanceSymbol) {
             Chart(displayWeeks) { week in
                 BarMark(
                     x: .value("Hafta", week.weekStart, unit: .weekOfYear),
-                    y: .value("Kilometre", week.distance)
+                    y: .value(units.distanceSymbol, units.distance(fromMetres: week.distance * 1000))
                 )
                 .foregroundStyle(ZenithiumColor.spectrumMagenta.opacity(0.7))
             }
@@ -326,9 +328,9 @@ struct EnduranceView: View {
             .accessibilityChartDescriptor(
                 SeriesChartDescriptor(
                     title: "Haftalık koşu mesafesi",
-                    seriesName: "Kilometre",
-                    points: weeks.map { DescribedPoint(date: $0.weekStart, value: $0.distance) },
-                    formatValue: { "\(ZenithiumFormat.metric($0, digits: 1)) kilometre" },
+                    seriesName: units.distanceSymbol,
+                    points: weeks.map { DescribedPoint(date: $0.weekStart, value: units.distance(fromMetres: $0.distance * 1000)) },
+                    formatValue: { "\(ZenithiumFormat.metric($0, digits: 1)) \(units.distanceSymbol)" },
                     summary: volumeSummary(weeks)
                 )
             )
@@ -338,11 +340,11 @@ struct EnduranceView: View {
 
     /// How many weeks the chart covers, and the range they span.
     private func volumeSummary(_ weeks: [EnduranceViewModel.WeeklyDistance]) -> String {
-        let distances = weeks.map(\.distance)
+        let distances = weeks.map { units.distance(fromMetres: $0.distance * 1000) }
         guard let low = distances.min(), let high = distances.max() else {
             return "Henüz hafta yok"
         }
-        return "\(weeks.count) hafta. En az \(ZenithiumFormat.metric(low, digits: 1)), en çok \(ZenithiumFormat.metric(high, digits: 1)) kilometre."
+        return "\(weeks.count) hafta. En az \(ZenithiumFormat.metric(low, digits: 1)), en çok \(ZenithiumFormat.metric(high, digits: 1)) \(units.distanceSymbol)."
     }
 
     // MARK: - Efforts
@@ -352,14 +354,14 @@ struct EnduranceView: View {
             VStack(spacing: ZenithiumSpacing.none) {
                 ForEach(efforts.prefix(8)) { effort in
                     HStack {
-                        Text("\(ZenithiumFormat.metric(effort.distance / 1000, digits: 2)) km")
+                        Text("\(ZenithiumFormat.metric(units.distance(fromMetres: effort.distance), digits: 2)) \(units.distanceSymbol)")
                             .font(ZenithiumFont.callout.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textPrimary)
                         Spacer()
                         Text(ZenithiumFormat.longClock(seconds: effort.duration))
                             .font(ZenithiumFont.callout.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textSecondary)
-                        Text(ZenithiumFormat.pace(secondsPerKilometre: effort.pace))
+                        Text(ZenithiumFormat.pace(secondsPerKilometre: effort.pace, units: units))
                             .font(ZenithiumFont.caption.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textTertiary)
                             .frame(width: 68, alignment: .trailing)

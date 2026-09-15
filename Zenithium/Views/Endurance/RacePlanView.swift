@@ -10,6 +10,7 @@ import Charts
 import UniformTypeIdentifiers
 
 struct RacePlanView: View {
+    @Environment(\.displayUnits) private var units
 
     @State private var viewModel: RacePlanViewModel
     @State private var isPickingCourse = false
@@ -74,8 +75,8 @@ struct RacePlanView: View {
                     MetricTileGrid {
                         MetricTile(
                             label: "Mesafe",
-                            value: ZenithiumFormat.metric(course.distance / 1_000, digits: 2),
-                            unit: "km",
+                            value: ZenithiumFormat.metric(units.distance(fromMetres: course.distance), digits: 2),
+                            unit: units.distanceSymbol,
                             accessibilityLabelText: "Parkur mesafesi"
                         )
                         MetricTile(
@@ -150,7 +151,7 @@ struct RacePlanView: View {
                             .foregroundStyle(ZenithiumColor.textPrimary)
                             .contentTransition(.numericText())
                             .animation(.snappy, value: content.plan.targetFinishSeconds)
-                        Text("ortalama \(ZenithiumFormat.pace(secondsPerKilometre: content.plan.averagePace))")
+                        Text("ortalama \(ZenithiumFormat.pace(secondsPerKilometre: content.plan.averagePace, units: units))")
                             .font(ZenithiumFont.caption.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textSecondary)
                     }
@@ -172,7 +173,7 @@ struct RacePlanView: View {
                 MetricTileGrid {
                     MetricTile(
                         label: "Düz zemin karşılığı",
-                        value: ZenithiumFormat.pace(secondsPerKilometre: content.plan.flatEquivalentPace),
+                        value: ZenithiumFormat.pace(secondsPerKilometre: content.plan.flatEquivalentPace, units: units),
                         caption: "Bu eforu düz bir pistte koşsan",
                         accessibilityLabelText: "Düz zemin karşılığı tempo"
                     )
@@ -322,6 +323,7 @@ struct RacePlanView: View {
 
 /// One kilometre's row: its climb, its target and the clock at the end of it.
 private struct SplitRow: View {
+    @Environment(\.displayUnits) private var units
 
     let split: RaceSplit
     let flatPace: Double
@@ -336,7 +338,7 @@ private struct SplitRow: View {
             gradientChip
 
             VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                Text(ZenithiumFormat.pace(secondsPerKilometre: split.targetPace))
+                Text(ZenithiumFormat.pace(secondsPerKilometre: split.targetPace, units: units))
                     .font(ZenithiumFont.headline.monospacedDigit())
                     .foregroundStyle(ZenithiumColor.textPrimary)
                 Text(deltaText)
@@ -382,14 +384,14 @@ private struct SplitRow: View {
     }
 
     private var deltaText: String {
-        let delta = split.deltaFromFlat(flatPace)
+        let delta = split.deltaFromFlat(flatPace) * (units == .metric ? 1 : 1.609344)
         guard abs(delta) >= 1 else { return "düz zemin temposu" }
         let sign = delta > 0 ? "+" : "−"
         return "\(sign)\(ZenithiumFormat.clock(seconds: abs(delta))) düze göre"
     }
 
     private var accessibilityValue: String {
-        let pace = ZenithiumFormat.pace(secondsPerKilometre: split.targetPace)
+        let pace = ZenithiumFormat.pace(secondsPerKilometre: split.targetPace, units: units)
         let elapsed = ZenithiumFormat.longClock(seconds: split.elapsedSeconds)
         return "\(gradientText) eğim, hedef \(pace), bitişte \(elapsed)"
     }

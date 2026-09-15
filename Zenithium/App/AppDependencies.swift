@@ -9,11 +9,15 @@
 
 import Foundation
 import SwiftData
+import Observation
+import WidgetKit
 
 /// The object graph, built once at launch.
 @MainActor
+@Observable
 final class AppDependencies {
 
+    var presentationID = UUID()
     let modelContainer: ModelContainer
     let store: ZenithiumStore
     let health: any HealthDataProviding
@@ -33,6 +37,8 @@ final class AppDependencies {
 
     /// Whole-store export and import. Yol haritası v4, C9.
     let archive: ArchiveService
+    let preferences: PersonalPreferenceStore
+    let notifications = LocalNotificationCoordinator()
 
     /// Listens for a session running on the watch and drives its Live Activity.
     /// Yol haritası v4, C10.
@@ -49,11 +55,21 @@ final class AppDependencies {
         self.modelContainer = modelContainer
         self.store = store
         self.health = health
-        self.dayRecords = DayRecordCache(upstream: store)
-        self.archive = ArchiveService(store: store, vault: DocumentVault())
-
-        let coordinator = DailyRecalculationCoordinator(health: health, store: store, automaticallyBackfills: automaticallyBackfills)
+        let cache = DayRecordCache(upstream: store)
+        self.dayRecords = cache
+        let preferences = PersonalPreferenceStore(inMemory: !automaticallyBackfills)
+        self.preferences = preferences
+        let coordinator = DailyRecalculationCoordinator(health: health, store: store, automaticallyBackfills: automaticallyBackfills, preferences: preferences, invalidateRecords: { await cache.invalidate() })
         self.coordinator = coordinator
+        let notifications = self.notifications
+        self.archive = ArchiveService(store: store, vault: DocumentVault(), preferences: preferences,
+            beforeRestore: { await coordinator.suspendForErasure() },
+            afterRestore: {
+                await cache.invalidate()
+                await coordinator.resumeAfterErasure()
+                do { try await notifications.apply(try await preferences.load()) }
+                catch { ZenithiumLog.orchestration.error("Imported notification schedule failed: \(error.localizedDescription, privacy: .public)") }
+            })
         self.relay = HealthObservationRelay(health: health, coordinator: coordinator)
         self.scheduler = BackgroundRefreshScheduler(coordinator: coordinator, store: store)
     }
@@ -86,14 +102,21 @@ final class AppDependencies {
 
     /// Starts the background machinery. Called once, after the first frame.
     func start() async {
+        guard (try? await store.profile().hasCompletedOnboarding) == true else { return }
         // Invalidation first: a recalculation that lands before this drain is running would
         // leave the cache holding the previous pass's numbers with nothing to correct it.
         invalidationTask?.cancel()
-        invalidationTask = Task { [coordinator, dayRecords] in
-            for await _ in await coordinator.results() {
-                await dayRecords.invalidate()
+        let stream = await coordinator.results()
+        invalidationTask = Task { [notifications, preferences] in
+            for await result in stream {
+                do {
+                    let values = try await preferences.load()
+                    try await notifications.checkNight(result.record, preferences: values, now: result.computedAt)
+                } catch { ZenithiumLog.orchestration.error("Notification refresh failed: \(error.localizedDescription, privacy: .public)") }
             }
         }
+        do { try await notifications.apply(try await preferences.load()) }
+        catch { ZenithiumLog.orchestration.error("Notification schedule failed: \(error.localizedDescription, privacy: .public)") }
         // Started before the relay and the scheduler, because a session may already be
         // running on the wrist when the app is opened and its context is waiting.
         #if canImport(ActivityKit) && canImport(WatchConnectivity)
@@ -110,4 +133,24 @@ final class AppDependencies {
         invalidationTask = nil
         await relay.stop()
     }
+    func eraseAll() async throws {
+        await stop()
+        await coordinator.suspendForErasure()
+        #if canImport(ActivityKit) && canImport(WatchConnectivity)
+        await liveSession.stopAndClear()
+        #endif
+        do {
+            try await archive.eraseAll()
+            await notifications.clearAll()
+            try WidgetSnapshotStore.write(.placeholder)
+            await dayRecords.invalidate()
+            await coordinator.resumeAfterErasure()
+            WidgetCenter.shared.reloadAllTimelines()
+            presentationID = UUID()
+        } catch {
+            await coordinator.resumeAfterErasure()
+            throw error
+        }
+    }
+
 }

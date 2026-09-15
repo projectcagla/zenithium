@@ -10,8 +10,8 @@
 //  store keys them — a day by its start, everything else by its identifier — so importing the
 //  same archive twice produces the same store as importing it once.
 //
-//  Nothing here deletes. An import that goes wrong leaves the existing data intact, and the
-//  worst case is a store with more in it than the person expected rather than less.
+//  Imports validate before writing. Storage failures can leave a partial merge; retrying
+//  the same archive is idempotent. Explicit erasure is a separate user action.
 //
 
 import Foundation
@@ -22,21 +22,39 @@ actor ArchiveService {
     private let store: ZenithiumStore
     private let vault: DocumentVault
     private let fileManager: FileManager
+    private let preferences: (any PersonalPreferenceRepository)?
+    private let beforeRestore: @Sendable () async -> Void
+    private let afterRestore: @Sendable () async -> Void
 
     /// The largest vault this will embed in an archive.
     ///
-    /// Past this the archive carries metadata and extracted text without the original files.
-    /// A four hundred megabyte JSON is not something a person can move between phones, and
-    /// failing loudly at export time is better than producing a file that will not open.
+    /// Exports above this limit fail explicitly; original files are never silently omitted.
     static let maximumEmbeddedBytes: Int64 = 180 * 1_024 * 1_024
 
     /// The file extension an archive is written with.
     static let fileExtension = "zenithium"
 
-    init(store: ZenithiumStore, vault: DocumentVault, fileManager: FileManager = .default) {
+    init(store: ZenithiumStore, vault: DocumentVault, preferences: (any PersonalPreferenceRepository)? = nil,
+         fileManager: FileManager = .default,
+         beforeRestore: @escaping @Sendable () async -> Void = {},
+         afterRestore: @escaping @Sendable () async -> Void = {}) {
         self.store = store
         self.vault = vault
         self.fileManager = fileManager
+        self.preferences = preferences
+        self.beforeRestore = beforeRestore
+        self.afterRestore = afterRestore
+    }
+
+    func eraseAll() async throws {
+        try await vault.removeAll()
+        try await store.eraseAll()
+        try await preferences?.reset()
+        for url in try fileManager.contentsOfDirectory(at: fileManager.temporaryDirectory, includingPropertiesForKeys: nil) {
+            if url.lastPathComponent.hasPrefix("Zenithium-") && url.pathExtension == Self.fileExtension {
+                try fileManager.removeItem(at: url)
+            }
+        }
     }
 
     // MARK: - Export
@@ -45,8 +63,9 @@ actor ArchiveService {
     func archive(now: Date) async throws -> ZenithiumArchive {
         // A window wide enough to reach anything the store could hold. The date-ranged reads
         // exist for screens that show a period; an archive wants all of it.
-        let start = Date(timeIntervalSince1970: 0)
-        let end = now.addingTimeInterval(365 * 86_400)
+        let start = Date.distantPast
+        let end = Date.distantFuture
+        try await vault.migrateLegacyFiles()
 
         let profile = try await store.profile()
         let baselines = try await store.baselines()
@@ -62,8 +81,10 @@ actor ArchiveService {
         let courses = try await store.supplementCourses()
 
         let vaultBytes = await vault.totalBytes()
-        let embedsFiles = vaultBytes <= Self.maximumEmbeddedBytes
-        let files = embedsFiles ? readVaultFiles(for: documents) : []
+        guard vaultBytes <= Self.maximumEmbeddedBytes else {
+            throw ArchiveFailure.writeFailed(detail: "Belge boyutu bu cihazda tek dosya sınırını aşıyor. Eksik bir arşiv oluşturulmadı.")
+        }
+        let files = try readVaultFiles(for: documents)
 
         return ZenithiumArchive(
             formatVersion: ZenithiumArchive.currentFormatVersion,
@@ -84,7 +105,8 @@ actor ArchiveService {
             documents: documents,
             supplementCourses: courses,
             documentFiles: files,
-            omittedDocumentFiles: !embedsFiles
+            omittedDocumentFiles: false,
+            preferences: try await preferences?.load()
         )
     }
 
@@ -97,7 +119,7 @@ actor ArchiveService {
 
         do {
             let data = try Self.encoder.encode(archive)
-            try data.write(to: url, options: .atomic)
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
             return url
         } catch {
             throw ArchiveFailure.writeFailed(detail: error.localizedDescription)
@@ -111,11 +133,13 @@ actor ArchiveService {
         let needsScope = url.startAccessingSecurityScopedResource()
         defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
 
+        let bytes = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard bytes <= 320 * 1_024 * 1_024 else { throw ArchiveFailure.unreadableArchive }
         guard let data = try? Data(contentsOf: url),
               let archive = try? Self.decoder.decode(ZenithiumArchive.self, from: data) else {
             throw ArchiveFailure.unreadableArchive
         }
-        try ZenithiumArchive.validate(formatVersion: archive.formatVersion)
+        try Self.validate(archive)
         return archive
     }
 
@@ -125,6 +149,20 @@ actor ArchiveService {
     /// so restoring twice writes the same rows twice rather than duplicating them.
     @discardableResult
     func restore(_ archive: ZenithiumArchive) async throws -> ArchiveCounts {
+        try Self.validate(archive)
+        try validateVaultCollisions(archive.documentFiles)
+        await beforeRestore()
+        do {
+            let written = try await merge(archive)
+            await afterRestore()
+            return written
+        } catch {
+            await afterRestore()
+            throw error
+        }
+    }
+
+    private func merge(_ archive: ZenithiumArchive) async throws -> ArchiveCounts {
         var written = ArchiveCounts()
 
         try await store.updateProfile(archive.profile.asWrite)
@@ -195,7 +233,7 @@ actor ArchiveService {
 
         // Files first: a document row whose file is missing is findable but not openable, and
         // writing the row last means a failure part-way leaves no dangling entries.
-        restoreVaultFiles(archive.documentFiles)
+        try restoreVaultFiles(archive.documentFiles)
         for document in archive.documents {
             try await store.saveHealthDocument(document)
             written.documents += 1
@@ -206,32 +244,86 @@ actor ArchiveService {
             written.supplementCourses += 1
         }
 
+        if let restoredPreferences = archive.preferences { try await preferences?.save(restoredPreferences) }
         return written
     }
 
     // MARK: - Vault files
 
-    private func readVaultFiles(for documents: [HealthDocument]) -> [ZenithiumArchive.ArchivedDocumentFile] {
-        documents.compactMap { document in
-            guard !document.fileName.isEmpty,
-                  let url = DocumentVault.url(forFileName: document.fileName),
-                  let contents = try? Data(contentsOf: url) else { return nil }
-            return ZenithiumArchive.ArchivedDocumentFile(
-                fileName: document.fileName,
-                contents: contents
-            )
+    private func readVaultFiles(for documents: [HealthDocument]) throws -> [ZenithiumArchive.ArchivedDocumentFile] {
+        try documents.filter { !$0.fileName.isEmpty }.map { document in
+            guard let url = DocumentVault.url(forFileName: document.fileName) else {
+                throw ArchiveFailure.writeFailed(detail: "Belge yolu geçersiz; eksik arşiv oluşturulmadı.")
+            }
+            return ZenithiumArchive.ArchivedDocumentFile(fileName: document.fileName, contents: try Data(contentsOf: url))
         }
     }
 
-    private func restoreVaultFiles(_ files: [ZenithiumArchive.ArchivedDocumentFile]) {
-        guard !files.isEmpty, let directory = DocumentVault.directoryURL else { return }
-        try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+    nonisolated static func validate(_ archive: ZenithiumArchive) throws {
+        try ZenithiumArchive.validate(formatVersion: archive.formatVersion)
+        _ = try archive.preferences?.validated()
+        // Reject malformed values before any upsert. These are format bounds, not clinical
+        // reference intervals; unusual measurements remain importable within numeric bounds.
+        let encoded = try JSONEncoder().encode(archive)
+        guard validNumbers(try JSONSerialization.jsonObject(with: encoded)),
+              (5...12).contains(archive.profile.baselineSleepNeedHours),
+              archive.days.allSatisfy({ day in
+                  (day.recoveryScore.map { (0...100).contains($0) } ?? true) &&
+                  (day.sleepScore.map { (0...100).contains($0) } ?? true) &&
+                  (0...1).contains(day.recoveryConfidence) && (0...21).contains(day.dayStrain) &&
+                  day.trimp >= 0 && day.sleepDurationSeconds >= 0
+              }),
+              archive.baselines.allSatisfy({ $0.sampleCount >= 0 && $0.variance >= 0 }),
+              archive.bloodMarkers.allSatisfy({ $0.value >= 0 }) else {
+            throw ArchiveFailure.unreadableArchive
+        }
+        let names = archive.documentFiles.map(\.fileName)
+        let documentNames = archive.documents.map(\.fileName).filter { !$0.isEmpty }
+        guard Set(names).count == names.count, (names + documentNames).allSatisfy(validFileName),
+              Set(names).isSubset(of: Set(documentNames)) else {
+            throw ArchiveFailure.unreadableArchive
+        }
+        if !archive.omittedDocumentFiles, !Set(documentNames).isSubset(of: Set(names)) {
+            throw ArchiveFailure.writeFailed(detail: "Arşivdeki belgelerden birinin aslı eksik. İçe aktarma başlamadı.")
+        }
+    }
+
+    private nonisolated static func validNumbers(_ value: Any) -> Bool {
+        if let number = value as? NSNumber { return number.doubleValue.isFinite && abs(number.doubleValue) <= 1e12 }
+        if let values = value as? [Any] { return values.allSatisfy(validNumbers) }
+        if let values = value as? [String: Any] { return values.values.allSatisfy(validNumbers) }
+        return true
+    }
+
+    private func validateVaultCollisions(_ files: [ZenithiumArchive.ArchivedDocumentFile]) throws {
         for file in files {
-            let destination = directory.appending(path: file.fileName, directoryHint: .notDirectory)
-            // Never overwrite: a file already in the vault is the one the store's row points
-            // at, and replacing it with an older copy of itself gains nothing.
-            guard !fileManager.fileExists(atPath: destination.path(percentEncoded: false)) else { continue }
-            try? file.contents.write(to: destination, options: .atomic)
+            guard let url = DocumentVault.url(forFileName: file.fileName) else { throw ArchiveFailure.unreadableArchive }
+            if fileManager.fileExists(atPath: url.path), try Data(contentsOf: url) != file.contents {
+                throw ArchiveFailure.writeFailed(detail: "Aynı kimlikle farklı bir belge zaten kayıtlı. İçe aktarma başlamadı.")
+            }
+        }
+    }
+
+    private nonisolated static func validFileName(_ name: String) -> Bool {
+        !name.isEmpty && name.count <= 200 && name == (name as NSString).lastPathComponent &&
+        !name.contains("..") && !name.contains("\\") && !name.contains("\0")
+    }
+
+    private func restoreVaultFiles(_ files: [ZenithiumArchive.ArchivedDocumentFile]) throws {
+        guard !files.isEmpty else { return }
+        guard let directory = DocumentVault.directoryURL else { throw ZenithiumError.appGroupUnavailable(identifier: AppGroup.identifier) }
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        var folder = directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try folder.setResourceValues(values)
+        for file in files {
+            let destination = directory.appending(path: file.fileName)
+            if fileManager.fileExists(atPath: destination.path) {
+                guard try Data(contentsOf: destination) == file.contents else {
+                    throw ArchiveFailure.writeFailed(detail: "Aynı kimlikle farklı bir belge zaten kayıtlı. Var olan dosya korunuyor.")
+                }
+            } else { try file.contents.write(to: destination, options: [.atomic, .completeFileProtection]) }
         }
     }
 

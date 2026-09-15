@@ -49,10 +49,10 @@ enum BiologicalSexValue: String, Sendable, Codable, CaseIterable, Hashable {
 
     var displayName: String {
         switch self {
-        case .female: return "Female"
-        case .male: return "Male"
-        case .other: return "Other"
-        case .notSet: return "Not set"
+        case .female: return "Kadın"
+        case .male: return "Erkek"
+        case .other: return "Diğer"
+        case .notSet: return "Belirtilmedi"
         }
     }
 }

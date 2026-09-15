@@ -46,7 +46,9 @@ FRAMEWORK_SYMBOLS = {
     "Decodable", "Decoder", "Dictionary", "Double", "Encodable", "Encoder", "Equatable",
     "Error", "FileManager", "Float", "Hashable", "Identifiable", "Int", "Int64", "JSONDecoder",
     "JSONEncoder", "KeyedDecodingContainer", "LocalizedError", "Locale", "Measurement",
-    "NSError", "NSRange", "NSRegularExpression", "NSString", "NSLocalizedString", "NSObject", "NSObjectProtocol", "Notification",
+    "NSError", "NSNumber", "NSRange", "NSRegularExpression",
+    "UNCalendarNotificationTrigger", "UNMutableNotificationContent", "UNNotificationRequest",
+    "UNTimeIntervalNotificationTrigger", "UNUserNotificationCenter", "NSString", "NSLocalizedString", "NSObject", "NSObjectProtocol", "Notification",
     "NotificationCenter", "NumberFormatter", "Optional", "OptionSet", "Range", "RawRepresentable",
     "Result", "Sendable", "Set", "String", "Substring", "TimeInterval", "TimeZone", "URL",
     "URLComponents", "UUID", "UInt64", "UInt8", "UserDefaults", "XMLParser", "XMLParserDelegate",
@@ -70,7 +72,7 @@ FRAMEWORK_SYMBOLS = {
     "Stepper", "TextField", "TextEditor", "DatePicker", "Form", "Group", "GroupBox",
     "Spacer", "Divider", "Color", "Font", "Shape", "Path", "Canvas", "GeometryReader",
     "GeometryProxy", "Animation", "Animatable", "AnimatablePair", "EmptyAnimatableData",
-    "State", "Binding", "Environment", "EnvironmentObject", "Namespace", "FocusState",
+    "State", "Binding", "Environment", "EnvironmentObject", "EnvironmentValues", "Namespace", "FocusState",
     "ViewModifier", "ViewBuilder", "AnyView", "EdgeInsets", "Alignment", "HorizontalAlignment",
     "VerticalAlignment", "UnitPoint", "Angle", "CGFloat", "CGPoint", "CGSize", "CGRect",
     "CGContext", "CGImage", "CGColorSpace", "CGAffineTransform", "LinearGradient",
@@ -137,7 +139,7 @@ FRAMEWORK_SYMBOLS = {
     "ContainerBackground", "WidgetAccentedRenderingMode",
     # Swift Testing / XCTest
     "Test", "Suite", "Issue", "Comment", "SourceLocation", "Tag", "ConfirmationError",
-    "CustomTestStringConvertible", "XCTestCase", "XCTAssertGreaterThanOrEqual", "XCTAssertNotNil", "XCTAssertTrue",
+    "CustomTestStringConvertible", "XCTestCase", "XCTAssertGreaterThanOrEqual", "XCTAssertNotNil", "XCTAssertTrue", "XCTUnwrap",
     # SwiftUI / UIKit Graphics
     "ImageRenderer", "UIHostingController", "UIWindow", "UIWindowScene", "RunLoop", "UIGraphicsImageRenderer", "UIGraphicsImageRendererFormat",
 }

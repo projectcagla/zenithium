@@ -13,9 +13,11 @@ struct DataTransferView: View {
     @State private var viewModel: DataTransferViewModel
     @State private var isPickingArchive = false
     @State private var isSharing = false
+    private let onRestored: () -> Void
 
-    init(service: ArchiveService) {
+    init(service: ArchiveService, onRestored: @escaping () -> Void = {}) {
         _viewModel = State(initialValue: DataTransferViewModel(service: service))
+        self.onRestored = onRestored
     }
 
     var body: some View {
@@ -46,6 +48,9 @@ struct DataTransferView: View {
         .onChange(of: viewModel.exportState) { _, state in
             if case .ready = state { isSharing = true }
         }
+        .onDisappear {
+            if case .finished = viewModel.importState { onRestored() }
+        }
     }
 
     // MARK: - Copy
@@ -53,9 +58,9 @@ struct DataTransferView: View {
     private var explanation: some View {
         SectionCard(title: "Neden burada", subtitle: "Zenithium'un sunucusu yok") {
             Text("""
-            Verilerin yalnızca bu telefonda duruyor — hesap yok, bulut yok, hiçbir şey \
-            dışarı gitmiyor. Bunun bedeli şu: yeni bir telefona geçtiğinde geçmişin \
-            kendiliğinden gelmez. Buradan tek bir dosya yazıp yeni cihazda okutabilirsin.
+            Zenithium kendi sunucusuna veri göndermez. Uygulamada tuttuğun kayıtları ve \
+            belgelerin aslını bu dosyayla başka bir cihaza taşıyabilirsin. Dosyayı paylaşacağın \
+            yeri sen seçersin; arşiv hassas bilgilerini içerir.
             """)
             .font(ZenithiumFont.callout)
             .foregroundStyle(ZenithiumColor.textSecondary)
@@ -68,7 +73,7 @@ struct DataTransferView: View {
     private var exportCard: some View {
         SectionCard(title: "Dışa aktar", subtitle: "Tek dosya, .zenithium") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
-                Text("Gün kayıtların, günlüğün, tahlillerin, seansların, ağrı geçmişin ve kasadaki belgeler tek dosyaya yazılır.")
+                Text("Gün kayıtların, günlüğün, tahlillerin, seansların, hedeflerin, tercihlerinin ve belgelerinin aslı tek dosyaya yazılır.")
                     .font(ZenithiumFont.callout)
                     .foregroundStyle(ZenithiumColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

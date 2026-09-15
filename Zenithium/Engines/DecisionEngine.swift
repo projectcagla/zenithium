@@ -21,6 +21,8 @@ struct DecisionInput: Sendable {
     let calibration: CalibrationState
     let lens: TrainingLens
     let clinical: ClinicalContext
+    let preference: DecisionPreference
+    let evaluatedAt: Date
 
     init(
         recoveryScore: Double?,
@@ -33,7 +35,9 @@ struct DecisionInput: Sendable {
         dataQuality: DataQualityAssessment,
         calibration: CalibrationState,
         lens: TrainingLens = .endurance,
-        clinical: ClinicalContext = .neutral
+        clinical: ClinicalContext = .neutral,
+        preference: DecisionPreference = .progressive,
+        evaluatedAt: Date = Date()
     ) {
         self.recoveryScore = recoveryScore
         self.recoveryBand = recoveryBand
@@ -46,6 +50,8 @@ struct DecisionInput: Sendable {
         self.calibration = calibration
         self.lens = lens
         self.clinical = clinical
+        self.preference = preference
+        self.evaluatedAt = evaluatedAt
     }
 }
 
@@ -73,7 +79,8 @@ enum DecisionEngine {
         evidence.append(contentsOf: input.clinical.evidence)
         limitations.append(contentsOf: input.clinical.limitations)
 
-        if !input.dataQuality.isUsableForRecovery || input.calibration.tier == .coldStart || input.clinical.suppressesHRVRecovery {
+        let hasRecovery = input.recoveryScore.map { $0.isFinite && (0...100).contains($0) } ?? false
+        if !hasRecovery || !input.dataQuality.isUsableForRecovery || input.calibration.tier == .coldStart || input.clinical.suppressesHRVRecovery {
             if input.calibration.tier == .coldStart {
                 limitations.append(
                     ScientificLimitation(
@@ -126,15 +133,15 @@ enum DecisionEngine {
         }
 
         // Step 2: Recovery Assessment
-        let recovery = input.recoveryScore ?? 50.0
-        let band = input.recoveryBand ?? RecoveryBand.band(forScore: recovery)
+        let recovery = input.recoveryScore ?? 0
+        let band = RecoveryBand.band(forScore: recovery)
 
         evidence.append(
             EvidenceNode(
                 sourceCategory: "Toparlanma",
                 summary: "Toparlanma Skoru: \(Int(recovery)) (\(band.displayName))",
                 weight: 0.40,
-                timestamp: Date()
+                timestamp: input.evaluatedAt
             )
         )
 
@@ -144,7 +151,7 @@ enum DecisionEngine {
                 engineName: "RecoveryEngine",
                 inputDescription: "Gecelik HRV ve RHR z-skor dağılımı",
                 outputDescription: "Toparlanma Skoru: \(Int(recovery)) (\(band.displayName))",
-                physiologicalImpact: "Günlük otonom sinir sistemi hazırbulunuşluğu belirlendi."
+                physiologicalImpact: "Kişisel tabana göre biyometrik değişim özetlendi; performans kapasitesi ölçülmedi."
             )
         )
         stepCounter += 1
@@ -155,7 +162,7 @@ enum DecisionEngine {
                     sourceCategory: "Uyku",
                     summary: "Uyku Skoru: \(Int(sleep))",
                     weight: 0.20,
-                    timestamp: Date()
+                    timestamp: input.evaluatedAt
                 )
             )
             steps.append(
@@ -178,7 +185,7 @@ enum DecisionEngine {
                     sourceCategory: "Yük Dengesi",
                     summary: "ACWR: \(MathSupport.decimal(acwr, digits: 2)) (\(loadBand.displayName))",
                     weight: 0.30,
-                    timestamp: Date()
+                    timestamp: input.evaluatedAt
                 )
             )
             steps.append(
@@ -187,7 +194,7 @@ enum DecisionEngine {
                     engineName: "TrainingLoadEngine",
                     inputDescription: "Akut (7g): \(MathSupport.decimal(input.acuteLoad ?? 0, digits: 1)), Kronik (28g): \(MathSupport.decimal(input.chronicLoad ?? 0, digits: 1))",
                     outputDescription: "ACWR: \(MathSupport.decimal(acwr, digits: 2)) (\(loadBand.displayName))",
-                    physiologicalImpact: (loadBand == .productive || loadBand == .maintaining) ? "Yük artış hızı güvenli aralıkta." : "Aşırı yüklenme riski nedeniyle tavan sınırlandırıldı."
+                    physiologicalImpact: (loadBand == .productive || loadBand == .maintaining) ? "Son haftanın yükü uzun dönem yüküne yakın; bu bir güvenlik sınırı değildir." : "Yakın dönemde yük değişmiş; günlük plan ihtiyatla sınırlandırıldı."
                 )
             )
             stepCounter += 1
@@ -201,7 +208,7 @@ enum DecisionEngine {
                     sourceCategory: "Kas Yorgunluğu",
                     summary: "\(fatigued.muscle.displayName) toparlanma sürecinde (%\(Int(fatigued.readiness)))",
                     weight: 0.20,
-                    timestamp: Date()
+                    timestamp: input.evaluatedAt
                 )
             )
             steps.append(
@@ -240,20 +247,20 @@ enum DecisionEngine {
         case .green:
             let target = RecoveryEngine.targetCeiling(forRecovery: recovery)
             action = .push(targetStrain: target)
-            headline = "Yüksek Adaptasyon Kapasitesi"
-            rationale = "Otonom sinir sisteminiz ve toparlanma değerleriniz yüksek zorlanmayı karşılamaya hazır. Hedef antrenman yükü: \(MathSupport.decimal(target))."
+            headline = "Daha yoğun bir gün düşünülebilir"
+            rationale = "Toparlanma göstergelerin kişisel tabanına göre yüksek. Kendini iyi hissediyorsan planladığın antrenmanı değerlendirebilirsin."
             activities = [.running, .cycling, .highIntensityIntervalTraining, .functionalStrengthTraining]
 
         case .yellow:
             let target = RecoveryEngine.targetCeiling(forRecovery: recovery)
             action = .maintain(targetStrain: target)
-            headline = "Dengeli Antrenman Günü"
-            rationale = "Temel kardiyovasküler kapasite stabil. Aşırı yüklenmeden kaçınarak planlı antrenmanınıza devam edebilirsiniz (Tavan: \(MathSupport.decimal(target)))."
+            headline = "Planını koruyabilirsin"
+            rationale = "Toparlanma göstergelerin orta bantta. Bugünkü planını nasıl hissettiğinle birlikte değerlendir."
             activities = [.running, .functionalStrengthTraining, .swimming, .rowing]
 
         case .red:
             action = .recover
-            headline = "Fizyolojik Toparlanma Önceliği"
+            headline = "Toparlanmaya alan aç"
             rationale = "Toparlanma skorunuz baskılanmış durumda. Ağır antrenmanlar yerine aktif toparlanma, mobilite veya dinlenme önerilir."
             activities = [.walking, .coreTraining, .functionalStrengthTraining]
         }
@@ -267,8 +274,21 @@ enum DecisionEngine {
                 action = .maintain(targetStrain: cappedTarget)
             }
             headline = "Yüksek Akut Yük Koruması"
-            rationale = "Toparlanmanız \(band.displayName.lowercased()) bantta olsa da son haftalık akut yükünüz belirgin yükseldi (ACWR: \(MathSupport.decimal(acwr, digits: 2))). Aşırı yüklenme ve sakatlık riskine karşı günlük zorlanma tavanı \(MathSupport.decimal(cappedTarget)) ile sınırlandırıldı."
+            rationale = "Toparlanmanız \(band.displayName.lowercased()) bantta olsa da son haftalık akut yükünüz belirgin yükseldi (ACWR: \(MathSupport.decimal(acwr, digits: 2))). Planlama önlemi olarak günlük zorlanma tavanı \(MathSupport.decimal(cappedTarget)) ile sınırlandırıldı."
         }
+
+        if input.preference == .cautious, recovery < input.preference.pushThreshold, case .push = action {
+            let cap = min(RecoveryEngine.targetCeiling(forRecovery: recovery), 14)
+            action = .maintain(targetStrain: cap)
+            headline = "Bugün planını koru"
+            rationale = "İhtiyatlı tercihin, yüksek yük için daha güçlü toparlanma bekliyor. Bu bir planlama sınırıdır; ölçülen puanını değiştirmez."
+        }
+        if case .push = action { activities = activitiesForLens(input.lens) }
+        if case .maintain = action { activities = activitiesForLens(input.lens) }
+        steps.append(TraceStep(stepNumber: stepCounter, engineName: "DecisionEngine",
+            inputDescription: "\(input.preference.title) · \(input.lens.displayName)",
+            outputDescription: "Yüksek yük için toparlanma eşiği: \(Int(input.preference.pushThreshold))",
+            physiologicalImpact: "Kullanıcının planlama tercihi; doğrulanmış bir risk sınırı değil."))
 
         // Muscle Fatigue Screening
         if !fatiguedMuscles.isEmpty {
@@ -311,4 +331,13 @@ enum DecisionEngine {
             calculationSteps: steps.map { "Adım \($0.stepNumber): \($0.engineName) -> \($0.outputDescription)" }
         )
     }
+    private static func activitiesForLens(_ lens: TrainingLens) -> [WorkoutActivity] {
+        switch lens {
+        case .endurance: return [.running, .cycling, .swimming]
+        case .strength: return [.traditionalStrengthTraining, .functionalStrengthTraining]
+        case .hybrid: return [.functionalStrengthTraining, .running, .rowing]
+        case .health: return [.walking]
+        }
+    }
+
 }

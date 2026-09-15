@@ -62,10 +62,12 @@ enum ZenithiumFormat {
     }
 
     /// Tempo, dakika:saniye/km.
-    static func pace(secondsPerKilometre: Double) -> String {
+    static func pace(secondsPerKilometre: Double, units: UnitPreference = .metric) -> String {
         guard secondsPerKilometre.isFinite, secondsPerKilometre > 0 else { return "—" }
-        let total = Int(secondsPerKilometre.rounded())
-        return String(format: "%d:%02d/km", total / 60, total % 60)
+        let converted = secondsPerKilometre * (units == .metric ? 1 : 1.609344)
+        guard converted < Double(Int.max) else { return "—" }
+        let total = Int(converted.rounded())
+        return String(format: "%d:%02d/", total / 60, total % 60) + units.distanceSymbol
     }
 
     static func spokenDuration(seconds: Double) -> String {

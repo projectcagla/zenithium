@@ -213,10 +213,10 @@ struct TodayView: View {
             ribbonDivider
             supportingMetricItem(
                 id: "temp", label: "Bilek",
-                value: content.record.wristTemperatureDelta.map { ZenithiumFormat.signed($0, digits: 1) } ?? "—",
-                unit: "Δ°C", bandValues: history("temp", current: content.record.wristTemperatureDelta),
+                value: content.record.wristTemperatureDelta.map { ZenithiumFormat.signed(content.profile.unitPreference.temperatureDelta(fromCelsius: $0), digits: 1) } ?? "—",
+                unit: "Δ" + content.profile.unitPreference.temperatureDeltaSymbol, bandValues: history("temp", current: content.record.wristTemperatureDelta).map { content.profile.unitPreference.temperatureDelta(fromCelsius: $0) },
                 baseline: baseline(.wristTemperature).map { _ in 0 },
-                sigma: baseline(.wristTemperature)?.standardDeviation,
+                sigma: baseline(.wristTemperature).map { content.profile.unitPreference.temperatureDelta(fromCelsius: $0.standardDeviation) },
                 description: "Bilek sıcaklığının kişisel tabana göre farkı. Sıfır çizgisi tabanı, koridor ölçülen değişkenliği gösterir."
             )
         }
@@ -343,7 +343,7 @@ struct TodayView: View {
     private func prescriptionCard(_ content: TodayViewModel.Content) -> some View {
         let decision = viewModel.athleticDecision?.value
         let confidence = viewModel.athleticDecision?.confidence.value ?? content.recovery.confidence
-        let action = decision?.action ?? defaultAction(for: content.score, ceiling: content.ceiling)
+        let action = decision?.action ?? .calibrate
 
         return SectionCard(title: "Günün kararı") {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
@@ -356,7 +356,7 @@ struct TodayView: View {
                         Text(decision?.headline ?? content.headline).zenithiumBody()
                     }
                     Spacer(minLength: 0)
-                    if let ceiling = content.ceiling {
+                    if let ceiling = action.targetCeiling {
                         VStack(alignment: .trailing, spacing: 4) {
                             Text("TAVAN").zenithiumEyebrow()
                             Text(ZenithiumFormat.strain(ceiling)).metricNumeral()

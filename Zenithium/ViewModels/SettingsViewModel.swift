@@ -17,16 +17,19 @@ final class SettingsViewModel {
         let authorization: HealthAuthorizationState
         let engineVersion: Int
         let appGroupIdentifier: String
+        let baselineNights: Int
+        let preferences: PersonalPreferences
+        let healthReport: HealthAuthorizationReport
     }
 
     private(set) var state: ViewState<Content> = .loading
     private(set) var isSaving = false
     private(set) var saveError: ZenithiumError?
 
-    private let repository: any ProfileRepository
-    private let baselines: any BaselineRepository
-    private let health: any HealthAuthorizing
-    private let coordinator: any RecalculationDriving
+    private let settings: SettingsCoordinator
+    private let notifications: LocalNotificationCoordinator
+    private(set) var integrations = IntegrationStatus()
+    private(set) var notificationAuthorization = "Kontrol ediliyor"
     private let nowProvider: @Sendable () -> Date
 
     init(
@@ -34,12 +37,13 @@ final class SettingsViewModel {
         baselines: any BaselineRepository,
         health: any HealthAuthorizing,
         coordinator: any RecalculationDriving,
+        preferences: any PersonalPreferenceRepository = PersonalPreferenceStore(inMemory: true),
+        notifications: LocalNotificationCoordinator = LocalNotificationCoordinator(),
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
-        self.repository = repository
-        self.baselines = baselines
-        self.health = health
-        self.coordinator = coordinator
+        self.notifications = notifications
+        self.settings = SettingsCoordinator(profiles: repository, baselines: baselines, health: health,
+            recalculation: coordinator, preferences: preferences, notifications: notifications)
         self.nowProvider = nowProvider
     }
 
@@ -49,16 +53,12 @@ final class SettingsViewModel {
 
     func load() async {
         do {
-            let profile = try await repository.profile()
-            let report = await health.authorizationReport(now: nowProvider())
-            state = .loaded(
-                Content(
-                    profile: profile,
-                    authorization: report.overall,
-                    engineVersion: EngineConstants.engineVersion,
-                    appGroupIdentifier: AppGroup.identifier
-                )
-            )
+            let value = try await settings.load(now: nowProvider())
+            state = .loaded(Content(profile: value.profile, authorization: value.authorization.overall,
+                engineVersion: EngineConstants.engineVersion, appGroupIdentifier: AppGroup.identifier,
+                baselineNights: value.baselineNights, preferences: value.preferences, healthReport: value.authorization))
+            notificationAuthorization = await notifications.authorizationLabel()
+            integrations = await IntegrationStatusCoordinator.read()
         } catch {
             if let mapped = ViewState<Content>.from(error) {
                 state = mapped
@@ -67,6 +67,10 @@ final class SettingsViewModel {
     }
 
     func setSleepNeed(_ hours: Double) async {
+        guard hours.isFinite, (5...12).contains(hours) else {
+            saveError = .invalidEngineInput(reason: "Uyku hedefi 5–12 saat arasında olmalı.")
+            return
+        }
         var write = UserProfileWrite()
         write.baselineSleepNeedHours = hours
         await apply(write, recalculating: true)
@@ -78,18 +82,14 @@ final class SettingsViewModel {
         await apply(write, recalculating: true)
     }
 
-    /// Merceği değiştirir.
-    ///
-    /// Yeniden hesaplama yok: mercek motoru değil, arayüzü değiştirir (ASSUMPTION LENS-1).
+    /// Updates activity suggestions, leaving physiological measurements unchanged.
     func setTrainingLens(_ lens: TrainingLens) async {
         var write = UserProfileWrite()
         write.trainingLens = lens
         await apply(write, recalculating: false)
     }
 
-    /// Choose the palette. Yol haritası v4, B6.
-    ///
-    /// No recalculation: this changes how a number is drawn, never what it is.
+    /// Choose the palette and publish the updated profile to the visible screens.
     func setAppearance(_ appearance: AppearancePreference) async {
         var write = UserProfileWrite()
         write.appearance = appearance
@@ -125,12 +125,21 @@ final class SettingsViewModel {
         await apply(write, recalculating: true)
     }
 
+    func setMaxHeartRateText(_ text: String) async {
+        if text.isEmpty { await setMaxHeartRateOverride(nil); return }
+        guard let value = Double(text), value.isFinite else {
+            saveError = .invalidEngineInput(reason: "Maksimum nabzı sayı olarak gir.")
+            return
+        }
+        await setMaxHeartRateOverride(value)
+    }
+
     /// Sets or clears the `HRmax` override (§5.3). Values outside the accepted range are
     /// refused rather than clamped, so the user sees why nothing changed.
     func setMaxHeartRateOverride(_ value: Double?) async {
         if let value, !UserProfile.maxHeartRateOverrideRange.contains(value) {
             saveError = .invalidEngineInput(
-                reason: "Enter a maximum heart rate between \(Int(UserProfile.maxHeartRateOverrideRange.lowerBound)) and \(Int(UserProfile.maxHeartRateOverrideRange.upperBound)) bpm."
+                reason: "Maksimum nabız \(Int(UserProfile.maxHeartRateOverrideRange.lowerBound))–\(Int(UserProfile.maxHeartRateOverrideRange.upperBound)) atım/dk arasında olmalı."
             )
             return
         }
@@ -146,8 +155,7 @@ final class SettingsViewModel {
         saveError = nil
         defer { isSaving = false }
         do {
-            try await baselines.resetBaselines()
-            _ = try await coordinator.recalculate(now: nowProvider())
+            try await settings.resetBaseline(now: nowProvider())
             await load()
         } catch let error as ZenithiumError {
             saveError = error
@@ -157,14 +165,12 @@ final class SettingsViewModel {
     }
 
     private func apply(_ write: UserProfileWrite, recalculating: Bool) async {
+        guard !isSaving else { return }
         isSaving = true
         saveError = nil
         defer { isSaving = false }
         do {
-            _ = try await repository.updateProfile(write)
-            if recalculating {
-                _ = try? await coordinator.recalculate(now: nowProvider())
-            }
+            try await settings.updateProfile(write, now: nowProvider())
             await load()
         } catch let error as ZenithiumError {
             saveError = error
@@ -172,4 +178,27 @@ final class SettingsViewModel {
             saveError = .persistenceWriteFailed(detail: String(describing: error))
         }
     }
+    func setPreferences(_ update: (inout PersonalPreferences) -> Void, requestNotifications: Bool = false) async {
+        guard !isSaving, var preferences = state.value?.preferences else { return }
+        update(&preferences)
+        isSaving = true
+        saveError = nil
+        defer { isSaving = false }
+        do {
+            try await settings.updatePreferences(preferences, requestNotifications: requestNotifications, now: nowProvider())
+            await load()
+        } catch {
+            saveError = .persistenceWriteFailed(detail: error.localizedDescription)
+            await load()
+        }
+    }
+
+    func requestHealth() async {
+        isSaving = true
+        saveError = nil
+        defer { isSaving = false }
+        do { try await settings.requestHealth(now: nowProvider()); await load() }
+        catch { saveError = .persistenceWriteFailed(detail: error.localizedDescription) }
+    }
+
 }

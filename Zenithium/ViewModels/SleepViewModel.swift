@@ -18,6 +18,8 @@ final class SleepViewModel {
         let stages: [StageSlice]
         let profile: UserProfileSnapshot
         let history: [BiometricDaySnapshot]
+        var plannedBedtimeMinute: Int? = nil
+        var plannedWakeMinute: Int? = nil
 
         var score: Double { sleep.score ?? 0 }
 
@@ -44,6 +46,7 @@ final class SleepViewModel {
     private let coordinator: any RecalculationDriving
     private let health: any HealthAuthorizing
     private let records: (any BiometricDayRepository)?
+    private let preferences: (any PersonalPreferenceRepository)?
     private let nowProvider: @Sendable () -> Date
     private var observationTask: Task<Void, Never>?
 
@@ -51,11 +54,13 @@ final class SleepViewModel {
         coordinator: any RecalculationDriving,
         health: any HealthAuthorizing,
         records: (any BiometricDayRepository)? = nil,
+        preferences: (any PersonalPreferenceRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.coordinator = coordinator
         self.health = health
         self.records = records
+        self.preferences = preferences
         self.nowProvider = nowProvider
     }
 
@@ -118,6 +123,9 @@ final class SleepViewModel {
         let start = calendar.date(byAdding: .day, value: -14, to: today) ?? today
         let history = (try? await records?.dayRecords(from: start, through: today)) ?? []
 
+        let planned: PersonalPreferences?
+        do { planned = try await preferences?.load() }
+        catch { state = .failed(.persistenceReadFailed(detail: error.localizedDescription)); return }
         switch result.sleep.validity {
         case .noData:
             state = .noData(reason: .noOvernightData)
@@ -130,7 +138,9 @@ final class SleepViewModel {
                     record: result.record,
                     stages: Self.stageSlices(from: result.record),
                     profile: result.profile,
-                    history: history
+                    history: history,
+                    plannedBedtimeMinute: planned?.bedtimeMinute(needHours: result.sleep.needHours),
+                    plannedWakeMinute: planned?.wakeMinute
                 )
             )
         }

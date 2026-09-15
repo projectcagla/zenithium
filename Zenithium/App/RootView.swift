@@ -43,6 +43,7 @@ struct RootView: View {
     /// The palette the app draws in. Dark until the profile says otherwise, so the first
     /// frame is never the wrong colour. Yol haritası v4, B6.
     @State private var appearance: AppearancePreference = .default
+    @State private var displayUnits: UnitPreference = .metric
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -71,7 +72,8 @@ struct RootView: View {
                 sessions: store,
                 cycleSource: health,
                 goals: store,
-                workoutSource: health
+                workoutSource: health,
+                preferences: dependencies.preferences
             )
         )
         _strainViewModel = State(
@@ -86,7 +88,8 @@ struct RootView: View {
             initialValue: SleepViewModel(
                 coordinator: coordinator,
                 health: authorizing,
-                records: records
+                records: records,
+                preferences: dependencies.preferences
             )
         )
         _muscleViewModel = State(
@@ -108,7 +111,9 @@ struct RootView: View {
                 repository: store,
                 baselines: store,
                 health: authorizing,
-                coordinator: coordinator
+                coordinator: coordinator,
+                preferences: dependencies.preferences,
+                notifications: dependencies.notifications
             )
         )
         _onboardingViewModel = State(
@@ -167,6 +172,7 @@ struct RootView: View {
             case .some(false):
                 OnboardingView(viewModel: onboardingViewModel) {
                     hasCompletedOnboarding = true
+                    Task { await dependencies.start() }
                 }
 
             case .some(true):
@@ -176,6 +182,7 @@ struct RootView: View {
         // Applied at the root so it reaches every sheet and every asset colour beneath it.
         // `nil` means follow the phone. Yol haritası v4, B6.
         .preferredColorScheme(appearance.colorScheme)
+        .environment(\.displayUnits, displayUnits)
         .task { await loadOnboardingState() }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
@@ -204,6 +211,9 @@ struct RootView: View {
         }
         .onChange(of: settingsViewModel.state.value?.profile.appearance) { _, newAppearance in
             if let newAppearance { appearance = newAppearance }
+        }
+        .onChange(of: settingsViewModel.state.value?.profile.unitPreference) { _, units in
+            if let units { displayUnits = units }
         }
     }
 
@@ -325,8 +335,8 @@ struct RootView: View {
             case .bloodwork: BloodworkView(viewModel: bloodworkViewModel)
             case .report: ReportView(viewModel: reportViewModel)
             case .documents: DocumentsView(viewModel: documentsViewModel)
-            case .dataTransfer: DataTransferView(service: dependencies.archive)
-            case .settings: SettingsView(viewModel: settingsViewModel)
+            case .dataTransfer: DataTransferView(service: dependencies.archive, onRestored: { dependencies.presentationID = UUID() })
+            case .settings: SettingsView(onRestored: { dependencies.presentationID = UUID() }, viewModel: settingsViewModel, archive: dependencies.archive, onErase: { try await dependencies.eraseAll() })
             case .journal: JournalView(viewModel: journalViewModel)
             }
         }
@@ -355,6 +365,8 @@ struct RootView: View {
     private func refreshLens() async {
         guard let profile = try? await dependencies.store.profile() else { return }
         lens = profile.trainingLens
+        displayUnits = profile.unitPreference
+        appearance = profile.appearance
     }
 
     private func loadOnboardingState() async {
@@ -373,6 +385,7 @@ struct RootView: View {
         if let profile {
             lens = profile.trainingLens
             appearance = profile.appearance
+            displayUnits = profile.unitPreference
         }
     }
 }

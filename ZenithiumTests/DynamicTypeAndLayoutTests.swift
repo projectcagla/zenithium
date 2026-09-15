@@ -11,6 +11,7 @@ import SwiftUI
 @testable import Zenithium
 
 @Suite("Dynamic Type ve Arayüz Düzeni")
+@MainActor
 struct DynamicTypeAndLayoutTests {
 
     private let calendar = Calendar.autoupdatingCurrent
@@ -47,7 +48,8 @@ struct DynamicTypeAndLayoutTests {
             peakAlertness: 80.0
         )
         let view = CircadianArcView(arc: arc)
-        #expect(view.arc.markers.count == 5)
+        let markerCount = view.arc.markers.count
+        #expect(markerCount == 5)
         #expect(arc.markers.count == 5)
     }
 
@@ -66,7 +68,8 @@ struct DynamicTypeAndLayoutTests {
         )
         .environment(\.dynamicTypeSize, size)
 
-        #expect(tile != nil)
+        let tileRenderer = ImageRenderer(content: tile.frame(width: 300))
+        #expect(tileRenderer.uiImage?.size.width == 300)
 
         let card = SectionCard(
             title: "Günün Uyanıklık Eğrisi",
@@ -76,6 +79,7 @@ struct DynamicTypeAndLayoutTests {
         }
         .environment(\.dynamicTypeSize, size)
 
-        #expect(card != nil)
+        let cardRenderer = ImageRenderer(content: card.frame(width: 300))
+        #expect(cardRenderer.uiImage?.size.width == 300)
     }
 }

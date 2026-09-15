@@ -44,6 +44,8 @@ actor DailyRecalculationCoordinator {
     private let calendarProvider: @Sendable () -> Calendar
 
     /// The in-flight pass, if any. This is the single-flight gate.
+    private var isPaused = false
+    private var mutationGeneration = 0
     private var inFlight: Task<RecalculationResult, any Error>?
 
     /// The in-flight deep historical backfill, so multiple passes do not duplicate 90-day history walks.
@@ -55,19 +57,25 @@ actor DailyRecalculationCoordinator {
     /// Writes the widget snapshot and decides whether the widgets need to redraw.
     private let widgets: WidgetRefreshPublisher
     private let automaticallyBackfills: Bool
+    private let preferences: (any PersonalPreferenceRepository)?
+    private let invalidateRecords: @Sendable () async -> Void
 
     init(
         health: any HealthDataProviding,
         store: any ZenithiumRepository,
         calendarProvider: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent },
         widgets: WidgetRefreshPublisher = WidgetRefreshPublisher(),
-        automaticallyBackfills: Bool = true
+        automaticallyBackfills: Bool = true,
+        preferences: (any PersonalPreferenceRepository)? = nil,
+        invalidateRecords: @escaping @Sendable () async -> Void = {}
     ) {
         self.health = health
         self.store = store
         self.calendarProvider = calendarProvider
         self.widgets = widgets
         self.automaticallyBackfills = automaticallyBackfills
+        self.preferences = preferences
+        self.invalidateRecords = invalidateRecords
     }
 
     // MARK: - Entry points
@@ -75,6 +83,7 @@ actor DailyRecalculationCoordinator {
     /// Recomputes today. Concurrent callers join the pass already running.
     @discardableResult
     func recalculate(now: Date) async throws -> RecalculationResult {
+        guard !isPaused else { throw ZenithiumError.cancelled }
         if let inFlight {
             return try await inFlight.value
         }
@@ -97,11 +106,28 @@ actor DailyRecalculationCoordinator {
         }
     }
 
+    func suspendForErasure() async {
+        isPaused = true
+        mutationGeneration += 1
+        let computation = inFlight
+        let history = inFlightBackfill
+        computation?.cancel()
+        history?.cancel()
+        _ = try? await computation?.value
+        await history?.value
+        inFlight = nil
+        inFlightBackfill = nil
+        cachedBaselines = nil
+    }
+
+    func resumeAfterErasure() { isPaused = false }
+
     /// Recomputes days whose records were produced by an older engine (§7).
     ///
     /// Bounded per pass so a version bump does not turn the next launch into a long stall;
     /// the remaining days are picked up by subsequent passes.
     func backfillPendingDays(now: Date, limit: Int = 7) async throws {
+        guard limit > 0 else { return }
         let stale = try await store.dayRecordsNeedingBackfill(
             currentEngineVersion: EngineConstants.engineVersion
         )
@@ -123,6 +149,7 @@ actor DailyRecalculationCoordinator {
     /// This immediately populates ACWR (acute/chronic load), HRV baselines, sleep consistency,
     /// sleep debt, and muscle fatigue models on first launch or sparse store states.
     func backfillHistoricalDays(now: Date, windowDays: Int = 90) async throws {
+        guard windowDays > 0 else { return }
         let calendar = calendarProvider()
         let profile = try await store.profile()
         let resolver = DayWindowResolver(calendar: calendar, boundary: profile.dayBoundary)
@@ -156,7 +183,7 @@ actor DailyRecalculationCoordinator {
 
         // Recompute today now that the entire history is committed to the local store
         let finalResult = try await recalculateDay(wakeDay: today, now: now)
-        publish(finalResult)
+        await publish(finalResult)
         await refreshWidgetTrend(now: now, result: finalResult)
         ZenithiumLog.orchestration.notice("Deep historical backfill completed successfully.")
     }
@@ -178,7 +205,8 @@ actor DailyRecalculationCoordinator {
         subscribers.removeValue(forKey: id)
     }
 
-    private func publish(_ result: RecalculationResult) {
+    private func publish(_ result: RecalculationResult) async {
+        await invalidateRecords()
         for continuation in subscribers.values {
             continuation.yield(result)
         }
@@ -190,7 +218,7 @@ actor DailyRecalculationCoordinator {
         let calendar = calendarProvider()
         let today = calendar.startOfDay(for: now)
         let result = try await recalculateDay(wakeDay: today, now: now)
-        publish(result)
+        await publish(result)
         // The widget snapshot is written from the committed records, so its three-day trend
         // is real history rather than the single day this pass happened to compute.
         await refreshWidgetTrend(now: now, result: result)
@@ -243,6 +271,8 @@ actor DailyRecalculationCoordinator {
     }
 
     private func performRecalculation(wakeDay: Date, now: Date) async throws -> RecalculationResult {
+        guard !isPaused else { throw ZenithiumError.cancelled }
+        let generation = mutationGeneration
         try Task.checkCancellation()
 
         let calendar = calendarProvider()
@@ -341,7 +371,10 @@ actor DailyRecalculationCoordinator {
             strainOutput: strainOutput,
             baselines: baselines
         )
+        guard !isPaused, generation == mutationGeneration else { throw ZenithiumError.cancelled }
+        try Task.checkCancellation()
         let record = try await store.upsertDayRecord(write)
+        guard !isPaused, generation == mutationGeneration else { throw ZenithiumError.cancelled }
 
         let arrays = MuscleFatigueSnapshot.arrays(from: muscle)
         try await store.saveMuscleSnapshot(
@@ -380,24 +413,27 @@ actor DailyRecalculationCoordinator {
     ///
     /// Held for the pass rather than for a duration: the next pass has a different `now` and
     /// rebuilds, so there is no staleness to reason about.
-    private var cachedBaselines: (now: Date, values: [MetricKind: BaselineSnapshot])?
+    private var cachedBaselines: (now: Date, start: Date?, values: [MetricKind: BaselineSnapshot])?
 
     private func refreshBaselines(
         now: Date,
         calendar: Calendar
     ) async throws -> [MetricKind: BaselineSnapshot] {
-        if let cachedBaselines, cachedBaselines.now == now {
+        let start = try await preferences?.load().baselineStart
+        if let cachedBaselines, cachedBaselines.now == now, cachedBaselines.start == start {
             return cachedBaselines.values
         }
-        let values = try await rebuildBaselines(now: now, calendar: calendar)
-        cachedBaselines = (now, values)
+        let values = try await rebuildBaselines(now: now, calendar: calendar, startingAt: start)
+        cachedBaselines = (now, start, values)
         return values
     }
 
     private func rebuildBaselines(
         now: Date,
-        calendar: Calendar
+        calendar: Calendar,
+        startingAt: Date?
     ) async throws -> [MetricKind: BaselineSnapshot] {
+        let generation = mutationGeneration
         let series = try await health.fetchBaselineSeries(
             days: EngineConstants.Baseline.windowDays,
             now: now,
@@ -405,10 +441,13 @@ actor DailyRecalculationCoordinator {
         )
         var baselines: [MetricKind: BaselineSnapshot] = [:]
         for metric in MetricKind.allCases {
-            let samples = series.samples(for: metric)
+            let samples = series.samples(for: metric).filter { sample in
+                startingAt.map { sample.dayStart >= $0 } ?? true
+            }
             guard !samples.isEmpty else { continue }
             baselines[metric] = BaselineEngine.rebuild(metric: metric, from: samples)
         }
+        guard !isPaused, generation == mutationGeneration else { throw ZenithiumError.cancelled }
         if !baselines.isEmpty {
             try await store.saveBaselines(baselines)
         }

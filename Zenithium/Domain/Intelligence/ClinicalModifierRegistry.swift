@@ -141,26 +141,4 @@ enum ClinicalModifierRegistry {
         allModifiers.first { $0.targetMarkerKey == key }
     }
 
-    // MARK: - User Defaults Storage for Disabled Modifiers
-
-    private static let disabledModifiersDefaultsKey = "zenithium.clinical.disabledModifiers"
-
-    private static var userDefaults: UserDefaults {
-        AppGroup.defaults ?? UserDefaults.standard
-    }
-
-    static func disabledModifierIDs() -> Set<String> {
-        let array = userDefaults.stringArray(forKey: disabledModifiersDefaultsKey) ?? []
-        return Set(array)
-    }
-
-    static func setModifier(id: String, isEnabled: Bool) {
-        var set = disabledModifierIDs()
-        if isEnabled {
-            set.remove(id)
-        } else {
-            set.insert(id)
-        }
-        userDefaults.set(Array(set), forKey: disabledModifiersDefaultsKey)
-    }
 }

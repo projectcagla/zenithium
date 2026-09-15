@@ -123,6 +123,23 @@ final class RenderHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(renderedCount, 21, "En az 21 temel PNG başarıyla render edilmelidir.")
     }
 
+    func testSettingsAtLargestTextSize() async throws {
+        let dependencies = try AppDependencies.preview(configuration: .complete)
+        let now = Date(timeIntervalSince1970: 1_780_300_800)
+        _ = try await dependencies.coordinator.recalculate(now: now)
+        let model = SettingsViewModel(repository: dependencies.store, baselines: dependencies.store,
+            health: dependencies.health, coordinator: dependencies.coordinator,
+            preferences: dependencies.preferences, nowProvider: { now })
+        await model.load()
+        XCTAssertNotNil(model.state.value)
+        for size in [DynamicTypeSize.large, .accessibility5] {
+            let view = AnyView(NavigationStack { SettingsView(viewModel: model, archive: dependencies.archive) })
+            let data = try XCTUnwrap(renderView(view, size: size17Pro, dynamicTypeSize: size))
+            savePNG(data: data, filename: "ayarlar-\(size == .large ? "default" : "ax5").png")
+        }
+        await dependencies.stop()
+    }
+
     func testImageRendererDirect() throws {
         let view = Text("ZENITHIUM TEST")
             .font(.largeTitle)

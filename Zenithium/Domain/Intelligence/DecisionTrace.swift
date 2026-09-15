@@ -18,6 +18,13 @@ enum DecisionAction: Sendable, Equatable, Codable {
     case recover
     /// Baseline insufficient; prioritize wearing device and collecting biometric anchors.
     case calibrate
+
+    var targetCeiling: Double? {
+        switch self {
+        case .push(let value), .maintain(let value): return value
+        case .recover, .calibrate: return nil
+        }
+    }
 }
 
 /// A discrete step in the deterministic decision pipeline.

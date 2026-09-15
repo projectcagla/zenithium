@@ -50,7 +50,8 @@ enum PrescriptionEngine {
         biologicalSex: BiologicalSexValue,
         criticalSpeed: CriticalSpeedModel?,
         circadian: CircadianArc?,
-        cycle: CycleContext? = nil
+        cycle: CycleContext? = nil,
+        preference: DecisionPreference = .progressive
     ) -> Prescription? {
         guard lens.expectsPrescription || lens == .health else { return nil }
         guard recovery.availability.isScored, let score = recovery.score else { return nil }
@@ -61,13 +62,18 @@ enum PrescriptionEngine {
         var intent = Intent(band: band)
         rationale.append("Toparlanma \(ZenithiumFormat.score(score)) — \(band.displayName.lowercased()) bant.")
 
+        if band == .green && score < preference.pushThreshold {
+            intent = intent.softened()
+            rationale.append("İhtiyatlı tercihin bugün yüksek yük yerine planı korumayı seçiyor.")
+        }
+
         // Step 2 — the ratio can only ever move the intent *down*. A good morning is not
         // evidence that a spike was fine; it is evidence that the body handled yesterday.
         if let load, let ratio = load.ratio {
             if ratio >= spikeGuardRatio {
                 intent = intent.softened()
                 rationale.append("Yük oranın \(ZenithiumFormat.metric(ratio, digits: 2)) — son haftan son ayının belirgin üstünde, bugün eklemiyorum.")
-            } else if ratio < 0.80, band != .red {
+            } else if ratio < 0.80, band != .red, preference == .progressive {
                 intent = intent.raised()
                 rationale.append("Yük oranın \(ZenithiumFormat.metric(ratio, digits: 2)) — son haftan hafif geçmiş, alan var.")
             }
@@ -85,7 +91,7 @@ enum PrescriptionEngine {
         let candidates = sessionKinds(for: lens, intent: intent, constrained: constrainedGroups)
         guard !candidates.isEmpty else { return nil }
 
-        let ceiling = recovery.targetStrainCeiling
+        let ceiling = recovery.targetStrainCeiling.map { preference == .cautious && score < preference.pushThreshold ? min($0, 14) : $0 }
         let sessions = candidates.prefix(3).enumerated().map { index, kind in
             session(
                 kind: kind,

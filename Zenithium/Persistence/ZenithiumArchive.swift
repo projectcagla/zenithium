@@ -83,6 +83,9 @@ struct ZenithiumArchive: Codable, Sendable, Equatable {
     /// Whether `documentFiles` was left empty because the vault exceeded the size limit.
     var omittedDocumentFiles: Bool
 
+    /// Optional for compatibility with existing archives.
+    var preferences: PersonalPreferences? = nil
+
     /// One file from the document vault, carried whole.
     struct ArchivedDocumentFile: Codable, Sendable, Equatable {
 
@@ -192,8 +195,8 @@ extension ArchiveFailure: LocalizedError {
             return "Bu dosya bir Zenithium arşivi değil"
         case .unsupportedFormatVersion(let found, let supported):
             return "Arşiv sürümü \(found), bu uygulama \(supported) okuyor"
-        case .writeFailed:
-            return "Arşiv yazılamadı"
+        case .writeFailed(let detail):
+            return "Arşiv tamamlanamadı: \(detail)"
         }
     }
 
@@ -204,7 +207,7 @@ extension ArchiveFailure: LocalizedError {
         case .unsupportedFormatVersion:
             return "Uygulamayı güncelledikten sonra yeniden dene."
         case .writeFailed:
-            return "Cihazda yer açıp yeniden dene."
+            return "Hata nedenini giderdikten sonra yeniden dene."
         }
     }
 }

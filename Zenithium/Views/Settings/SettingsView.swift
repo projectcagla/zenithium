@@ -1,413 +1,237 @@
-//
-//  SettingsView.swift
-//  Zenithium
-//
-//  Settings. Spec §10, and §12's requirement that the disclaimer and privacy statements are
-//  reachable from here.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
-
+    var onRestored: () -> Void = {}
     @State var viewModel: SettingsViewModel
+    var archive: ArchiveService? = nil
+    var onErase: (() async throws -> Void)? = nil
     @State private var maxHeartRateText = ""
-    @State private var isConfirmingRebuild = false
+    @State private var confirmsBaseline = false
+    @State private var confirmsErase = false
+    @State private var isErasing = false
+    @State private var eraseError: String?
+    @State private var editsBirthDate = false
+    @State private var birthDateDraft = Date()
+    @State private var birthDateChanged = false
 
     var body: some View {
-        NavigationStack {
-            Form {
-                ViewStateContainer(
-                    state: viewModel.state,
-                    loadingLabel: "Ayarlar yükleniyor",
-                    retry: { await viewModel.load() },
-                    requestAccess: nil
-                ) { content in
-                    sections(content)
-                }
-                .listRowBackground(Color.clear)
+        Form {
+            ViewStateContainer(state: viewModel.state, loadingLabel: "Ayarlar yükleniyor",
+                retry: { await viewModel.load() }, requestAccess: { await viewModel.requestHealth() }) { content in
+                sections(content)
             }
-            .scrollContentBackground(.hidden)
-            .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Ayarlar")
-            .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
+            if let error = viewModel.saveError {
+                Section { Text(error.localizedDescription).foregroundStyle(ZenithiumColor.red) }
+            }
+            if let eraseError { Section { Text(eraseError).foregroundStyle(ZenithiumColor.red) } }
         }
-        .zenithiumBackground(tint: ZenithiumColor.spectrumIndigo, intensity: 0.3)
+        .scrollContentBackground(.hidden)
+        .background(ZenithiumColor.background.ignoresSafeArea())
+        .navigationTitle("Ayarlar")
+        .disabled(viewModel.isSaving || isErasing)
         .task { await viewModel.onAppear() }
+        .tint(ZenithiumColor.accent)
+        .sheet(isPresented: $editsBirthDate) {
+            NavigationStack {
+                Form {
+                    DatePicker("Doğum tarihi", selection: $birthDateDraft, in: ...Date(), displayedComponents: .date)
+                        .onChange(of: birthDateDraft) { _, _ in birthDateChanged = true }
+                    if let error = viewModel.saveError { Text(error.localizedDescription).foregroundStyle(ZenithiumColor.red) }
+                }
+                .navigationTitle("Doğum tarihin")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Vazgeç") { editsBirthDate = false } }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Kaydet") { Task { await viewModel.setDateOfBirth(birthDateDraft); if viewModel.saveError == nil { editsBirthDate = false } } }
+                            .disabled(!birthDateChanged || viewModel.isSaving)
+                    }
+                }
+            }
+        }
+        .confirmationDialog("Kişisel tabanın yeniden başlatılsın mı?", isPresented: $confirmsBaseline, titleVisibility: .visible) {
+            Button("Bugünden başlat", role: .destructive) { Task { await viewModel.rebuildBaselines() } }
+        } message: {
+            Text("Geçmiş kayıtların kalır. Yeni toparlanma hesapları yalnızca bugünden sonra biriken gecelerle karşılaştırılır; yeterli veri birikene kadar puan gösterilmez.")
+        }
+        .confirmationDialog("Zenithium kayıtların silinsin mi?", isPresented: $confirmsErase, titleVisibility: .visible) {
+            Button("Tümünü sil", role: .destructive) {
+                guard let onErase else { return }
+                isErasing = true
+                Task {
+                    defer { isErasing = false }
+                    do { try await onErase() }
+                    catch { eraseError = "Silme tamamlanamadı: \(error.localizedDescription). Tekrar deneyebilirsin." }
+                }
+            }
+        } message: {
+            Text("Tahliller, belgeler, günlük, antrenman kayıtları ve tercihler bu uygulamadan silinir. Apple Sağlık'taki kaynak veriler ve senin paylaştığın arşiv kopyaları korunur. Yeniden kurulumda Sağlık verileri tekrar okunabilir.")
+        }
     }
 
-    @ViewBuilder
-    private func sections(_ content: SettingsViewModel.Content) -> some View {
-        lensSection(content)
-        cycleSection(content)
-        clinicalSection(content)
+    @ViewBuilder private func sections(_ content: SettingsViewModel.Content) -> some View {
         profileSection(content)
+        healthSection(content)
+        Section("Kişisel taban") {
+            LabeledContent("Geçerli HRV gecesi", value: "\(content.baselineNights) gece")
+            ProgressView(value: Double(min(content.baselineNights, 14)), total: 14)
+                .accessibilityLabel("Kişisel taban için \(content.baselineNights) gece birikti")
+            Text(content.baselineNights >= 14 ? "Başlangıç tabanın hazır; yeni gecelerle gelişmeye devam eder." : "İlk 14 geçerli gecede kişisel tabanın oluşur. Uyku süren ve kayıtların bu sırada da görünür.")
+                .font(ZenithiumFont.caption)
+            if let start = content.preferences.baselineStart {
+                LabeledContent("Başlangıç", value: start.formatted(.dateTime.day().month().year().locale(Locale(identifier: "tr_TR"))))
+            }
+            Button("Tabanı yeniden başlat", role: .destructive) { confirmsBaseline = true }
+        }
+        Section {
+            Picker("Hedef profil", selection: Binding(get: { content.profile.trainingLens }, set: { value in Task { await viewModel.setTrainingLens(value) } })) {
+                ForEach(TrainingLens.allCases) { Text($0.displayName).tag($0) }
+            }
+            Picker("Karar yaklaşımı", selection: Binding(get: { content.preferences.decision }, set: { value in Task { await viewModel.setPreferences { $0.decision = value } } })) {
+                ForEach(DecisionPreference.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+        } header: { Text("Antrenman kararları") } footer: {
+            Text("İhtiyatlı yaklaşım yüksek yük önermeden önce daha güçlü toparlanma bekler. Hedef profil önerilen etkinlikleri değiştirir. Bu tercihler ölçülen toparlanma puanını değiştirmez; sakatlanma riskini hesaplamaz.")
+        }
         sleepSection(content)
-        strainSection(content)
-        unitsSection(content)
-        appearanceSection(content)
-        dataSection(content)
-        safetySection
-        aboutSection(content)
-    }
-
-    /// The palette. Yol haritası v4, B6.
-    ///
-    /// Dark is first and is the default, because it is the app's identity rather than a
-    /// fallback. Following the phone is offered and is not the default: an app that changed
-    /// colour on somebody because of an update they did not read would be making the choice
-    /// for them in the other direction.
-    private func appearanceSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            ForEach(AppearancePreference.allCases) { option in
-                Button {
-                    Task { await viewModel.setAppearance(option) }
-                } label: {
-                    HStack(spacing: ZenithiumSpacing.m) {
-                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                            Text(option.displayName)
-                                .foregroundStyle(ZenithiumColor.textPrimary)
-                            Text(option.subtitle)
-                                .font(ZenithiumFont.caption)
-                                .foregroundStyle(ZenithiumColor.textSecondary)
-                        }
-                        Spacer(minLength: 0)
-                        if content.profile.appearance == option {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(ZenithiumColor.accent)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(
-                    content.profile.appearance == option ? [.isButton, .isSelected] : .isButton
-                )
+        notificationsSection(content)
+        Section("Bağlantılar") {
+            LabeledContent("Widget'lar", value: viewModel.integrations.widgets)
+            LabeledContent("Canlı etkinlikler", value: viewModel.integrations.liveActivities)
+            LabeledContent("Apple Watch", value: viewModel.integrations.watch)
+            if let date = viewModel.integrations.lastSummary {
+                LabeledContent("Son paylaşılan özet", value: date.formatted(.dateTime.day().month().hour().minute().locale(Locale(identifier: "tr_TR"))))
             }
-        } header: {
-            Text("Görünüm")
+            Text("Saat bağlantısı anlık erişimi gösterir; Sağlık verilerinin aktarımı ayrıca gecikebilir.").font(ZenithiumFont.caption)
         }
-        .sensoryFeedback(.selection, trigger: content.profile.appearance)
-    }
-
-    private func lensSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            ForEach(TrainingLens.allCases) { lens in
-                Button {
-                    Task { await viewModel.setTrainingLens(lens) }
-                } label: {
-                    HStack(spacing: ZenithiumSpacing.m) {
-                        // Drawn rather than an SF Symbol: this is the one screen that asks
-                        // what kind of athlete somebody is, and it used the same four glyphs
-                        // as every other fitness app's onboarding. Yol haritası v4, B9.
-                        LensMark(lens: lens)
-                            .frame(width: 26)
-                            .foregroundStyle(
-                                content.profile.trainingLens == lens
-                                    ? ZenithiumColor.accent
-                                    : ZenithiumColor.textSecondary
-                            )
-                        VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                            Text(lens.displayName)
-                                .foregroundStyle(ZenithiumColor.textPrimary)
-                            Text(lens.subtitle)
-                                .font(ZenithiumFont.caption)
-                                .foregroundStyle(ZenithiumColor.textSecondary)
-                        }
-                        Spacer(minLength: 8)
-                        if content.profile.trainingLens == lens {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(ZenithiumColor.accent)
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(
-                    content.profile.trainingLens == lens ? [.isButton, .isSelected] : .isButton
-                )
+        Section("Görünüm ve dil") {
+            Picker("Birimler", selection: Binding(get: { content.profile.unitPreference }, set: { value in Task { await viewModel.setUnitPreference(value) } })) {
+                ForEach(UnitPreference.allCases, id: \.self) { Text($0 == .metric ? "Metrik · km, °C" : "İngiliz · mil, °F").tag($0) }
             }
-        } header: {
-            Text("Mercek")
-        } footer: {
-            Text("Mercek hesaplamayı değiştirmez — toparlanma, zorlanma ve uyku dört mercekte de aynı sayıyı üretir. Değişen, hangi ekranların öne çıktığı.")
+            Picker("Görünüm", selection: Binding(get: { content.profile.appearance }, set: { value in Task { await viewModel.setAppearance(value) } })) {
+                ForEach(AppearancePreference.allCases) { Text($0.displayName).tag($0) }
+            }
+            LabeledContent("Uygulama dili", value: "Türkçe")
+            Text("Bu sürüm Türkçe sunulur. Birimler yalnızca gösterimi değiştirir; hesaplar aynı ölçüm birimleriyle yapılır.").font(ZenithiumFont.caption)
         }
-    }
-
-    /// Faz 12 — cycle awareness, opt-in and never inferred.
-    ///
-    /// The footer earns its length. This is the one setting that asks for a category of
-    /// health data people are rightly careful about, so it says what is read, what it is
-    /// used for, and what Zenithium will never do with it.
-    private func cycleSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            Toggle(
-                "Döngü farkındalığı",
-                isOn: Binding(
-                    get: { content.profile.tracksMenstrualCycle },
-                    set: { newValue in Task { await viewModel.setTracksMenstrualCycle(newValue) } }
-                )
-            )
-            .accessibilityHint("Toparlanmayı döngü fazına göre karşılaştırır")
-        } header: {
-            Text("Döngü")
-        } footer: {
-            Text("Açtığında Sağlık'tan yalnızca kaydettiğin regl günlerini okurum ve toparlanmanı, döngünün aynı fazındaki kendi geçmişinle karşılaştırırım. Luteal fazda istirahat nabzı 2–5 atım yükselir ve HRV düşer; bunu bilmeyen bir motor tamamen normal bir sabahı kötü okur.\n\nGebelik çıkarımı yapmam, doğurgan pencere hesaplamam, döngünü düzenli ya da düzensiz diye nitelemem. Veri cihazdan çıkmaz.")
+        Section("Verilerin") {
+            if let archive { NavigationLink("Dışa aktar veya içe aktar") { DataTransferView(service: archive, onRestored: onRestored) } }
+            if onErase != nil { Button("Tüm verilerimi sil", role: .destructive) { confirmsErase = true } }
+        }
+        Section("Şeffaflık") {
+            NavigationLink("Hesaplar, eşikler ve kaynaklar") { EvidenceLibraryView() }
+            DisclosureGroup("Tahlil ve EKG bağlamı") {
+                ForEach(ClinicalModifierRegistry.allModifiers) { modifier in
+                    Toggle(modifier.title, isOn: Binding(
+                        get: { !content.preferences.disabledClinicalModifierIDs.contains(modifier.id) },
+                        set: { enabled in Task { await viewModel.setPreferences {
+                            if enabled { $0.disabledClinicalModifierIDs.remove(modifier.id) }
+                            else { $0.disabledClinicalModifierIDs.insert(modifier.id) }
+                        } } }
+                    ))
+                    Text(modifier.rationale).font(ZenithiumFont.caption)
+                }
+            }
+            NavigationLink(SafetyCopy.disclaimerTitle) { DisclaimerView() }
+            NavigationLink(SafetyCopy.privacyTitle) { PrivacyView() }
+        }
+        Section("Zenithium") {
+            LabeledContent("Sürüm", value: versionLabel)
+            LabeledContent("Hesaplama sürümü", value: "\(content.engineVersion)")
+            if let url = URL(string: "mailto:hi@zenithium.app") { Link("hi@zenithium.app", destination: url) }
+            if let url = SystemURL.support { Link("Destek", destination: url) }
         }
     }
 
     private func profileSection(_ content: SettingsViewModel.Content) -> some View {
         Section {
-            DatePicker(
-                "Doğum tarihi",
-                selection: dateOfBirthBinding(content),
-                in: ...Date(),
-                displayedComponents: .date
-            )
-
-            Picker("Biyolojik cinsiyet", selection: sexBinding(content)) {
-                ForEach(BiologicalSexValue.allCases, id: \.self) { sex in
-                    Text(sex.displayName).tag(sex)
+            if let date = content.profile.dateOfBirth {
+                LabeledContent("Doğum tarihi", value: date.formatted(.dateTime.day().month().year().locale(Locale(identifier: "tr_TR"))))
+                Button("Doğum tarihini kaldır", role: .destructive) { Task { await viewModel.setDateOfBirth(nil) } }
+            }
+            Button(content.profile.dateOfBirth == nil ? "Doğum tarihi ekle" : "Doğum tarihini düzenle") {
+                birthDateDraft = content.profile.dateOfBirth ?? Date()
+                birthDateChanged = false
+                editsBirthDate = true
+            }
+            Picker("Biyolojik cinsiyet", selection: Binding(get: { content.profile.biologicalSex }, set: { value in Task { await viewModel.setBiologicalSex(value) } })) {
+                ForEach(BiologicalSexValue.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            VStack(alignment: .leading, spacing: ZenithiumSpacing.s) {
+                Text("Maksimum nabız").font(ZenithiumFont.body)
+                TextField("Otomatik", text: $maxHeartRateText)
+                    .font(.body)
+                    .keyboardType(.numberPad)
+                    .accessibilityLabel("Maksimum nabız, atım/dakika. Otomatik tahmin için boş bırak.")
+                Button("Kaydet") {
+                    let trimmed = maxHeartRateText.trimmingCharacters(in: .whitespaces)
+                    Task { await viewModel.setMaxHeartRateText(trimmed) }
                 }
             }
-        } header: {
-            Text("Sen")
-        } footer: {
-            Text("Yaş, yedek maksimum nabzı belirler; cinsiyet ise antrenman yükü sabitlerini seçer. İkisi de isteğe bağlı — olmadıklarında belgelenmiş varsayılanları kullanırım.")
+            .onAppear { maxHeartRateText = content.profile.maxHeartRateOverride.map { ZenithiumFormat.metric($0, digits: 0) } ?? "" }
+        } header: { Text("Profil") } footer: {
+            Text("Yaş maksimum nabız tahmininde, biyolojik cinsiyet nabza dayalı yük katsayısında kullanılır. İsteğe bağlıdır. Hesapta kullanılmayan boy veya kilo istenmez.")
+        }
+    }
+
+    private func healthSection(_ content: SettingsViewModel.Content) -> some View {
+        Section {
+            LabeledContent("Sağlık erişimi", value: healthLabel(content.authorization))
+            Button("Sağlık erişimini gözden geçir") { Task { await viewModel.requestHealth() } }
+            if let url = SystemURL.appSettings { Link("iPhone ayarlarını aç", destination: url) }
+            Text("Sağlık → profilin → Uygulamalar → Zenithium yolundan tek tek veri türlerini yönetebilirsin.")
+                .font(ZenithiumFont.caption)
+        } header: { Text("Apple Sağlık") } footer: {
+            Text("Apple, hangi okuma izinlerini kapattığını uygulamalara açıklamaz. İzin ekranının tamamlanması bütün verilerin okunabildiği anlamına gelmez; eksik kayıt izin, ölçüm veya eşitleme kaynaklı olabilir.")
         }
     }
 
     private func sleepSection(_ content: SettingsViewModel.Content) -> some View {
         Section {
-            LabeledContent("Uyku ihtiyacı") {
-                Text("\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 1)) h")
-                    .font(ZenithiumFont.callout.monospacedDigit())
+            LabeledContent("Taban uyku ihtiyacı", value: "\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 2)) saat")
+            Slider(value: Binding(get: { content.profile.baselineSleepNeedHours }, set: { value in Task { await viewModel.setSleepNeed(value) } }), in: UserProfile.sleepNeedRange, step: 0.25)
+            Picker("Uyku saatleri tercihi", selection: Binding(get: { content.preferences.sleepTiming }, set: { value in
+                Task { await viewModel.setPreferences { $0.sleepTiming = value; if let minute = value.suggestedWakeMinute { $0.wakeMinute = minute } } }
+            })) { ForEach(SleepTimingPreference.allCases, id: \.self) { Text($0.title).tag($0) } }
+            DatePicker("Hedef uyanış", selection: Binding(get: { time(content.preferences.wakeMinute) }, set: { date in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+                Task { await viewModel.setPreferences { $0.wakeMinute = (components.hour ?? 7) * 60 + (components.minute ?? 0); $0.sleepTiming = .custom } }
+            }), displayedComponents: .hourAndMinute)
+            if let minute = content.preferences.bedtimeMinute(needHours: content.profile.baselineSleepNeedHours) {
+                LabeledContent("Taban uyku penceresi", value: "\(clock(minute))–\(clock(content.preferences.wakeMinute))")
             }
-            Slider(
-                value: sleepNeedBinding(content),
-                in: UserProfile.sleepNeedRange,
-                step: 0.25
-            ) {
-                Text("Uyku ihtiyacı")
+            Picker("Antrenman günü başlangıcı", selection: Binding(get: { content.profile.dayBoundary }, set: { value in Task { await viewModel.setDayBoundary(value) } })) {
+                ForEach(DayBoundary.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            .accessibilityLabel("Taban uyku ihtiyacı")
-            .accessibilityValue("\(ZenithiumFormat.metric(content.profile.baselineSleepNeedHours, digits: 1)) saat")
-        } header: {
-            Text("Uyku")
-        } footer: {
-            Text("Başlangıç noktan. Dünkü zorlanma ve uyku borcu için üstüne eklerim, şekerlemeler için düşerim.")
+        } header: { Text("Uyku planın") } footer: {
+            Text("Erken veya geç saat tercihi bir kronotip ölçümü değildir; uyanış hedefini belirlemek için başlangıç sağlar. Uyku ekranındaki yatış önerisi bu hedef ve o geceki hesaplanan ihtiyacından oluşur.")
         }
     }
 
-    private func strainSection(_ content: SettingsViewModel.Content) -> some View {
+    private func notificationsSection(_ content: SettingsViewModel.Content) -> some View {
         Section {
-            Picker("Gün şurada başlar", selection: dayBoundaryBinding(content)) {
-                ForEach(DayBoundary.allCases, id: \.self) { boundary in
-                    Text(boundary.displayName).tag(boundary)
-                }
-            }
-            Text(content.profile.dayBoundary.explanation)
-                .font(ZenithiumFont.caption)
-                .foregroundStyle(ZenithiumColor.textSecondary)
-
-            HStack {
-                Text("Maksimum nabız")
-                Spacer()
-                TextField("Otomatik", text: $maxHeartRateText)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: 80)
-                    .font(ZenithiumFont.callout.monospacedDigit())
-                    .onSubmit { Task { await submitMaxHeartRate() } }
-                Text("bpm")
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.textSecondary)
-            }
-            .accessibilityElement(children: .contain)
-
-            if let error = viewModel.saveError, error.isRetryable == false {
-                Text(error.errorDescription ?? "")
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.red)
-            }
-        } header: {
-            Text("Zorlanma")
-        } footer: {
-            Text("Maksimumu boş bırakırsan gözlediğim değer ile yaşa dayalı tahminin yüksek olanını kullanırım.")
-        }
-        .onAppear {
-            if let override = content.profile.maxHeartRateOverride {
-                maxHeartRateText = ZenithiumFormat.metric(override, digits: 0)
-            }
+            LabeledContent("Sistem izni", value: viewModel.notificationAuthorization)
+            Toggle("Sabah kararı", isOn: Binding(get: { content.preferences.morningReminder }, set: { enabled in Task { await viewModel.setPreferences({ $0.morningReminder = enabled }, requestNotifications: enabled) } }))
+            Toggle("Eksik gece uyarısı", isOn: Binding(get: { content.preferences.missingNightReminder }, set: { enabled in Task { await viewModel.setPreferences({ $0.missingNightReminder = enabled }, requestNotifications: enabled) } }))
+            Toggle("Haftalık özet", isOn: Binding(get: { content.preferences.weeklyReminder }, set: { enabled in Task { await viewModel.setPreferences({ $0.weeklyReminder = enabled }, requestNotifications: enabled) } }))
+        } header: { Text("Bildirimler") } footer: {
+            Text("Sabah hatırlatması uyanış hedefinden 15 dakika sonra, haftalık hatırlatma pazar 18.00'de gelir. Eksik gece uyarısı yeni veri okunduğunda gönderilir; kilitli cihazda veya eşitleme beklerken gecikebilir.")
         }
     }
 
-    private func unitsSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            Picker("Birimler", selection: unitBinding(content)) {
-                ForEach(UnitPreference.allCases, id: \.self) { preference in
-                    Text(preference.displayName).tag(preference)
-                }
-            }
-        } header: {
-            Text("Görünüm")
-        } footer: {
-            Text("Yalnızca görünüm. Her şey iki durumda da aynı birimlerle saklanır ve hesaplanır.")
-        }
+    private var versionLabel: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return "\(version) (\(build))"
     }
 
-    private func dataSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            LabeledContent("Sağlık erişimi") {
-                Text(authorizationLabel(content.authorization))
-                    .foregroundStyle(authorizationTint(content.authorization))
-            }
-
-            Button(role: .destructive) {
-                isConfirmingRebuild = true
-            } label: {
-                Text("Taban çizgilerini yeniden kur")
-            }
-            .disabled(viewModel.isSaving)
-            .confirmationDialog(
-                "Taban çizgileri yeniden kurulsun mu?",
-                isPresented: $isConfirmingRebuild,
-                titleVisibility: .visible
-            ) {
-                Button("Yeniden kur", role: .destructive) {
-                    Task { await viewModel.rebuildBaselines() }
-                }
-                Button("Vazgeç", role: .cancel) {}
-            } message: {
-                Text("Puanlarken karşılaştırdığım 60 günlük ortalamaları unutup Sağlık'tan yeniden kuracağım. Yeterli gece birikene kadar puanlar kalibrasyonda görünecek.")
-            }
-        } header: {
-            Text("Veri")
-        } footer: {
-            Text("Uzun bir aradan ya da yeni bir saatten sonra yapmaya değer; eski taban çizgisi artık içinde bulunduğundan farklı bir durumu anlatıyordur.")
-        }
-    }
-
-    private var safetySection: some View {
-        Section {
-            NavigationLink { DisclaimerView() } label: {
-                Label(SafetyCopy.disclaimerTitle, systemImage: "cross.case")
-            }
-            NavigationLink { PrivacyView() } label: {
-                Label(SafetyCopy.privacyTitle, systemImage: "lock.shield")
-            }
-            if let supportURL = SystemURL.support {
-                Link(destination: supportURL) {
-                    Label("Destek ve İletişim", systemImage: "questionmark.circle")
-                }
-            }
-        } header: {
-            Text("Zenithium hakkında")
-        }
-    }
-
-    private func aboutSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            LabeledContent("Motor sürümü") {
-                Text("\(content.engineVersion)")
-                    .font(ZenithiumFont.callout.monospacedDigit())
-            }
-            LabeledContent("Paylaşılan kapsayıcı") {
-                Text(content.appGroupIdentifier)
-                    .font(ZenithiumFont.caption)
-                    .foregroundStyle(ZenithiumColor.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-        } footer: {
-            Text(SafetyCopy.disclaimerFooter)
-        }
-    }
-
-    // MARK: - Bindings
-
-    private func dateOfBirthBinding(_ content: SettingsViewModel.Content) -> Binding<Date> {
-        Binding(
-            get: { content.profile.dateOfBirth ?? Date(timeIntervalSince1970: 0) },
-            set: { newValue in Task { await viewModel.setDateOfBirth(newValue) } }
-        )
-    }
-
-    private func sexBinding(_ content: SettingsViewModel.Content) -> Binding<BiologicalSexValue> {
-        Binding(
-            get: { content.profile.biologicalSex },
-            set: { newValue in Task { await viewModel.setBiologicalSex(newValue) } }
-        )
-    }
-
-    private func sleepNeedBinding(_ content: SettingsViewModel.Content) -> Binding<Double> {
-        Binding(
-            get: { content.profile.baselineSleepNeedHours },
-            set: { newValue in Task { await viewModel.setSleepNeed(newValue) } }
-        )
-    }
-
-    private func dayBoundaryBinding(_ content: SettingsViewModel.Content) -> Binding<DayBoundary> {
-        Binding(
-            get: { content.profile.dayBoundary },
-            set: { newValue in Task { await viewModel.setDayBoundary(newValue) } }
-        )
-    }
-
-    private func unitBinding(_ content: SettingsViewModel.Content) -> Binding<UnitPreference> {
-        Binding(
-            get: { content.profile.unitPreference },
-            set: { newValue in Task { await viewModel.setUnitPreference(newValue) } }
-        )
-    }
-
-    private func submitMaxHeartRate() async {
-        let trimmed = maxHeartRateText.trimmingCharacters(in: .whitespaces)
-        await viewModel.setMaxHeartRateOverride(trimmed.isEmpty ? nil : Double(trimmed))
-    }
-
-    private func authorizationLabel(_ state: HealthAuthorizationState) -> String {
+    private func time(_ minute: Int) -> Date { Calendar.current.date(from: DateComponents(hour: minute / 60, minute: minute % 60)) ?? Date() }
+    private func clock(_ minute: Int) -> String { time(minute).formatted(.dateTime.hour().minute().locale(Locale(identifier: "tr_TR"))) }
+    private func healthLabel(_ state: HealthAuthorizationState) -> String {
         switch state {
-        case .authorized: return "Verildi"
-        case .denied: return "Kapalı"
-        case .notDetermined: return "Sorulmadı"
-        case .unavailable: return "Kullanılamıyor"
-        }
-    }
-
-    private func authorizationTint(_ state: HealthAuthorizationState) -> Color {
-        switch state {
-        case .authorized: return ZenithiumColor.green
-        case .denied: return ZenithiumColor.red
-        case .notDetermined, .unavailable: return ZenithiumColor.textSecondary
-        }
-    }
-
-    private func clinicalSection(_ content: SettingsViewModel.Content) -> some View {
-        Section {
-            ForEach(ClinicalModifierRegistry.allModifiers) { modifier in
-                let isEnabled = !ClinicalModifierRegistry.disabledModifierIDs().contains(modifier.id)
-                Toggle(isOn: Binding(
-                    get: { isEnabled },
-                    set: { newValue in
-                        ClinicalModifierRegistry.setModifier(id: modifier.id, isEnabled: newValue)
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                        Text(modifier.title)
-                            .foregroundStyle(ZenithiumColor.textPrimary)
-                        Text(modifier.rationale)
-                            .font(ZenithiumFont.caption)
-                            .foregroundStyle(ZenithiumColor.textSecondary)
-                    }
-                }
-                .tint(ZenithiumColor.accent)
-            }
-        } header: {
-            Text("Klinik Bağlam")
-        } footer: {
-            Text("Laboratuvar ve EKG bulgularının karar güvenine etkisini tek tek yönetin. Devre dışı bırakılan düzenleyiciler toparlanma ve yük güvenini etkilemez.")
-                .font(ZenithiumFont.caption)
-                .foregroundStyle(ZenithiumColor.textTertiary)
+        case .authorized: return "İzin ekranı tamamlandı"
+        case .notDetermined: return "İzin ekranı bekleniyor"
+        case .denied: return "Erişim gerekli"
+        case .unavailable: return "Bu cihazda kullanılamıyor"
         }
     }
 }

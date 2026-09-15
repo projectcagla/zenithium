@@ -179,6 +179,11 @@ struct SleepView: View {
 
     // MARK: - TEK L2 KART — Uyku Borcu ve Bu Gecenin Hedefi
 
+    private func plannedClock(_ minute: Int) -> String {
+        let date = Calendar.current.date(from: DateComponents(hour: minute / 60, minute: minute % 60)) ?? Date()
+        return date.formatted(.dateTime.hour().minute().locale(Locale(identifier: "tr_TR")))
+    }
+
     private func debtAndNeedCard(_ content: SleepViewModel.Content) -> some View {
         SectionCard(
             title: "Bu gece için",
@@ -211,6 +216,12 @@ struct SleepView: View {
                                 .metricUnit()
                         }
                     }
+                }
+
+                if let bedtime = content.plannedBedtimeMinute, let wake = content.plannedWakeMinute {
+                    LabeledContent("Planlanan uyku", value: "\(plannedClock(bedtime))–\(plannedClock(wake))")
+                        .font(ZenithiumFont.callout)
+                    Text("Uyanış hedefin ve bu gece için hesaplanan ihtiyaca göre. Saatler bir plan önerisidir.").zenithiumCaption()
                 }
 
                 BaselineBand(

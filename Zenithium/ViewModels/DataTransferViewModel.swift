@@ -55,6 +55,7 @@ final class DataTransferViewModel {
     // MARK: - Export
 
     func export() async {
+        guard exportState != .working else { return }
         exportState = .working
         do {
             let archive = try await service.archive(now: nowProvider())
@@ -69,6 +70,10 @@ final class DataTransferViewModel {
     /// Clear the export once the share sheet has closed, so the next tap writes a fresh file
     /// rather than sharing a stale one.
     func clearExport() {
+        if case .ready(let url) = exportState {
+            do { try FileManager.default.removeItem(at: url) }
+            catch { exportState = .failed("Geçici arşiv temizlenemedi: \(error.localizedDescription)"); return }
+        }
         exportState = .idle
     }
 
@@ -99,7 +104,7 @@ final class DataTransferViewModel {
             pending = nil
             importState = .finished(written)
         } catch {
-            importState = .failed(message(for: error))
+            importState = .failed(message(for: error) + " Bazı kayıtlar aktarılmış olabilir. Aynı arşivi tekrar seçmek kayıtları çoğaltmaz.")
         }
     }
 

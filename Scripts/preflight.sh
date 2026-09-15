@@ -17,6 +17,7 @@ run() {
 }
 
 run "Yapılandırma tutarlılığı"  python3 Scripts/check-target-sources.py
+run "Uygulama içi hesap kaynağı" python3 Scripts/generate-reference-content.py
 run "Sembol çözümlemesi"        python3 Scripts/check-symbols.py
 run "Gizlilik bildirimi"        python3 Scripts/check-privacy-manifest.py
 run "Varlık kataloğu"           python3 Scripts/check-assets.py
