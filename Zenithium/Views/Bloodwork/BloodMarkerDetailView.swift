@@ -11,7 +11,18 @@ import Charts
 struct BloodMarkerDetailView: View {
 
     @ScaledMetric private var chartHeight: CGFloat = 180
-    let series: BloodworkViewModel.MarkerSeries
+    private let initialSeries: BloodworkViewModel.MarkerSeries
+    var series: BloodworkViewModel.MarkerSeries {
+        if case .loaded(let content) = viewModel.state {
+            return content.series.first { $0.id == initialSeries.id } ?? .init(marker: initialSeries.marker, entries: [])
+        }
+        return initialSeries
+    }
+
+    init(series: BloodworkViewModel.MarkerSeries, viewModel: BloodworkViewModel) {
+        self.initialSeries = series
+        self.viewModel = viewModel
+    }
     let viewModel: BloodworkViewModel
 
     /// The rate of change, or the reason there isn't one yet.
@@ -39,6 +50,8 @@ struct BloodMarkerDetailView: View {
                 impactCard
                 historyCard
                 rangeCard
+                Text(SafetyCopy.clinicianPrompt).zenithiumCaption()
+                if let error = viewModel.saveError { Text(error.localizedDescription).zenithiumCaption() }
             }
             .padding(.horizontal, ZenithiumSpacing.l)
             .padding(.bottom, ZenithiumSpacing.xxl)
@@ -71,19 +84,6 @@ struct BloodMarkerDetailView: View {
                 }
 
                 ForEach(displayEntries) { entry in
-                    AreaMark(
-                        x: .value("Alınma", entry.drawnAt),
-                        y: .value(series.marker.displayName, entry.value)
-                    )
-                    .foregroundStyle(ZenithiumChartGradient.area(for: ZenithiumColor.accent))
-
-                    LineMark(
-                        x: .value("Alınma", entry.drawnAt),
-                        y: .value(series.marker.displayName, entry.value)
-                    )
-                    .foregroundStyle(ZenithiumColor.accent)
-                    .lineStyle(ZenithiumChartLine.strokeStyle)
-
                     PointMark(
                         x: .value("Alınma", entry.drawnAt),
                         y: .value(series.marker.displayName, entry.value)
@@ -91,7 +91,7 @@ struct BloodMarkerDetailView: View {
                     .foregroundStyle(ZenithiumColor.accent)
                 }
 
-                if let lastEntry = displayEntries.last {
+                if let lastEntry = displayEntries.first {
                     PointMark(
                         x: .value("Alınma", lastEntry.drawnAt),
                         y: .value(series.marker.displayName, lastEntry.value)
@@ -134,7 +134,7 @@ struct BloodMarkerDetailView: View {
 
     private var chartAccessibilityValue: String {
         let readings = series.entries.prefix(6).map { entry in
-            "\(ZenithiumFormat.metric(entry.value, digits: series.marker.fractionDigits)) on \(entry.drawnAt.formatted(date: .abbreviated, time: .omitted))"
+            "\(ZenithiumFormat.metric(entry.value, digits: series.marker.fractionDigits)) · \(entry.drawnAt.formatted(date: .abbreviated, time: .omitted))"
         }
         return readings.joined(separator: ", ")
     }
@@ -187,13 +187,13 @@ struct BloodMarkerDetailView: View {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 rangeRow(
                     title: "Referans",
-                    range: series.latest?.referenceRange ?? series.marker.referenceRange,
+                    range: series.latest?.referenceRange ?? .unbounded,
                     caption: SafetyCopy.bloodworkRangeCaption
                 )
                 Divider().overlay(ZenithiumColor.hairline)
                 rangeRow(
-                    title: "Sık anılan",
-                    range: series.latest?.optimalRange ?? series.marker.optimalRange,
+                    title: "Sporcu referansı",
+                    range: series.latest?.optimalRange ?? .unbounded,
                     caption: SafetyCopy.bloodworkOptimalCaption
                 )
             }

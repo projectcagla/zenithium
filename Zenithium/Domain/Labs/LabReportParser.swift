@@ -42,7 +42,8 @@ enum LabReportParser {
                     line,
                     continuation: continuation,
                     pageNumber: page.pageNumber,
-                    source: page.source
+                    source: page.source,
+                    hasReferenceHeading: lines.contains { BiomarkerCatalog.normalize($0).contains("referans") }
                 ) {
                 case .parsed(let value):
                     // The same marker can legitimately appear twice (a summary table and a
@@ -93,11 +94,24 @@ enum LabReportParser {
         _ line: String,
         continuation: String? = nil,
         pageNumber: Int = 1,
-        source: LabTextSource = .textLayer
+        source: LabTextSource = .textLayer,
+        hasReferenceHeading: Bool = false
     ) -> LineOutcome {
         let normalized = BiomarkerCatalog.normalizedMapping(line)
         guard !normalized.isEmpty, let match = BiomarkerCatalog.bestMatch(in: normalized) else {
             return .notALabLine
+        }
+
+        // A valid PDF text layer can store its result column before the marker name.
+        // Move only a verified value+unit prefix; never reorder a comment or a date.
+        if match.originalRange.lowerBound > line.startIndex {
+            let prefix = String(line[..<match.originalRange.lowerBound])
+            let prefixNumbers = numberTokens(in: prefix, excluding: nil)
+            if prefixNumbers.count == 1, let number = prefixNumbers.first,
+               match.definition.unit(matching: unitText(after: number, in: prefix, nextNumber: nil)) != nil {
+                let reordered = String(line[match.originalRange]) + "  " + prefix + "  " + String(line[match.originalRange.upperBound...])
+                return parseLine(reordered, continuation: continuation, pageNumber: pageNumber, source: source, hasReferenceHeading: hasReferenceHeading)
+            }
         }
 
         var numbers = numberTokens(in: line, excluding: match.originalRange)
@@ -120,7 +134,19 @@ enum LabReportParser {
         let marker = BloodMarkerKind.standard(definition.key)
         let printedUnit = unitText(after: result, in: valueLine, nextNumber: numbers.first { $0.order == result.order + 1 })
         let recognisedUnit = definition.unit(matching: printedUnit)
-        let printedRange = printedRange(spans: spans, numbers: numbers)
+        var printedRange = printedRange(spans: spans, numbers: numbers)
+        // Some report formats print separate lower/upper columns without a dash.
+        // Only accept adjacent numeric columns after a recognised result unit under an
+        // explicit reference heading. The review screen still requires confirmation.
+        if printedRange == nil, hasReferenceHeading, recognisedUnit != nil,
+           let low = numbers.first(where: { $0.order == result.order + 1 }),
+           let high = numbers.first(where: { $0.order == result.order + 2 }),
+           !low.isThreshold, !high.isThreshold, low.value <= high.value {
+            let gap = valueLine[low.range.upperBound..<high.range.lowerBound]
+            if gap.count >= 2 && gap.allSatisfy(\.isWhitespace) {
+                printedRange = MarkerRange(minimum: low.value, maximum: high.value)
+            }
+        }
         let resolved = resolveGrouping(of: result, unit: recognisedUnit ?? definition.canonicalUnit, definition: definition)
 
         let score = confidenceScore(
@@ -139,7 +165,7 @@ enum LabReportParser {
             ParsedLabValue(
                 marker: marker,
                 value: resolved.value,
-                unitSymbol: printedUnit.isEmpty ? definition.canonicalUnit.symbol : printedUnit,
+                unitSymbol: printedUnit,
                 unitIsRecognised: recognisedUnit != nil,
                 printedRange: printedRange,
                 isThreshold: result.isThreshold,
@@ -445,6 +471,7 @@ enum LabReportParser {
 
         for line in lines {
             let normalized = BiomarkerCatalog.normalize(line)
+            if normalized.contains("dogum") || normalized.contains("birth") { continue }
             let isLabelled = labels.contains { normalized.contains($0) }
             for date in dates(in: line, referenceDate: referenceDate) {
                 all[date, default: 0] += 1
@@ -495,7 +522,8 @@ enum LabReportParser {
             guard let day = components.day, (1...31).contains(day) else { continue }
             guard let year = components.year, (1900...2200).contains(year) else { continue }
             guard let date = calendar.date(from: components) else { continue }
-            guard date <= referenceDate, date >= earliest else { continue }
+            guard calendar.component(.day, from: date) == day, calendar.component(.month, from: date) == month,
+                  date <= referenceDate, date >= earliest else { continue }
             found.append(date)
         }
         return found

@@ -19,7 +19,7 @@ final class BloodworkViewModel {
         let marker: BloodMarkerKind
         let entries: [BloodMarkerSnapshot]
 
-        var id: String { marker.storageKey }
+        var id: String { marker.storageKey + "|" + (latest?.unitSymbol ?? "") }
         var latest: BloodMarkerSnapshot? { entries.first }
 
         /// The change between the two most recent draws, in the marker's unit.
@@ -27,7 +27,7 @@ final class BloodworkViewModel {
         /// A number, not a judgement: §12 forbids Zenithium saying whether a direction is
         /// good. The view renders it as "+4 mg/dL since March", never as "improving".
         var changeSincePrevious: Double? {
-            guard entries.count >= 2 else { return nil }
+            guard entries.count >= 2, entries[0].unitSymbol == entries[1].unitSymbol else { return nil }
             return entries[0].value - entries[1].value
         }
 
@@ -41,7 +41,7 @@ final class BloodworkViewModel {
         /// line, and a line through two draws six weeks apart says more about which morning
         /// the blood was taken than about anything happening in the body.
         var annualRate: Double? {
-            guard entries.count >= Self.minimumDrawsForRate else { return nil }
+            guard entries.count >= Self.minimumDrawsForRate, Set(entries.map(\.unitSymbol)).count == 1 else { return nil }
             let ordered = entries.sorted { $0.drawnAt < $1.drawnAt }
             guard let origin = ordered.first?.drawnAt,
                   let last = ordered.last?.drawnAt else { return nil }
@@ -98,6 +98,7 @@ final class BloodworkViewModel {
         /// Observations from `LabInsightEngine`, strongest first. Anything with
         /// `requiresClinician` set is rendered with the clinician prompt attached.
         let observations: [LabObservation]
+        let trainingContext: [LabTrainingContext]
     }
 
     private(set) var state: ViewState<Content> = .loading
@@ -107,14 +108,18 @@ final class BloodworkViewModel {
     private let repository: any BloodMarkerRepository
 
     /// Read only for biological sex, which decides which reference band applies.
-    private let profile: (any ProfileRepository)?
+    private let coordinator: BloodworkCoordinator
+    private let nowProvider: @Sendable () -> Date
 
     /// Handed to the import sheet so it can write the rows the user approves.
     var markerRepository: any BloodMarkerRepository { repository }
+    let documentRepository: (any HealthDocumentRepository)?
 
-    init(repository: any BloodMarkerRepository, profile: (any ProfileRepository)? = nil) {
+    init(repository: any BloodMarkerRepository, profile: (any ProfileRepository)? = nil, documents: (any HealthDocumentRepository)? = nil, records: (any BiometricDayRepository)? = nil, nowProvider: @escaping @Sendable () -> Date = { Date() }) {
         self.repository = repository
-        self.profile = profile
+        self.nowProvider = nowProvider
+        self.coordinator = BloodworkCoordinator(markers: repository, records: records)
+        self.documentRepository = documents
     }
 
     func onAppear() async {
@@ -123,16 +128,11 @@ final class BloodworkViewModel {
 
     func load() async {
         do {
-            let markers = try await repository.bloodMarkers()
+            let loaded = try await coordinator.load(now: nowProvider())
+            let markers = loaded.markers
             guard !markers.isEmpty else {
                 state = .noData(reason: .nothingLogged(what: "results"))
                 return
-            }
-            // A missing profile is not an error here — it only means the sex-agnostic
-            // band is used, which is the wider one.
-            var sex = BiologicalSexValue.notSet
-            if let profile, let snapshot = try? await profile.profile() {
-                sex = snapshot.biologicalSex
             }
             let series = Self.group(markers)
             state = .loaded(
@@ -140,7 +140,8 @@ final class BloodworkViewModel {
                     series: series,
                     panels: Self.groupByPanel(series),
                     disclaimer: SafetyCopy.bloodworkDisclaimer,
-                    observations: LabInsightEngine.observations(markers: markers, sex: sex)
+                    observations: loaded.observations,
+                    trainingContext: loaded.context
                 )
             )
         } catch {
@@ -171,16 +172,8 @@ final class BloodworkViewModel {
         defer { isSaving = false }
 
         do {
-            _ = try await repository.saveBloodMarker(
-                id: id,
-                marker: marker,
-                value: value,
-                unitSymbol: unitSymbol.isEmpty ? marker.defaultUnitSymbol : unitSymbol,
-                referenceRange: referenceRange ?? marker.referenceRange,
-                optimalRange: optimalRange ?? marker.optimalRange,
-                drawnAt: drawnAt,
-                note: note
-            )
+            try await coordinator.save(id: id, marker: marker, value: value, unit: unitSymbol,
+                reference: referenceRange ?? .unbounded, optimal: optimalRange ?? .unbounded, drawnAt: drawnAt, note: note)
             await load()
         } catch let error as ZenithiumError {
             saveError = error
@@ -191,7 +184,7 @@ final class BloodworkViewModel {
 
     func delete(id: UUID) async {
         do {
-            try await repository.deleteBloodMarker(id: id)
+            try await coordinator.delete(id: id)
             await load()
         } catch let error as ZenithiumError {
             saveError = error
@@ -223,7 +216,7 @@ final class BloodworkViewModel {
         var buckets: [String: [BloodMarkerSnapshot]] = [:]
         var kinds: [String: BloodMarkerKind] = [:]
         for marker in markers {
-            let key = marker.marker.storageKey
+            let key = marker.marker.storageKey + "|" + marker.unitSymbol
             buckets[key, default: []].append(marker)
             kinds[key] = marker.marker
         }

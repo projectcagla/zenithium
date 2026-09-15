@@ -37,6 +37,8 @@ struct SnapshotRegressionTests {
         let styledView = view
             .environment(\.dynamicTypeSize, .large)
             .environment(\.colorScheme, .dark)
+            .environment(\.locale, Locale(identifier: "tr_TR"))
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
             .frame(width: size17Pro.width, height: size17Pro.height)
 
         let scene = UIApplication.shared.connectedScenes
@@ -187,6 +189,22 @@ struct SnapshotRegressionTests {
         tolerance: Double = 0.005
     ) {
         let referenceURL = snapshotsDirectory.appendingPathComponent("\(name).png")
+        guard let renderedImage = renderViewToImage(view) else {
+            Issue.record("Görünüm render edilemedi: \(name)")
+            return
+        }
+
+        if let png = renderedImage.pngData() {
+            do {
+                try png.write(to: diffDirectory.appendingPathComponent("\(name)-actual.png"))
+                if ProcessInfo.processInfo.environment["ZENITHIUM_RECORD_SNAPSHOTS"] == "1" {
+                    try FileManager.default.createDirectory(at: snapshotsDirectory, withIntermediateDirectories: true)
+                    try png.write(to: referenceURL)
+                    return
+                }
+            } catch { Issue.record("Görsel dosya yazılamadı: \(error)"); return }
+        }
+
         guard FileManager.default.fileExists(atPath: referenceURL.path) else {
             Issue.record("Kanonik referans snapshot bulunamadı: \(referenceURL.path)")
             return
@@ -195,11 +213,6 @@ struct SnapshotRegressionTests {
         guard let referenceData = try? Data(contentsOf: referenceURL),
               let referenceImage = UIImage(data: referenceData) else {
             Issue.record("Kanonik referans dosyası okunamadı: \(referenceURL.path)")
-            return
-        }
-
-        guard let renderedImage = renderViewToImage(view) else {
-            Issue.record("Görünüm render edilemedi: \(name)")
             return
         }
 

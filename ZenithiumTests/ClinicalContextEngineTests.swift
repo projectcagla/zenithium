@@ -122,7 +122,7 @@ struct ClinicalContextEngineTests {
 
     // MARK: - Modifiers: Triggered vs Non-Triggered
 
-    @Test("Düşük hemoglobin çarpan uygular, normal hemoglobin uygulamaz")
+    @Test("Düşük hemoglobin bağlam ekler; puanı değiştirmez")
     func hemoglobinLowTrigger() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
@@ -131,7 +131,7 @@ struct ClinicalContextEngineTests {
             makeMarker("hemoglobin", value: 11.0, unit: "g/dL", drawnAt: drawn, reference: MarkerRange(minimum: 13.0, maximum: 17.5))
         ]
         let lowContext = ClinicalContextEngine.assess(markers: lowSample, ecgRecords: [], sex: .male, now: now, calendar: calendar)
-        #expect(lowContext.confidenceMultiplier == 0.85)
+        #expect(lowContext.confidenceMultiplier == 1.0)
         #expect(!lowContext.penaltyReasons.isEmpty)
         #expect(lowContext.limitations.contains { $0.code == "CLINICAL-HEMOGLOBIN-LOW" })
 
@@ -142,7 +142,7 @@ struct ClinicalContextEngineTests {
         #expect(normalContext == .neutral)
     }
 
-    @Test("Düşük ferritin çarpan uygular, normal ferritin uygulamaz")
+    @Test("Düşük ferritin bağlam ekler; puanı değiştirmez")
     func ferritinLowTrigger() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
@@ -151,7 +151,7 @@ struct ClinicalContextEngineTests {
             makeMarker("ferritin", value: 15.0, unit: "ng/mL", drawnAt: drawn, reference: MarkerRange(minimum: 30.0, maximum: 300.0))
         ]
         let lowContext = ClinicalContextEngine.assess(markers: lowSample, ecgRecords: [], sex: .male, now: now, calendar: calendar)
-        #expect(lowContext.confidenceMultiplier == 0.88)
+        #expect(lowContext.confidenceMultiplier == 1.0)
         #expect(lowContext.limitations.contains { $0.code == "CLINICAL-FERRITIN-LOW" })
 
         let normalSample = [
@@ -161,7 +161,7 @@ struct ClinicalContextEngineTests {
         #expect(normalContext == .neutral)
     }
 
-    @Test("Referans dışı TSH çarpan uygular, normal TSH uygulamaz")
+    @Test("Referans dışı TSH bağlam ekler; puanı değiştirmez")
     func tshShiftTrigger() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
@@ -170,7 +170,7 @@ struct ClinicalContextEngineTests {
             makeMarker("tsh", value: 5.8, unit: "mIU/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.4, maximum: 4.0))
         ]
         let highContext = ClinicalContextEngine.assess(markers: highSample, ecgRecords: [], sex: .male, now: now, calendar: calendar)
-        #expect(highContext.confidenceMultiplier == 0.85)
+        #expect(highContext.confidenceMultiplier == 1.0)
         #expect(highContext.limitations.contains { $0.code == "CLINICAL-TSH-SHIFT" })
 
         let normalSample = [
@@ -180,7 +180,7 @@ struct ClinicalContextEngineTests {
         #expect(normalContext == .neutral)
     }
 
-    @Test("Yüksek hsCRP çarpan uygular, normal hsCRP uygulamaz")
+    @Test("Yüksek hsCRP bağlam ekler; puanı değiştirmez")
     func hsCRPElevatedTrigger() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
@@ -189,7 +189,7 @@ struct ClinicalContextEngineTests {
             makeMarker("highSensitivityCRP", value: 4.5, unit: "mg/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.0, maximum: 1.0))
         ]
         let highContext = ClinicalContextEngine.assess(markers: highSample, ecgRecords: [], sex: .male, now: now, calendar: calendar)
-        #expect(highContext.confidenceMultiplier == 0.90)
+        #expect(highContext.confidenceMultiplier == 1.0)
         #expect(highContext.limitations.contains { $0.code == "CLINICAL-HSCRP-ELEVATED" })
 
         let normalSample = [
@@ -199,12 +199,12 @@ struct ClinicalContextEngineTests {
         #expect(normalContext == .neutral)
     }
 
-    @Test("Kreatin kinaz 5 katı aştığında çarpan uygulamaz ama kas sınırı ekler")
+    @Test("Referans üstü CK yalnızca bağlam ekler")
     func creatineKinaseSevereTrigger() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
 
-        // Upper ref = 308, 5x = 1540 U/L
+        // The laboratory's own upper bound is used without a population fallback.
         let highSample = [
             makeMarker("creatineKinase", value: 2000.0, unit: "U/L", drawnAt: drawn, reference: MarkerRange(minimum: 39.0, maximum: 308.0))
         ]
@@ -262,7 +262,7 @@ struct ClinicalContextEngineTests {
         #expect(result.limitations.contains { $0.code == "CLINICAL-AF-SUPPRESSED" && $0.isBlocking })
     }
 
-    @Test("Belirsiz zayıf EKG kaydı çarpan 0.95 uygular")
+    @Test("Okunamayan EKG optik ölçümlerin güvenini azaltmaz")
     func ecgPoorReadingTrigger() {
         let now = date(2026, 6, 1)
         let ecg = ECGRecord(
@@ -273,7 +273,7 @@ struct ClinicalContextEngineTests {
         )
 
         let context = ClinicalContextEngine.assess(markers: [], ecgRecords: [ecg], sex: .male, now: now, calendar: calendar)
-        #expect(context.confidenceMultiplier == 0.95)
+        #expect(context.confidenceMultiplier == 1.0)
         #expect(context.limitations.contains { $0.code == "CLINICAL-ECG-POOR-READING" })
     }
 
@@ -296,27 +296,26 @@ struct ClinicalContextEngineTests {
 
     // MARK: - Multiplier Floor Clamping
 
-    @Test("Tüm düzenleyiciler aynı anda tetiklense bile çarpan tabanı 0.70 altına inemez")
+    @Test("Birden çok laboratuvar bulgusu sayısal ceza üretmez")
     func multiplierFloorClamp() {
         let now = date(2026, 6, 1)
         let drawn = date(2026, 5, 20)
 
         let extremeMarkers = [
-            makeMarker("hemoglobin", value: 10.0, unit: "g/dL", drawnAt: drawn, reference: MarkerRange(minimum: 13.0, maximum: 17.5)), // x0.85
-            makeMarker("ferritin", value: 10.0, unit: "ng/mL", drawnAt: drawn, reference: MarkerRange(minimum: 30.0, maximum: 300.0)),   // x0.88
-            makeMarker("tsh", value: 6.0, unit: "mIU/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.4, maximum: 4.0)),            // x0.85
-            makeMarker("highSensitivityCRP", value: 8.0, unit: "mg/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.0, maximum: 1.0)) // x0.90
+            makeMarker("hemoglobin", value: 10.0, unit: "g/dL", drawnAt: drawn, reference: MarkerRange(minimum: 13.0, maximum: 17.5)),
+            makeMarker("ferritin", value: 10.0, unit: "ng/mL", drawnAt: drawn, reference: MarkerRange(minimum: 30.0, maximum: 300.0)),
+            makeMarker("tsh", value: 6.0, unit: "mIU/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.4, maximum: 4.0)),
+            makeMarker("highSensitivityCRP", value: 8.0, unit: "mg/L", drawnAt: drawn, reference: MarkerRange(minimum: 0.0, maximum: 1.0))
         ]
         let ecg = ECGRecord(
             recordedAt: now,
-            classification: .inconclusivePoorReading, // x0.95
+            classification: .inconclusivePoorReading,
             sourceName: "Apple Watch"
         )
 
         let context = ClinicalContextEngine.assess(markers: extremeMarkers, ecgRecords: [ecg], sex: .male, now: now, calendar: calendar)
-        // 0.85 * 0.88 * 0.85 * 0.90 * 0.95 = ~0.543 -> clamped to 0.70
         #expect(context.confidenceMultiplier == ClinicalContextEngine.multiplierFloor)
-        #expect(context.confidenceMultiplier == 0.70)
+        #expect(context.confidenceMultiplier == 1.0)
     }
 
     // MARK: - Disabled Modifiers
@@ -343,4 +342,18 @@ struct ClinicalContextEngineTests {
         #expect(context == .neutral)
         #expect(context.confidenceMultiplier == 1.0)
     }
+    @Test("Eksik referans, bilinmeyen birim ve gelecek kayıt klinik çıkarım üretmez")
+    func invalidContextDoesNotInfer() {
+        let now = date(2026, 6, 1)
+        for sample in [
+            makeMarker("ferritin", value: 1, unit: "ng/mL", drawnAt: now),
+            makeMarker("highSensitivityCRP", value: 10, unit: "bilinmiyor", drawnAt: now, reference: MarkerRange(minimum: 0, maximum: 3)),
+            makeMarker("hemoglobin", value: 1, unit: "g/dL", drawnAt: now.addingTimeInterval(86400), reference: MarkerRange(minimum: 12, maximum: 17))
+        ] {
+            #expect(ClinicalContextEngine.assess(markers: [sample], ecgRecords: [], sex: .female, now: now) == .neutral)
+        }
+        let older = ECGRecord(recordedAt: now.addingTimeInterval(-2 * 86400), classification: .atrialFibrillation, sourceName: "Apple Watch")
+        #expect(!ClinicalContextEngine.assess(markers: [], ecgRecords: [older], sex: .notSet, now: now).suppressesHRVRecovery)
+    }
+
 }

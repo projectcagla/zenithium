@@ -35,7 +35,16 @@ struct BloodMarkerEditorView: View {
     }
 
     private var canSave: Bool {
-        guard let parsedValue, parsedValue.isFinite else { return false }
+        guard let parsedValue, parsedValue.isFinite, parsedValue >= 0, !viewModel.isSaving else { return false }
+        guard !unitSymbol.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if overridesRange {
+            guard !refMinText.isEmpty || !refMaxText.isEmpty else { return false }
+            for text in [refMinText, refMaxText] where !text.isEmpty {
+                guard let value = Double(text.replacingOccurrences(of: ",", with: ".")), value.isFinite, value >= 0 else { return false }
+            }
+            if let low = Double(refMinText.replacingOccurrences(of: ",", with: ".")),
+               let high = Double(refMaxText.replacingOccurrences(of: ",", with: ".")), low > high { return false }
+        }
         if usesCustomMarker {
             return !customName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
@@ -49,6 +58,7 @@ struct BloodMarkerEditorView: View {
                 valueSection
                 rangeSection
                 detailsSection
+                Section { Text(SafetyCopy.clinicianPrompt).zenithiumCaption() }
                 if let error = viewModel.saveError {
                     Section {
                         Text(error.errorDescription ?? "Kaydedilemedi.")
@@ -64,6 +74,7 @@ struct BloodMarkerEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Vazgeç") { dismiss() }
+                        .disabled(viewModel.isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet") { Task { await save() } }
@@ -75,6 +86,7 @@ struct BloodMarkerEditorView: View {
             }
         }
         .tint(ZenithiumColor.accent)
+        .interactiveDismissDisabled(viewModel.isSaving)
     }
 
     private var markerSection: some View {
@@ -129,8 +141,8 @@ struct BloodMarkerEditorView: View {
 
     private var rangeSection: some View {
         Section {
-            Toggle("Kendi laboratuvarımın aralığını kullan", isOn: $overridesRange)
-                .accessibilityHint("Yerleşik referans aralığını raporundakiyle değiştirir")
+            Toggle("Raporumda referans aralığı var", isOn: $overridesRange)
+                .accessibilityHint("Yalnızca laboratuvar raporunda yazan aralığı kaydeder")
 
             if overridesRange {
                 HStack {
@@ -141,14 +153,9 @@ struct BloodMarkerEditorView: View {
                         .keyboardType(.decimalPad)
                 }
                 .font(ZenithiumFont.body.monospacedDigit())
-            } else if resolvedMarker.hasBuiltInRanges {
-                let range = resolvedMarker.referenceRange
-                if let minimum = range.minimum, let maximum = range.maximum {
-                    LabeledContent("Referans") {
-                        Text("\(ZenithiumFormat.metric(minimum, digits: resolvedMarker.fractionDigits))–\(ZenithiumFormat.metric(maximum, digits: resolvedMarker.fractionDigits)) \(resolvedMarker.defaultUnitSymbol)")
-                            .font(ZenithiumFont.callout.monospacedDigit())
-                    }
-                }
+            } else {
+                Text("Referans aralığı yok. Raporda belirtilmediyse boş bırakılır.")
+                    .foregroundStyle(ZenithiumColor.textSecondary)
             }
         } header: {
             Text("Referans aralığı")

@@ -737,14 +737,16 @@ def main() -> int:
     (out_dir / "project.pbxproj").write_text(pbxproj, encoding="utf-8")
 
     (out_dir / "project.xcworkspace").mkdir(exist_ok=True)
-    (out_dir / "project.xcworkspace" / "contents.xcworkspacedata").write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<Workspace version = "1.0">\n'
-        '   <FileRef location = "self:">\n'
-        "   </FileRef>\n"
-        "</Workspace>\n",
-        encoding="utf-8",
-    )
+    workspace_file = out_dir / "project.xcworkspace" / "contents.xcworkspacedata"
+    if not workspace_file.exists():
+        (out_dir / "project.xcworkspace" / "contents.xcworkspacedata").write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Workspace version = "1.0">\n'
+            '   <FileRef location = "self:">\n'
+            "   </FileRef>\n"
+            "</Workspace>\n",
+            encoding="utf-8",
+        )
 
     print(
         f"Wrote {out_dir.relative_to(ROOT)}/project.pbxproj — "

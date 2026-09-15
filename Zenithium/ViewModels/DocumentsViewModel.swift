@@ -65,16 +65,14 @@ final class DocumentsViewModel {
     /// The search query. Filtering happens in `filtered`, so typing never triggers a read.
     var query = ""
 
-    private let repository: any HealthDocumentRepository
-    private let reader = LabDocumentReader()
-    private let vault = DocumentVault()
+    private let coordinator: DocumentsCoordinator
     private let nowProvider: @Sendable () -> Date
 
     init(
         repository: any HealthDocumentRepository,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
-        self.repository = repository
+        self.coordinator = DocumentsCoordinator(repository: repository)
         self.nowProvider = nowProvider
     }
 
@@ -84,7 +82,7 @@ final class DocumentsViewModel {
 
     func load() async {
         do {
-            state = .loaded(Content(documents: try await repository.healthDocuments()))
+            state = .loaded(Content(documents: try await coordinator.load()))
         } catch {
             if let mapped = ViewState<Content>.from(error) {
                 state = mapped
@@ -113,54 +111,25 @@ final class DocumentsViewModel {
     /// this build cannot parse — the document is still stored and still findable by its
     /// title. Losing the file because the text could not be read would be the wrong trade.
     func `import`(url: URL, kind: HealthDocumentKind, title: String) async {
+        guard !isImporting else { return }
         isImporting = true
         defer { isImporting = false }
 
-        let id = UUID()
-        let now = nowProvider()
-
         do {
-            let fileName = try await vault.store(source: url, id: id)
-
-            var extractedText = ""
-            var source = LabTextSource.textLayer
-            var documentDate = now
-
-            if let text = try? await reader.read(fileURL: url) {
-                extractedText = text.allLines.joined(separator: "\n")
-                source = text.source
-                if let detected = LabReportParser.detectDrawDate(in: text.allLines, referenceDate: now) {
-                    documentDate = detected
-                }
-            }
-
-            let trimmed = title.trimmingCharacters(in: .whitespaces)
-            try await repository.saveHealthDocument(
-                HealthDocument(
-                    id: id,
-                    kind: kind,
-                    title: trimmed.isEmpty ? kind.displayName : trimmed,
-                    documentDate: documentDate,
-                    addedAt: now,
-                    fileName: fileName,
-                    extractedText: extractedText,
-                    textSource: source
-                )
-            )
-            importError = nil
+            importError = try await coordinator.store(url: url, kind: kind, title: title, now: nowProvider())
             await load()
         } catch {
-            importError = "Belge kaydedilemedi."
+            importError = "Belge kaydedilemedi: \(error.localizedDescription)"
         }
     }
 
     func delete(_ document: HealthDocument) async {
         do {
-            try await repository.deleteHealthDocument(id: document.id)
-            await vault.remove(fileName: document.fileName)
+            try await coordinator.delete(document)
+            importError = nil
             await load()
         } catch {
-            importError = "Belge silinemedi."
+            importError = "Belge silinemedi: \(error.localizedDescription). Yeniden deneyebilirsin."
         }
     }
 }

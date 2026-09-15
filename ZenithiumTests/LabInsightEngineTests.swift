@@ -46,7 +46,7 @@ struct LabInsightEngineTests {
     func outOfRangeRoutesToClinician() throws {
         let now = day(2026, 6, 1)
         let observations = LabInsightEngine.observations(
-            markers: [marker("ferritin", 12, unit: "ng/mL", drawnAt: day(2026, 5, 20))],
+            markers: [marker("ferritin", 12, unit: "ng/mL", drawnAt: day(2026, 5, 20), reference: MarkerRange(minimum: 30, maximum: 400))],
             sex: .male,
             now: now,
             calendar: calendar
@@ -93,16 +93,16 @@ struct LabInsightEngineTests {
 
     /// Ferritin 20 ng/mL is inside a female reference band and below a male one. Showing one
     /// band to everybody was the bug this replaced.
-    @Test("Referans bandı cinsiyete göre değişir")
+    @Test("Referans yoksa cinsiyete göre aralık uydurulmaz")
     func usesSexSpecificBand() {
         let sample = [marker("ferritin", 20, unit: "ng/mL", drawnAt: day(2026, 5, 20))]
         let male = LabInsightEngine.observations(markers: sample, sex: .male, now: day(2026, 6, 1), calendar: calendar)
         let female = LabInsightEngine.observations(markers: sample, sex: .female, now: day(2026, 6, 1), calendar: calendar)
-        #expect(male.contains { $0.requiresClinician })
+        #expect(!male.contains { $0.requiresClinician })
         #expect(!female.contains { $0.requiresClinician })
     }
 
-    @Test("Cinsiyet bilinmiyorsa geniş band kullanılır")
+    @Test("Cinsiyet bilinmiyorsa eksik referans yine boş kalır")
     func unknownSexUsesWiderBand() {
         let sample = [marker("ferritin", 20, unit: "ng/mL", drawnAt: day(2026, 5, 20))]
         let unknown = LabInsightEngine.observations(markers: sample, sex: .notSet, now: day(2026, 6, 1), calendar: calendar)
@@ -201,7 +201,7 @@ struct LabInsightEngineTests {
         }
         #expect(hours == 36)
         #expect(caveat.message.contains("36 saat sonra"))
-        #expect(caveat.message.contains("antrenmandan etkilenir"))
+        #expect(caveat.message.contains("antrenman sonrasında değişebilir"))
     }
 
     // MARK: - Panels

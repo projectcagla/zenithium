@@ -114,8 +114,8 @@ struct NumberFormattingTests {
         #expect(ZenithiumFormat.clock(seconds: 305) == "5:05")
         #expect(ZenithiumFormat.longClock(seconds: 3_725) == "1:02:05")
         #expect(ZenithiumFormat.pace(secondsPerKilometre: 285) == "4:45/km")
-        #expect(ZenithiumFormat.duration(seconds: 3_900) == "1sa 5dk")
-        #expect(ZenithiumFormat.duration(seconds: 600) == "10dk")
+        #expect(ZenithiumFormat.duration(seconds: 3_900) == "1 sa 5 dk")
+        #expect(ZenithiumFormat.duration(seconds: 600) == "10 dk")
     }
 
     @Test("Sesli süre Türkçede çoğul eki almıyor")

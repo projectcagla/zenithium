@@ -33,6 +33,7 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
     case documents
     case dataTransfer
     case settings
+    case journal
 
     var id: String { rawValue }
 
@@ -53,6 +54,7 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
         case .documents: return "Belgeler"
         case .dataTransfer: return "Veri taşıma"
         case .settings: return "Ayarlar"
+        case .journal: return "Günlük"
         }
     }
 
@@ -75,6 +77,7 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
         case .documents: return "EKG, görüntüleme, hekim notu — cihazında, aranabilir"
         case .dataTransfer: return "Her şeyi tek dosyaya yaz, yeni telefonda oku"
         case .settings: return "Profil, mercek, izinler"
+        case .journal: return "Alışkanlıkların ve toparlanman arasındaki ilişkiler"
         }
     }
 
@@ -95,6 +98,7 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
         case .documents: return "folder"
         case .dataTransfer: return "arrow.up.arrow.down.square"
         case .settings: return "gearshape.fill"
+        case .journal: return "square.and.pencil"
         }
     }
 
@@ -102,7 +106,7 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
     var group: HubGroup {
         switch self {
         case .strain, .load, .endurance, .racePlan, .strength, .muscles, .plan, .hybrid: return .training
-        case .vitals, .trends, .bloodwork, .report, .documents: return .health
+        case .vitals, .trends, .bloodwork, .report, .documents, .journal: return .health
         case .dataTransfer, .settings: return .app
         }
     }
@@ -113,17 +117,17 @@ enum HubDestination: String, Sendable, Hashable, CaseIterable, Identifiable {
     /// on the tab bar does not need a second entrance.
     func isVisible(for lens: TrainingLens) -> Bool {
         switch self {
-        case .strain: return lens.showsStrainCeiling && lens.secondaryTab != .load
-        case .load: return lens.showsStrainCeiling && lens.secondaryTab != .load
-        case .muscles: return lens != .health && lens.secondaryTab != .muscles
-        case .vitals: return lens.secondaryTab != .vitals
+        case .strain: return lens.showsStrainCeiling
+        case .load: return false // Already present on the permanent tab bar.
+        case .muscles, .vitals: return true
         case .endurance: return lens == .endurance || lens == .hybrid
         // Only the running lens plans a course; a Hyrox athlete does not pace a GPX.
         case .racePlan: return lens == .endurance
         case .strength: return lens == .strength || lens == .hybrid
         case .hybrid: return lens == .hybrid
         case .plan: return lens != .health
-        case .trends, .bloodwork, .report, .documents, .dataTransfer, .settings: return true
+        case .trends: return false // Already present on the permanent tab bar.
+        case .bloodwork, .report, .documents, .dataTransfer, .settings, .journal: return true
         }
     }
 }
@@ -171,7 +175,7 @@ struct HubView<Destination: View>: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(ZenithiumColor.background.ignoresSafeArea())
-            .navigationTitle("Daha fazla")
+            .navigationTitle("Keşfet")
             .toolbarBackground(ZenithiumColor.background, for: .navigationBar)
         }
         .tint(ZenithiumColor.accent)

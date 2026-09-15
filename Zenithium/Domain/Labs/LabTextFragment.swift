@@ -67,12 +67,14 @@ struct LabTextFragment: Sendable, Equatable {
 
     /// Box height, which is what the row band is derived from.
     let height: Double
+    let width: Double
 
-    init(text: String, midY: Double, minX: Double, height: Double) {
+    init(text: String, midY: Double, minX: Double, height: Double, width: Double = 0) {
         self.text = text
         self.midY = midY
         self.minX = minX
         self.height = height
+        self.width = width
     }
 
     /// What separates two fragments joined into one line.
@@ -85,7 +87,8 @@ struct LabTextFragment: Sendable, Equatable {
     static func assembleLines(
         from fragments: [LabTextFragment],
         bandHeightFactor: Double,
-        fallbackTolerance: Double
+        fallbackTolerance: Double,
+        estimateRotation: Bool = true
     ) -> [String] {
         guard !fragments.isEmpty else { return [] }
 
@@ -94,7 +97,7 @@ struct LabTextFragment: Sendable, Equatable {
             factor: bandHeightFactor,
             fallback: fallbackTolerance
         )
-        let slope = estimatedSlope(for: fragments, band: band)
+        let slope = estimateRotation ? estimatedSlope(for: fragments, band: band) : 0
 
         return group(fragments, band: band, slope: slope).map { row in
             row

@@ -106,9 +106,7 @@ enum LabInsightEngine {
     ) -> [LabObservation] {
         let marker = snapshot.marker
         let key = marker.storageKey
-        let reference = snapshot.referenceRange.isBounded
-            ? snapshot.referenceRange
-            : marker.referenceRange(for: sex)
+        let reference = snapshot.referenceRange
 
         if reference.isBounded, !reference.contains(snapshot.value) {
             let isAbove = reference.maximum.map { snapshot.value > $0 } ?? false
@@ -124,9 +122,7 @@ enum LabInsightEngine {
             ]
         }
 
-        let optimal = snapshot.optimalRange.isBounded
-            ? snapshot.optimalRange
-            : marker.optimalRange(for: sex)
+        let optimal = snapshot.optimalRange
         if optimal.isBounded, !optimal.contains(snapshot.value) {
             let isAbove = optimal.maximum.map { snapshot.value > $0 } ?? false
             return [
@@ -134,7 +130,7 @@ enum LabInsightEngine {
                     id: "\(key).optimal",
                     marker: marker,
                     kind: .outsideOptimal(isAbove: isAbove),
-                    message: "\(marker.displayName) \(format(snapshot)) — referans aralığının içinde, sporcu literatüründe sık anılan dar bandın \(isAbove ? "üstünde" : "altında").",
+                    message: "\(marker.displayName) \(format(snapshot)) — kayıtta belirtilen kişisel hedef aralığının \(isAbove ? "üstünde" : "altında").",
                     requiresClinician: false,
                     priority: 60
                 )
@@ -216,7 +212,7 @@ enum LabInsightEngine {
             id: "\(snapshot.marker.storageKey).timing",
             marker: snapshot.marker,
             kind: .timingCaveat(hoursSinceSession: hours),
-            message: "Bu ölçüm, bir antrenmandan \(hours) saat sonra alınmış. \(snapshot.marker.displayName) bu pencerede antrenmandan etkilenir; karşılaştırırken bunu hesaba kat.",
+            message: "Bu ölçüm, bir antrenmandan \(hours) saat sonra alınmış. \(snapshot.marker.displayName) antrenman sonrasında değişebilir; karşılaştırırken bunu hesaba kat.",
             requiresClinician: false,
             priority: 70
         )

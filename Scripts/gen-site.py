@@ -1319,74 +1319,47 @@ def build_index():
 
 # ── 2. PRIVACY.HTML İÇERİĞİ ─────────────────────────────────────────
 def build_privacy():
-    title = "Zenithium — Gizlilik Politikası"
-    desc = "Zenithium'un sunucusu, hesabı ve ağ bağlantı yetkisi yoktur. Sağlık verileri cihazdan asla çıkmaz."
+    title = "Zenithium — Gizlilik"
+    desc = "Sağlık verilerin cihazında işlenir. Hesap, reklam veya analiz hizmeti yok."
     url = "https://projectcagla.github.io/zenithium/privacy.html"
-
     content = """
-<div class="hero-band"><div class="wrap hero">
-  <div class="hero-copy">
-    <span class="eyebrow">Gizlilik Protokolü · Privacy Protocol</span>
-    <h1>Sıfır sunucu.<br><em>Sıfır hesap. Sıfır izleme.</em></h1>
-    <p class="lede">Zenithium bir gizlilik sözü vermez; gizlilik ihlalini <strong>teknik olarak imkânsız</strong> kılan bir mimariyle çalışır. Uygulamanın işletim sisteminden ağ bağlantı izni (Network Capability) dahi yoktur.</p>
-    <div class="manifest">
-      <div class="mhead">Mimari Güvenceler</div>
-      <div class="mrow"><span class="x">✕</span><span class="lab">Sunucu altyapısı</span><span class="st">0 Bayt</span></div>
-      <div class="mrow"><span class="x">✕</span><span class="lab">Kullanıcı kaydı ve e-posta</span><span class="st">Yok</span></div>
-      <div class="mrow"><span class="x">✕</span><span class="lab">Üçüncü parti SDK</span><span class="st">0 Adet</span></div>
-      <div class="mrow"><span class="x">✕</span><span class="lab">İnternet erişim yetkisi</span><span class="st">Kapalı</span></div>
-      <p class="foot">Gizlilik politikamız bir hukuk metni değil, kaynak koduyla denetlenebilen teknik bir gerçektir.</p>
-    </div>
-  </div>
-</div></div>
-
-<main class="wrap">
-  <section style="border-top:0;">
-    <div class="sec-head">
-      <span class="eyebrow">Hükümler · Clauses</span>
-      <h2>Verilerin Yalnızca Cihazında Yaşar</h2>
-    </div>
-
-    <div style="display:grid; gap:24px; max-width:var(--measure);">
-      <article class="panel" style="padding:20px;">
-        <span class="eyebrow">01 · Sağlık Verileri</span>
-        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Apple HealthKit Entegrasyonu</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium, kalp atış hızı, HRV, uyku evreleri ve antrenman kayıtlarını yalnızca cihaz üzerindeki Apple HealthKit veri tabanından okur. Okunan hiçbir veri harici bir belleğe veya üçüncü tarafa kopyalanmaz. Hesaplamalar Apple'ın korumalı sandbox ortamında gerçekleşir.</p>
-        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> Zenithium reads biometric data exclusively from your on-device Apple HealthKit store. No health metrics ever leave your device. All mathematical calculations execute inside Apple's sandboxed environment.</p>
-      </article>
-
-      <article class="panel" style="padding:20px;">
-        <span class="eyebrow">02 · Ağ ve İletişim</span>
-        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Sıfır Ağ Yetkisi</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulama derlenirken hiçbir ağ kütüphanesi (URLSession, WebKit vb.) içermez. Xcode Info.plist dosyasında harici iletişim için hiçbir yetki talep edilmemiştir. Uygulama internete bağlanamaz.</p>
-        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> The application binary does not include network libraries or communication capabilities. It is structurally impossible for Zenithium to transmit telemetry or biometric data over the internet.</p>
-      </article>
-
-      <article class="panel" style="padding:20px;">
-        <span class="eyebrow">03 · Analitik ve Çerezler</span>
-        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Sıfır Telemetri ve İzleme</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulama ve bu tanıtım sitesi; Google Analytics, Meta Pixel, Firebase, Crashlytics veya çerez kullanmaz. Ziyaretçilerin IP adresleri saklanmaz veya profillenmez.</p>
-        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> We do not employ tracking pixels, cookies, crash reporting frameworks, or behavioral analytics of any kind. Your identity and usage remain completely anonymous.</p>
-      </article>
-
-      <article class="panel" style="padding:20px;">
-        <span class="eyebrow">04 · Veri Silme ve İhracat</span>
-        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Tam Kullanıcı Kontrolü</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Uygulamayı sildiğinizde, cihazda tutulan yerel hesaplama arşivi kalıcı olarak silinir. Apple Health'teki orijinal verileriniz korunur. Verilerini dışa aktarmak istediğinizde standart iOS paylaşım menüsü üzerinden .zenithium formatında tamamen sizin denetiminizde yedek alınır.</p>
-        <p style="color:var(--faint); font-size:0.85rem; margin-top:8px; line-height:1.5;"><em>English:</em> Uninstalling Zenithium purges all local model parameters immediately. Data export is strictly user-driven via standard encrypted iOS share sheets.</p>
-      </article>
-    </div>
-
-    <div style="margin-top:40px; padding:20px; background:var(--surface); border:1px solid var(--hairline); border-radius:4px; max-width:var(--measure);">
-      <span class="eyebrow">İletişim · Contact</span>
-      <p style="margin-top:6px; font-size:0.95rem; color:var(--text);">Gizlilikle ilgili tüm sorularınız için: <a href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
-    </div>
-  </section>
-</main>
+<div class="hero-band"><div class="wrap hero"><div class="hero-copy">
+  <span class="eyebrow">Gizlilik</span>
+  <h1>Verilerin.<br><em>Senin kontrolünde.</em></h1>
+  <p class="lede">Zenithium sağlık verilerini cihazında işler. Hesap açmazsın; uygulama sağlık verilerini bir sunucuya göndermez. Reklam ve üçüncü taraf analiz hizmeti kullanmaz.</p>
+</div></div></div>
+<main class="wrap"><section style="border-top:0;"><div style="display:grid; gap:24px; max-width:var(--measure);">
+  <article class="panel" style="padding:24px;">
+    <h2>Apple Sağlık</h2>
+    <p>İzin verdiğin kalp, uyku ve antrenman kayıtları HealthKit üzerinden okunur. Hesaplanan günlük özetler uygulamanın cihazdaki veri tabanında tutulur. İzinlerini Apple Sağlık içinden değiştirebilirsin.</p>
+  </article>
+  <article class="panel" style="padding:24px;">
+    <h2>Laboratuvar belgeleri</h2>
+    <p>Seçtiğin PDF ve fotoğraflar Apple'ın cihaz içi metin tanıma araçlarıyla okunur. Her ölçüm kaydedilmeden önce onayını ister. Onayladığında asıl belge, iPhone'daki korumalı ortak uygulama alanında (App Group) saklanır; cihaz kilitliyken dosya erişimi kapalıdır. Belgeler ekranındaki sil düğmesi dosyayı ve belge kaydını kaldırır. Ayrı kaydedilmiş ölçümleri Kan Değerleri ekranından yönetebilirsin.</p>
+    <p>Laboratuvar dosyaları otomatik aygıt yedeğinden hariç tutulur. Kendi seçtiğin dışa aktarma işlemi belge kopyalarını içerebilir. Dosyalar veya Fotoğraflar'dan seçtiğin asıl kopya değişmez.</p>
+  </article>
+  <article class="panel" style="padding:24px;">
+    <h2>Watch ve widget</h2>
+    <p>Günlük özetler iPhone widget'larıyla ve eşlenmiş Apple Watch ile Apple'ın paylaşım mekanizmaları üzerinden paylaşılır. Laboratuvar belgesinin içeriği widget'lara veya saate gönderilmez.</p>
+  </article>
+  <article class="panel" style="padding:24px;">
+    <h2>Dışa aktarma ve paylaşma</h2>
+    <p>Dışa aktarma yalnızca sen başlattığında yapılır. Paylaşım menüsünde seçtiğin uygulama veya hedef, kendi gizlilik kurallarına tabidir. Bir .zenithium dosyası hassas sağlık verisi içerebilir; paylaşım hedefini sen belirlersin. Destek ve kaynak bağlantıları seçtiğinde tarayıcıda açılır.</p>
+  </article>
+  <article class="panel" style="padding:24px;">
+    <h2>Bu web sitesi</h2>
+    <p>Sayfalara analiz kodu, reklam veya takip çerezi eklemiyoruz. Site GitHub Pages üzerinde yayınlanır; GitHub bağlantı sırasında teknik günlükler işleyebilir.</p>
+    <p><a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub gizlilik bildirimi</a></p>
+  </article>
+  <article class="panel" style="padding:24px;">
+    <h2>İletişim</h2><p><a href="mailto:hi@zenithium.app">hi@zenithium.app</a></p>
+    <p>Son güncelleme: 14 Eylül 2026.</p>
+  </article>
+</div></section></main>
 """
     return page_layout(title, desc, url, "privacy", content)
 
-# ── 3. SUPPORT.HTML İÇERİĞİ ─────────────────────────────────────────
+
 def build_support():
     title = "Zenithium — Destek ve Kılavuz"
     desc = "Zenithium için sıkça sorulan sorular, kalibrasyon davranışı, eksik gece modeli ve doğrudan geliştirici iletişimi."

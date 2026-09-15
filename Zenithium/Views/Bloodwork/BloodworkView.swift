@@ -10,6 +10,7 @@ struct BloodworkView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isAddingEntry = false
     @State private var isImportingReport = false
+    @State private var opensManualAfterImport = false
 
     var body: some View {
         if embedInNavigation {
@@ -23,7 +24,7 @@ struct BloodworkView: View {
                                 Button {
                                     isImportingReport = true
                                 } label: {
-                                    Label("PDF tahlil sonucu içe aktar", systemImage: "doc.text.viewfinder")
+                                    Label("PDF veya fotoğraf içe aktar", systemImage: "doc.text.viewfinder")
                                 }
                                 Button {
                                     isAddingEntry = true
@@ -39,8 +40,11 @@ struct BloodworkView: View {
                     .sheet(isPresented: $isAddingEntry) {
                         BloodMarkerEditorView(viewModel: viewModel)
                     }
-                    .sheet(isPresented: $isImportingReport) {
-                        LabImportView(repository: viewModel.markerRepository) {
+                    .sheet(isPresented: $isImportingReport, onDismiss: {
+                        if opensManualAfterImport { opensManualAfterImport = false; isAddingEntry = true }
+                        Task { await viewModel.load() }
+                    }) {
+                        LabImportView(repository: viewModel.markerRepository, documents: viewModel.documentRepository, onManualEntry: { opensManualAfterImport = true }) {
                             Task { await viewModel.load() }
                         }
                     }
@@ -100,6 +104,14 @@ struct BloodworkView: View {
 
             // 2. KADEME: Aksiyon Gerektiren Bulgular Özeti (TEK L2 KART)
             actionableFindingsSection(content)
+            if !content.trainingContext.isEmpty {
+                NavigationLink {
+                    LabTrainingContextView(context: content.trainingContext, series: content.series)
+                } label: {
+                    Label("Tahlil günlerinde HRV ve antrenman yükü", systemImage: "chart.xyaxis.line")
+                        .zenithiumBody().frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
+            }
 
             // 3. KADEME: Sistemlere Göre Gruplanmış Biyobelirteçler (kartsız L1 SectionBlock)
             panelPicker
@@ -175,7 +187,7 @@ struct BloodworkView: View {
     // MARK: - TEK L2 KART / SESSİZ L1 SATIR: Aksiyon Gerektiren Bulgular
 
     private func actionableFindingsSection(_ content: BloodworkViewModel.Content) -> some View {
-        let actionable = content.observations.filter(\.requiresClinician)
+        let actionable = content.observations
         let outside = content.series.compactMap(\.latest).filter { $0.referenceRange.isBounded && !$0.referenceRange.contains($0.value) }
         let unknown = content.series.compactMap(\.latest).filter { !$0.referenceRange.isBounded }.count
         return SectionCard(title: outside.isEmpty ? "Panel özeti" : "Referans dışı sonuçlar") {
@@ -270,6 +282,9 @@ private struct MarkerSummaryRow: View {
                     Spacer()
                     Text(latest.drawnAt.formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "tr_TR"))))
                         .zenithiumCaption()
+                }
+                if let change = series.changeSincePrevious {
+                    Text("Önceki ölçümden \(ZenithiumFormat.signed(change, digits: series.marker.fractionDigits)) \(latest.unitSymbol)").zenithiumCaption()
                 }
                 if isOutOfRange {
                     Label("Referans dışında", systemImage: "exclamationmark.triangle")

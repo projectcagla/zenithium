@@ -54,17 +54,20 @@ actor DailyRecalculationCoordinator {
 
     /// Writes the widget snapshot and decides whether the widgets need to redraw.
     private let widgets: WidgetRefreshPublisher
+    private let automaticallyBackfills: Bool
 
     init(
         health: any HealthDataProviding,
         store: any ZenithiumRepository,
         calendarProvider: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent },
-        widgets: WidgetRefreshPublisher = WidgetRefreshPublisher()
+        widgets: WidgetRefreshPublisher = WidgetRefreshPublisher(),
+        automaticallyBackfills: Bool = true
     ) {
         self.health = health
         self.store = store
         self.calendarProvider = calendarProvider
         self.widgets = widgets
+        self.automaticallyBackfills = automaticallyBackfills
     }
 
     // MARK: - Entry points
@@ -193,7 +196,7 @@ actor DailyRecalculationCoordinator {
         await refreshWidgetTrend(now: now, result: result)
 
         // Run deep historical backfill in the background with a single-flight gate if history is sparse
-        scheduleHistoricalBackfillIfNeeded(now: now)
+        if automaticallyBackfills { scheduleHistoricalBackfillIfNeeded(now: now) }
 
         return result
     }

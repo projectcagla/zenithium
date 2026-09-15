@@ -144,10 +144,10 @@ enum SafetyCopy {
     /// Shown at the top of the bloodwork screen. §12: ranges and trends only.
     static let bloodworkDisclaimer = """
     Zenithium, laboratuvar raporunda yazanı saklar ve zaman içindeki seyrini çizer. Sonuçları \
-    yorumlamaz, değerleri işaretlemez ve haklarında bir şey önermez. Bunu hekimin yapar.
+    laboratuvarın referans aralığıyla karşılaştırır. Bu karşılaştırma teşhis veya tedavi önerisi değildir. Sonuçlarını hekiminle değerlendir.
     """
 
-    static let bloodworkRangeCaption = "Tipik bir laboratuvar raporunda basıldığı hâliyle referans aralığı."
+    static let bloodworkRangeCaption = "Kendi laboratuvar raporunda yazan aralık. Yaş, yöntem ve numuneye göre değişebilir; eksikse başka bir aralıkla doldurulmaz."
 
     static let bloodworkOptimalCaption = "Literatürde sık anılan daha dar bir bant. Bağlam, hedef değil."
 

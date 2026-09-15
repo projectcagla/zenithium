@@ -235,13 +235,17 @@ struct ReasonView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(evidenceTitle(node.sourceCategory)).zenithiumEyebrow()
                 Text(node.summary).zenithiumBody()
-                Text("\(node.timestamp.formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(Locale(identifier: "tr_TR")))) · \(node.sampleCount) örnek")
+                Text("\(evidenceDate(node.timestamp)) · \(node.sampleCount) örnek")
                     .zenithiumCaption()
             }
             .padding(.bottom, 24)
         }
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
+    }
+
+    private func evidenceDate(_ date: Date) -> String {
+        date.formatted(.dateTime.day().month(.abbreviated).hour().minute().locale(Locale(identifier: "tr_TR")))
     }
 
     private func evidenceSymbol(_ source: String) -> String {

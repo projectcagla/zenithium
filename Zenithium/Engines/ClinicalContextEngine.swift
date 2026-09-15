@@ -11,7 +11,7 @@ import Foundation
 enum ClinicalContextEngine {
 
     /// Minimum total confidence multiplier floor (confidence is trimmed, never wiped out).
-    static let multiplierFloor: Double = 0.70
+    static let multiplierFloor: Double = 1.0
 
     // MARK: - Assessment
 
@@ -40,7 +40,7 @@ enum ClinicalContextEngine {
         var suppressesHRV = false
 
         // Group markers by key and take only the latest snapshot
-        let groupedMarkers = Dictionary(grouping: markers, by: { $0.marker.storageKey })
+        let groupedMarkers = Dictionary(grouping: markers.filter { $0.drawnAt <= now && $0.value.isFinite }, by: { $0.marker.storageKey })
 
         for modifier in ClinicalModifierRegistry.allModifiers {
             // Check if user disabled this modifier
@@ -76,13 +76,14 @@ enum ClinicalContextEngine {
                 }
             } else if let targetECG = modifier.targetECGClassification {
                 // Find most recent ECG record
-                guard let latestECG = ecgRecords.sorted(by: { $0.recordedAt < $1.recordedAt }).last else { continue }
+                guard let latestECG = ecgRecords.filter { $0.recordedAt <= now }.sorted(by: { $0.recordedAt < $1.recordedAt }).last else { continue }
 
                 // Staleness check for ECG: only records within 30 days are relevant
                 let days = calendar.dateComponents([.day], from: latestECG.recordedAt, to: now).day ?? 0
-                guard days <= 30 else { continue }
+                guard days >= 0, days <= 30 else { continue }
 
                 if latestECG.classification == targetECG {
+                    if modifier.suppressesHRVRecovery, now.timeIntervalSince(latestECG.recordedAt) > 24 * 3600 { continue }
                     multiplier *= modifier.multiplier
                     if modifier.suppressesHRVRecovery {
                         suppressesHRV = true
@@ -129,9 +130,10 @@ enum ClinicalContextEngine {
         snapshot: BloodMarkerSnapshot,
         sex: BiologicalSexValue
     ) -> Bool {
-        let reference = snapshot.referenceRange.isBounded
-            ? snapshot.referenceRange
-            : snapshot.marker.referenceRange(for: sex)
+        guard snapshot.value.isFinite, snapshot.referenceRange.isBounded,
+              let definition = BiomarkerCatalog.definition(forKey: snapshot.marker.storageKey),
+              definition.unit(matching: snapshot.unitSymbol) != nil else { return false }
+        let reference = snapshot.referenceRange
 
         switch modifier.id {
         case ClinicalModifierRegistry.hemoglobinLow.id,
@@ -151,12 +153,11 @@ enum ClinicalContextEngine {
             if let max = reference.maximum {
                 return snapshot.value > max
             }
-            // Clinical default threshold for high hsCRP is > 3.0 mg/L
-            return snapshot.value > 3.0
+            return false
 
         case ClinicalModifierRegistry.creatineKinaseSevere.id:
-            let upper = reference.maximum ?? 200.0
-            return snapshot.value > (upper * 5.0)
+            guard let upper = reference.maximum else { return false }
+            return snapshot.value > upper
 
         default:
             return false

@@ -140,7 +140,19 @@ struct NavigationAndAppearanceTests {
     func fiveTabsAreConfigured() {
         let tabs = RootTab.allCases
         #expect(tabs.count == 5)
-        #expect(tabs == [.today, .sleep, .load, .trends, .muscle])
+        #expect(tabs == [.today, .sleep, .load, .trends, .hub])
+    }
+
+    @Test("Ayarlar, tahlil, günlük ve sağlık her mercekte erişilebilir")
+    func essentialRoutesRemainVisible() {
+        #expect(RootTab.allCases.contains(.hub))
+        for lens in TrainingLens.allCases {
+            for destination in [HubDestination.settings, .bloodwork, .journal, .dataTransfer, .documents, .report, .muscles, .vitals] {
+                #expect(destination.isVisible(for: lens))
+            }
+        }
+        #expect(HubDestination.strain.isVisible(for: .endurance))
+        #expect(HubDestination.plan.isVisible(for: .strength))
+        #expect(HubDestination.racePlan.isVisible(for: .endurance))
     }
 }
-

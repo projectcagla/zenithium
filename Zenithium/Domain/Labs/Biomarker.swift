@@ -871,14 +871,14 @@ enum BiomarkerCatalog {
             accessibilityName: "Yirmi beş hidroksi D vitamini",
             panel: .micronutrient,
             units: [
-                BiomarkerUnit(symbol: "ng/mL", factorToCanonical: 1.0, aliases: []),
+                BiomarkerUnit(symbol: "ng/mL", factorToCanonical: 1.0, aliases: ["ug/L", "µg/L", "μg/L"]),
                 BiomarkerUnit(symbol: "nmol/L", factorToCanonical: 0.4006, aliases: [])
             ],
             referenceRange: SexSpecificRange(shared: MarkerRange(minimum: 30.0, maximum: 100.0)),
             optimalRange: SexSpecificRange(shared: MarkerRange(minimum: 40.0, maximum: 60.0)),
             fractionDigits: 0,
             retestMonths: 6,
-            synonyms: ["d vitamini", "vitamin d", "25 oh vitamin d", "25 hidroksi vitamin d", "vit d", "d vit", "25 oh d"],
+            synonyms: ["d vitamini", "vitamin d", "25 oh vitamin d", "25 hidroksi vitamin d", "25 hidroksivitamin d", "vit d", "d vit", "25 oh d"],
             contextNote: "Kuzey enlemlerinde kış aylarında düşme eğilimi belirgindir; mevsimsel karşılaştırma anlamlıdır."
         ),
         BiomarkerDefinition(

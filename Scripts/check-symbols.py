@@ -46,7 +46,7 @@ FRAMEWORK_SYMBOLS = {
     "Decodable", "Decoder", "Dictionary", "Double", "Encodable", "Encoder", "Equatable",
     "Error", "FileManager", "Float", "Hashable", "Identifiable", "Int", "Int64", "JSONDecoder",
     "JSONEncoder", "KeyedDecodingContainer", "LocalizedError", "Locale", "Measurement",
-    "NSError", "NSLocalizedString", "NSObject", "NSObjectProtocol", "Notification",
+    "NSError", "NSRange", "NSRegularExpression", "NSString", "NSLocalizedString", "NSObject", "NSObjectProtocol", "Notification",
     "NotificationCenter", "NumberFormatter", "Optional", "OptionSet", "Range", "RawRepresentable",
     "Result", "Sendable", "Set", "String", "Substring", "TimeInterval", "TimeZone", "URL",
     "URLComponents", "UUID", "UInt64", "UInt8", "UserDefaults", "XMLParser", "XMLParserDelegate",
@@ -55,7 +55,7 @@ FRAMEWORK_SYMBOLS = {
     "ISO8601DateFormatter", "DateComponentsFormatter", "ByteCountFormatter", "IndexSet",
     "PropertyListDecoder", "PropertyListEncoder", "FileHandle", "Bundle", "ProcessInfo",
     "AnyIterator", "Never", "StaticString", "AnyHashable", "JSONSerialization",
-    "URLResourceValues",
+    "URLResourceValues", "CFData", "CFDictionary", "CGImageSourceCreateWithData", "CGImageSourceGetType", "FileProtectionType", "CGImageSourceCreateThumbnailAtIndex", "PhotosPicker", "PhotosPickerItem",
     "Swift", "Foundation",
     # Concurrency
     "Task", "TaskGroup", "ThrowingTaskGroup", "Actor", "MainActor", "AsyncStream",
@@ -64,6 +64,7 @@ FRAMEWORK_SYMBOLS = {
     "CancellationError", "Sendable",
     # SwiftUI
     "View", "Text", "Image", "VStack", "HStack", "ZStack", "LazyVStack", "LazyHStack",
+    "AnyLayout", "HStackLayout", "VStackLayout", "DisclosureGroup",
     "LazyVGrid", "GridItem", "ScrollView", "List", "Section", "NavigationStack",
     "NavigationLink", "NavigationSplitView", "Button", "Toggle", "Picker", "Slider",
     "Stepper", "TextField", "TextEditor", "DatePicker", "Form", "Group", "GroupBox",
@@ -168,7 +169,7 @@ BANNED = [
 # formatter.
 DECIMAL_FORMAT = re.compile(r'String\(format:\s*"[^"]*%\.[^"]*f"')
 DECIMAL_FORMAT_ALLOWED = {
-    "Zenithium/Views/DesignSystem/ZenithiumFont.swift",
+    "Zenithium/Domain/ZenithiumFormat.swift",
     "Zenithium/Engines/CorrelationEngine.swift",
 }
 
@@ -573,8 +574,11 @@ def known_labels(bodies: dict[str, str]) -> dict[str, set[str]]:
     labels: dict[str, set[str]] = {}
     for name, body in bodies.items():
         names: set[str] = set(STORED_PROPERTY.findall(body))
-        for signature in INIT_SIGNATURE.findall(body):
-            for parameter in signature.split(","):
+        for match in re.finditer(r"\binit\s*(?:\?|!)?\s*\(", body):
+            split = top_level_arguments(body, match.end() - 1)
+            if split is None:
+                continue
+            for parameter in split[0]:
                 head = parameter.split(":")[0].strip()
                 for part in head.split():
                     if re.fullmatch(r"\w+", part) and part != "_":

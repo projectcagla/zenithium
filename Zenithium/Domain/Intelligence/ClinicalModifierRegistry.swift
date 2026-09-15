@@ -48,52 +48,54 @@ struct ClinicalModifier: Sendable, Equatable, Identifiable {
 
 enum ClinicalModifierRegistry {
 
+    // No validated conversion exists from one laboratory result to a recovery penalty.
+    // Registry entries add descriptive context only; all numeric multipliers remain neutral.
     static let hemoglobinLow = ClinicalModifier(
         id: "clinical.hemoglobin.low",
-        title: "Düşük Hemoglobin Güven Düzeltmesi",
+        title: "Hemoglobin referansı",
         targetMarkerKey: "hemoglobin",
-        multiplier: 0.85,
-        rationale: "Oksijen taşıma kapasitesi düşükken aynı iş daha yüksek nabızla yapılır; nabza dayalı yük tahmini bu dönemde sistematik olarak yüksek çıkabilir.",
+        multiplier: 1.0,
+        rationale: "Hemoglobin, kayıttaki laboratuvar aralığının altında. Sonucu hekiminle değerlendir. Bu değer toparlanma puanına sayısal bir ceza eklemez.",
         limitationCode: "CLINICAL-HEMOGLOBIN-LOW",
         validityMonths: 3
     )
 
     static let ferritinLow = ClinicalModifier(
         id: "clinical.ferritin.low",
-        title: "Düşük Ferritin Güven Düzeltmesi",
+        title: "Ferritin referansı",
         targetMarkerKey: "ferritin",
-        multiplier: 0.88,
-        rationale: "Oksijen taşıma ve hücresel enerji kapasitesi düşükken aynı iş daha yüksek kardiyovasküler stresle karşılanır; yük tahmini sistematik olarak yüksek çıkabilir.",
+        multiplier: 1.0,
+        rationale: "Ferritin, kayıttaki laboratuvar aralığının altında. Sonucu hekiminle değerlendir. Tek başına bu ölçümden yük veya toparlanma düzeltmesi hesaplanmaz.",
         limitationCode: "CLINICAL-FERRITIN-LOW",
         validityMonths: 3
     )
 
     static let tshShift = ClinicalModifier(
         id: "clinical.tsh.shift",
-        title: "Tiroit Taban Çizgisi Kayması",
+        title: "TSH referansı",
         targetMarkerKey: "tsh",
-        multiplier: 0.85,
-        rationale: "Tiroit durumu dinlenik nabız ve HRV taban çizgilerini kaydırır; bu dönemin tabanı öncekiyle doğrudan kıyaslanamaz.",
+        multiplier: 1.0,
+        rationale: "TSH, kayıttaki laboratuvar aralığının dışında. Sonucu hekiminle değerlendir. Bunun nabız veya HRV değişiminin nedeni olduğu söylenemez.",
         limitationCode: "CLINICAL-TSH-SHIFT",
         validityMonths: 6
     )
 
     static let hsCRPElevated = ClinicalModifier(
         id: "clinical.hscrp.elevated",
-        title: "Sistemik İnflamasyon HRV Baskılanması",
+        title: "hs-CRP referansı",
         targetMarkerKey: "highSensitivityCRP",
-        multiplier: 0.90,
-        rationale: "Sistemik inflamasyon HRV'yi antrenman yükünden bağımsız olarak baskılar.",
+        multiplier: 1.0,
+        rationale: "hs-CRP, kayıttaki laboratuvar aralığının üzerinde. Sonucu hekiminle değerlendir. HRV ile aynı zamanda değişmesi neden-sonuç ilişkisi göstermez.",
         limitationCode: "CLINICAL-HSCRP-ELEVATED",
         validityMonths: 1
     )
 
     static let creatineKinaseSevere = ClinicalModifier(
         id: "clinical.ck.severe",
-        title: "Aşırı Yüksek Kreatin Kinaz",
+        title: "CK referansı",
         targetMarkerKey: "creatineKinase",
         multiplier: 1.0,
-        rationale: "Kas toparlanma modeli normal klerens varsayar; aşırı yüksek CK değerinde toparlanma süresi uzayabilir.",
+        rationale: "CK, kayıttaki laboratuvar aralığının üzerinde. Sonucu ve ölçümden önceki antrenmanlarını hekiminle değerlendir. CK tek başına kasların toparlanma süresini vermez.",
         limitationCode: "CLINICAL-CK-SEVERE",
         validityMonths: 1
     )
@@ -103,7 +105,7 @@ enum ClinicalModifierRegistry {
         title: "Atriyal Fibrilasyon Ritim Uyarısı",
         targetECGClassification: .atrialFibrillation,
         multiplier: 1.0,
-        rationale: "Atriyal fibrilasyon sırasında HRV otonom tonusu değil ritim düzensizliğini ölçer; bu kayıt geçerliyken HRV'den toparlanma skoru üretilmez.",
+        rationale: "Son 24 saatteki EKG kaydı atriyal fibrilasyon olarak sınıflandırılmış. Bu bir tanı değildir; hekiminle değerlendir. Önlem olarak bugün HRV'ye dayalı antrenman kararı gösterilmez; bu, doğrulanmış bir 24 saatlik etki modeli değildir.",
         limitationCode: "CLINICAL-ECG-AF",
         validityMonths: 1,
         suppressesHRVRecovery: true,
@@ -112,10 +114,10 @@ enum ClinicalModifierRegistry {
 
     static let ecgPoorReading = ClinicalModifier(
         id: "clinical.ecg.poorReading",
-        title: "Zayıf Elektrot Teması",
+        title: "Okunamayan EKG",
         targetECGClassification: .inconclusivePoorReading,
-        multiplier: 0.95,
-        rationale: "Elektrot teması zayıf; aynı bilekten alınan optik ölçümler de gürültülü olabilir.",
+        multiplier: 1.0,
+        rationale: "EKG kaydı sınıflandırılamamış. Apple'ın ölçüm yönergelerini izleyerek yeniden deneyebilirsin. Bu sonuç, optik nabız veya HRV ölçümlerinin de hatalı olduğunu göstermez.",
         limitationCode: "CLINICAL-ECG-POOR-READING",
         validityMonths: 1
     )

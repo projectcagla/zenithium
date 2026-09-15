@@ -13,19 +13,23 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import PhotosUI
 
 struct LabImportView: View {
 
     @State private var model: LabImportViewModel
     @State private var isPickingFile = false
+    @State private var selectedPhoto: PhotosPickerItem?
+    let onManualEntry: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     /// Called once rows have been written, so the bloodwork screen can reload.
     let onFinish: () -> Void
 
-    init(repository: any BloodMarkerRepository, onFinish: @escaping () -> Void) {
-        _model = State(initialValue: LabImportViewModel(repository: repository))
+    init(repository: any BloodMarkerRepository, documents: (any HealthDocumentRepository)? = nil, onManualEntry: @escaping () -> Void = {}, onFinish: @escaping () -> Void) {
+        _model = State(initialValue: LabImportViewModel(repository: repository, documents: documents))
         self.onFinish = onFinish
+        self.onManualEntry = onManualEntry
     }
 
     var body: some View {
@@ -37,11 +41,24 @@ struct LabImportView: View {
                 .toolbar { toolbar }
                 .fileImporter(
                     isPresented: $isPickingFile,
-                    allowedContentTypes: [.pdf],
+                    allowedContentTypes: [.pdf, .image],
                     allowsMultipleSelection: false
                 ) { result in
                     handle(result)
                 }
+                .onChange(of: selectedPhoto) { _, item in
+                    guard let item else { return }
+                    Task {
+                        do {
+                            guard let data = try await item.loadTransferable(type: Data.self) else {
+                                model.reportFailure("Fotoğraf okunamadı.")
+                                return
+                            }
+                            await model.load(data: data, fileName: "Fotoğraf")
+                        } catch { model.reportFailure("Fotoğraf okunamadı: \(error.localizedDescription)") }
+                    }
+                }
+                .interactiveDismissDisabled(model.phase == .saving)
                 // Writing values into the record is the one commit in this flow, and it
                 // happens behind a sheet that is about to close — so it says so.
                 .sensoryFeedback(trigger: model.phase) { _, phase in
@@ -80,9 +97,9 @@ struct LabImportView: View {
             VStack(spacing: ZenithiumSpacing.xl) {
                 SectionCard(title: "Nasıl çalışır") {
                     VStack(alignment: .leading, spacing: ZenithiumSpacing.l) {
-                        step(number: 1, text: "Hastaneden aldığın PDF tahlil sonucunu seç.")
+                        step(number: 1, text: "PDF tahlil sonucunu veya net bir fotoğrafını seç.")
                         step(number: 2, text: "Zenithium belgeyi cihazında okur. Hiçbir yere gönderilmez.")
-                        step(number: 3, text: "Bulduğu her satırı sana gösterir; sen onaylarsın.")
+                        step(number: 3, text: "Her satırı ayrı onaylarsın. Kaydettiğinde kaynak belge de Belgeler içinde tutulur.")
                     }
                 }
 
@@ -100,13 +117,20 @@ struct LabImportView: View {
                 Button {
                     isPickingFile = true
                 } label: {
-                    Label("PDF seç", systemImage: "doc.badge.plus")
+                    Label("Dosyalardan seç", systemImage: "doc.badge.plus")
                         .font(ZenithiumFont.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, ZenithiumSpacing.l)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(ZenithiumColor.accent)
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Label("Fotoğraflardan seç", systemImage: "photo")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                Button("Elle değer gir") { dismiss(); onManualEntry() }
+                Text(SafetyCopy.clinicianPrompt).zenithiumCaption()
             }
             .padding(ZenithiumSpacing.xl)
         }
@@ -144,34 +168,34 @@ struct LabImportView: View {
                         .font(ZenithiumFont.callout)
                         .foregroundStyle(ZenithiumColor.textSecondary)
                 }
-                DatePicker("Alınma tarihi", selection: $model.drawDate, displayedComponents: .date)
+                DatePicker("Alınma tarihi", selection: $model.drawDate, in: ...Date(), displayedComponents: .date)
+                    .disabled(!model.savedIDs.isEmpty)
+                    .onChange(of: model.drawDate) { _, _ in model.invalidateApprovals() }
             } header: {
                 Text("Belge")
             } footer: {
                 Text(dateFooter)
             }
 
+            if let failure = model.saveFailure {
+                Section("Kaydetme sonucu") { Text(failure).foregroundStyle(ZenithiumColor.yellow) }
+            }
             Section {
                 ForEach($model.rows) { $row in
-                    LabImportRow(row: $row)
+                    if model.savedIDs.contains(row.id) {
+                        Label("\(row.marker.displayName) kaydedildi", systemImage: "checkmark.circle")
+                    } else { LabImportRow(row: $row) }
                 }
-            } header: {
-                HStack {
-                    Text("Bulunan değerler")
-                    Spacer()
-                    Button(model.selectedCount == model.rows.count ? "Hiçbiri" : "Tümü") {
-                        if model.selectedCount == model.rows.count {
-                            model.deselectAll()
-                        } else {
-                            model.selectAll()
-                        }
-                    }
-                    .font(ZenithiumFont.caption)
-                    .textCase(nil)
+            } header: { Text("Her satırı kontrol edip ayrı ayrı onayla") }
+            footer: { Text(reviewFooter) }
+            if model.canKeepOriginal {
+                Section {
+                    Button("Yalnızca kaynak belgeyi sakla") { Task { await model.keepOriginal() } }
+                } footer: {
+                    Text("Eşikle verilen veya okunamayan sonuçları kesin bir sayıya çevirmeden, belgenin tamamını Belgeler içinde saklayabilirsin.")
                 }
-            } footer: {
-                Text(reviewFooter)
             }
+            Section { Text(SafetyCopy.clinicianPrompt).zenithiumCaption() }
         }
         .scrollContentBackground(.hidden)
         .background(ZenithiumColor.background.ignoresSafeArea())
@@ -186,12 +210,12 @@ struct LabImportView: View {
     private var reviewFooter: String {
         var parts: [String] = []
         if model.lowConfidenceCount > 0 {
-            parts.append("\(model.lowConfidenceCount) satırdan emin değilim; onları kapalı bıraktım.")
+            parts.append("\(model.lowConfidenceCount) satırın okuma güveni düşük.")
         }
         if model.unreadableLineCount > 0 {
             parts.append("\(model.unreadableLineCount) satırda bir belirteç adı gördüm ama sayıyı okuyamadım.")
         }
-        parts.append("Kaydetmeden önce her değeri kendi raporunla karşılaştır.")
+        parts.append("Hiçbir satır önceden onaylı değildir. Kaydetmeden önce değeri, birimi ve referans aralığını kendi raporunla karşılaştır.")
         return parts.joined(separator: " ")
     }
 
@@ -213,7 +237,7 @@ struct LabImportView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 48))
                 .foregroundStyle(ZenithiumColor.green)
-            Text("\(count) değer kaydedildi")
+            Text(count == 0 ? "Kaynak belge saklandı" : "\(count) değer kaydedildi")
                 .font(ZenithiumFont.title)
                 .foregroundStyle(ZenithiumColor.textPrimary)
             Button("Bitti") {
@@ -236,6 +260,13 @@ struct LabImportView: View {
                 .font(ZenithiumFont.callout)
                 .foregroundStyle(ZenithiumColor.textSecondary)
                 .multilineTextAlignment(.center)
+            Button("Elle değer gir") { dismiss(); onManualEntry() }
+                .buttonStyle(.borderedProminent)
+            if model.canKeepOriginal {
+                Button("Kaynak belgeyi sakla") { Task { await model.keepOriginal() } }
+                    .buttonStyle(.bordered)
+            }
+            Text(SafetyCopy.clinicianPrompt).zenithiumCaption()
             Button("Başka bir dosya seç") { isPickingFile = true }
                 .buttonStyle(.bordered)
                 .tint(ZenithiumColor.accent)
@@ -247,7 +278,8 @@ struct LabImportView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button("Kapat") { dismiss() }
+            Button("Kapat") { onFinish(); dismiss() }
+                .disabled(model.phase == .saving)
         }
         if model.phase == .reviewing {
             ToolbarItem(placement: .confirmationAction) {
@@ -264,8 +296,8 @@ struct LabImportView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             Task { await model.load(fileURL: url) }
-        case .failure:
-            break
+        case .failure(let error):
+            model.reportFailure("Dosya seçilemedi: \(error.localizedDescription)")
         }
     }
 }
@@ -286,45 +318,71 @@ private struct LabImportRow: View {
                         .foregroundStyle(row.isSelected ? ZenithiumColor.accent : ZenithiumColor.textTertiary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(row.isSelected ? "Bu değeri kaydetme dışı bırak" : "Bu değeri kaydet")
+                .frame(minWidth: 44, minHeight: 44)
+                .disabled(!row.isValid)
+                .accessibilityLabel(row.isSelected ? "Bu satırın onayını kaldır" : "Değer, birim ve aralığı kontrol ettim; bu satırı onayla")
                 // Every row here is a decision the person is making about their own blood
                 // results, so each one gets an acknowledgement.
                 .sensoryFeedback(.selection, trigger: row.isSelected)
 
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                    Text(row.marker.displayName)
-                        .font(ZenithiumFont.headline)
-                        .foregroundStyle(ZenithiumColor.textPrimary)
+                    Picker("Belirteç", selection: $row.marker) {
+                        ForEach(BiomarkerCatalog.byPanel, id: \.panel) { group in
+                            Section(group.panel.displayName) {
+                                ForEach(group.markers) { definition in
+                                    Text(definition.displayName).tag(BloodMarkerKind.standard(definition.key))
+                                }
+                            }
+                        }
+                    }
+                    .labelsHidden()
                     ConfidenceBadge(confidence: row.confidence, unitIsRecognised: row.unitIsRecognised)
                 }
 
-                Spacer(minLength: 8)
-
+            }
+            HStack(spacing: ZenithiumSpacing.m) {
                 TextField("Değer", text: $row.valueText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .font(ZenithiumFont.body.monospacedDigit())
-                    .frame(maxWidth: 84)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .foregroundStyle(row.isValid ? ZenithiumColor.textPrimary : ZenithiumColor.red)
 
                 TextField("Birim", text: $row.unitSymbol)
                     .multilineTextAlignment(.trailing)
                     .font(ZenithiumFont.caption)
-                    .frame(maxWidth: 62)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .foregroundStyle(ZenithiumColor.textSecondary)
             }
 
+            if row.isThreshold {
+                Text("Bu sonuç eşik olarak verilmiş. Kesin ölçüm gibi kaydedilemez; raporunu sakla ve hekiminle değerlendir.").zenithiumCaption()
+            }
+            Toggle("Raporda referans aralığı var", isOn: $row.hasReference).font(ZenithiumFont.caption)
+            if row.hasReference {
+                HStack {
+                    TextField("Alt sınır", text: $row.referenceMinText).keyboardType(.decimalPad)
+                    Text("–")
+                    TextField("Üst sınır", text: $row.referenceMaxText).keyboardType(.decimalPad)
+                    Text(row.unitSymbol).zenithiumCaption()
+                }
+                if !row.referenceIsValid { Text("Rapordaki alt veya üst sınırı kontrol et.").zenithiumCaption() }
+            } else { Text("Referans aralığı yok").zenithiumCaption() }
             // The line the value came from, verbatim. This is what makes the review real
             // rather than ceremonial — the user can check the parse without opening the PDF.
             Text(row.sourceLine)
                 .font(ZenithiumFont.caption2.monospaced())
                 .foregroundStyle(ZenithiumColor.textTertiary)
-                .lineLimit(2)
-                .truncationMode(.tail)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel("Kaynak satır: \(row.sourceLine)")
         }
         .padding(.vertical, ZenithiumSpacing.xs)
-        .opacity(row.isSelected ? 1 : 0.55)
+        .onChange(of: row.valueText) { _, _ in row.isSelected = false }
+        .onChange(of: row.unitSymbol) { _, _ in row.isSelected = false }
+        .onChange(of: row.marker) { _, _ in row.isSelected = false }
+        .onChange(of: row.hasReference) { _, _ in row.isSelected = false }
+        .onChange(of: row.referenceMinText) { _, _ in row.isSelected = false }
+        .onChange(of: row.referenceMaxText) { _, _ in row.isSelected = false }
     }
 }
 

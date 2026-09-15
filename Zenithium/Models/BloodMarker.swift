@@ -77,7 +77,7 @@ final class BloodMarker {
         if refMin != nil || refMax != nil {
             return MarkerRange(minimum: refMin, maximum: refMax)
         }
-        return marker?.referenceRange ?? MarkerRange(minimum: nil, maximum: nil)
+        return .unbounded
     }
 
     /// The optimal band to draw, on the same rule.
@@ -85,7 +85,7 @@ final class BloodMarker {
         if optimalMin != nil || optimalMax != nil {
             return MarkerRange(minimum: optimalMin, maximum: optimalMax)
         }
-        return marker?.optimalRange ?? MarkerRange(minimum: nil, maximum: nil)
+        return .unbounded
     }
 
     /// Where the value sits across the reference range, 0…1, for positioning a dot on an

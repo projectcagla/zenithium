@@ -32,7 +32,23 @@ final class LabImportViewModel {
         let confidence: ParseConfidence
         let unitIsRecognised: Bool
         let isThreshold: Bool
-        let printedRange: MarkerRange?
+        var hasReference: Bool
+        var referenceMinText: String
+        var referenceMaxText: String
+        var printedRange: MarkerRange? {
+            guard hasReference else { return nil }
+            return MarkerRange(minimum: Self.number(referenceMinText), maximum: Self.number(referenceMaxText))
+        }
+        private static func number(_ text: String) -> Double? { Double(text.replacingOccurrences(of: ",", with: ".")) }
+        var referenceIsValid: Bool {
+            guard hasReference else { return true }
+            guard !referenceMinText.isEmpty || !referenceMaxText.isEmpty else { return false }
+            for text in [referenceMinText, referenceMaxText] where !text.isEmpty {
+                guard let n = Self.number(text), n.isFinite, n >= 0 else { return false }
+            }
+            if let low = Self.number(referenceMinText), let high = Self.number(referenceMaxText), low > high { return false }
+            return true
+        }
         let sourceLine: String
         let pageNumber: Int
 
@@ -47,23 +63,25 @@ final class LabImportViewModel {
 
         var isValid: Bool {
             guard let value else { return false }
-            return value.isFinite && !marker.displayName.isEmpty
+            return value.isFinite && value >= 0 && !marker.displayName.isEmpty && referenceIsValid && !isThreshold
+                && (try? LabRecording.prepare(marker: marker, value: value, unit: unitSymbol, reference: printedRange ?? .unbounded)) != nil
         }
 
         init(parsed: ParsedLabValue) {
             self.id = parsed.id
-            self.isSelected = parsed.confidence.isPreselected
+            self.isSelected = false
             self.marker = parsed.marker
             self.unitSymbol = parsed.unitSymbol
             self.confidence = parsed.confidence
             self.unitIsRecognised = parsed.unitIsRecognised
             self.isThreshold = parsed.isThreshold
-            self.printedRange = parsed.printedRange
+            self.hasReference = parsed.printedRange?.isBounded == true
+            self.referenceMinText = parsed.printedRange?.minimum.map { String($0).replacingOccurrences(of: ".", with: ",") } ?? ""
+            self.referenceMaxText = parsed.printedRange?.maximum.map { String($0).replacingOccurrences(of: ".", with: ",") } ?? ""
             self.sourceLine = parsed.sourceLine
             self.pageNumber = parsed.pageNumber
 
-            let digits = parsed.marker.fractionDigits
-            self.valueText = ZenithiumFormat.metric(parsed.value, digits: digits)
+            self.valueText = String(parsed.value).replacingOccurrences(of: ".", with: ",")
         }
     }
 
@@ -92,21 +110,24 @@ final class LabImportViewModel {
     /// knows whether to check it.
     private(set) var dateWasDetected = false
 
-    private let reader = LabDocumentReader()
-    private let repository: any BloodMarkerRepository
+    private let coordinator: LabImportCoordinator
+    private(set) var savedIDs: Set<UUID> = []
+    private(set) var saveFailure: String?
+    private(set) var canKeepOriginal = false
     private let nowProvider: @Sendable () -> Date
 
     init(
         repository: any BloodMarkerRepository,
+        documents: (any HealthDocumentRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() }
     ) {
-        self.repository = repository
+        self.coordinator = LabImportCoordinator(repository: repository, documents: documents)
         self.nowProvider = nowProvider
         self.drawDate = nowProvider()
     }
 
     var selectedCount: Int {
-        rows.filter { $0.isSelected && $0.isValid }.count
+        rows.filter { $0.isSelected && $0.isValid && !savedIDs.contains($0.id) }.count
     }
 
     var canSave: Bool {
@@ -122,10 +143,12 @@ final class LabImportViewModel {
     // MARK: - Import
 
     func load(fileURL: URL) async {
+        guard phase != .reading && phase != .saving else { return }
+        canKeepOriginal = false
         phase = .reading
         do {
-            let document = try await reader.read(fileURL: fileURL)
-            apply(LabReportParser.parse(document, referenceDate: nowProvider()))
+            apply(try await coordinator.read(fileURL: fileURL))
+            canKeepOriginal = true
         } catch let failure as LabImportFailure {
             phase = .failed(failure.message)
         } catch {
@@ -136,6 +159,8 @@ final class LabImportViewModel {
     /// Apply an already-parsed draft. Kept separate from `load` so tests can drive the
     /// review screen without a PDF.
     func apply(_ draft: LabReportDraft) {
+        savedIDs = []
+        saveFailure = nil
         fileName = draft.fileName
         source = draft.source
         unreadableLineCount = draft.unreadableLineCount
@@ -152,17 +177,28 @@ final class LabImportViewModel {
         phase = rows.isEmpty ? .failed(LabImportFailure.noRecognisableMarkers.message) : .reviewing
     }
 
-    func selectAll() {
-        for index in rows.indices where rows[index].isValid {
-            rows[index].isSelected = true
-        }
+    func load(data: Data, fileName: String) async {
+        guard phase != .reading && phase != .saving else { return }
+        canKeepOriginal = false
+        phase = .reading
+        do { apply(try await coordinator.read(data: data, fileName: fileName)); canKeepOriginal = true }
+        catch { phase = .failed(error.localizedDescription) }
     }
 
-    func deselectAll() {
-        for index in rows.indices {
-            rows[index].isSelected = false
-        }
+    func invalidateApprovals() {
+        for index in rows.indices where !savedIDs.contains(rows[index].id) { rows[index].isSelected = false }
     }
+
+    func keepOriginal() async {
+        guard canKeepOriginal, phase != .saving else { return }
+        phase = .saving
+        do {
+            try await coordinator.saveOriginal(drawnAt: drawDate)
+            phase = .finished(savedCount: savedIDs.count)
+        } catch { phase = .failed("Belge saklanamadı: \(error.localizedDescription)") }
+    }
+
+    func reportFailure(_ message: String) { phase = .failed(message) }
 
     // MARK: - Saving
 
@@ -175,31 +211,19 @@ final class LabImportViewModel {
         guard canSave else { return }
         phase = .saving
 
-        let approved = rows.filter { $0.isSelected && $0.isValid }
-        var saved = 0
-        do {
-            for row in approved {
-                guard let value = row.value else { continue }
-                let reference = row.printedRange ?? row.marker.referenceRange
-                try await repository.saveBloodMarker(
-                    id: UUID(),
-                    marker: row.marker,
-                    value: value,
-                    unitSymbol: row.unitSymbol,
-                    referenceRange: reference,
-                    optimalRange: row.marker.optimalRange,
-                    drawnAt: drawDate,
-                    note: importNote(for: row)
-                )
-                saved += 1
-            }
-            phase = .finished(savedCount: saved)
-        } catch {
-            // Partial success is still success for the rows that landed, so the count is
-            // reported rather than swallowed.
-            phase = saved > 0
-                ? .finished(savedCount: saved)
-                : .failed("Kaydedilemedi: \(error.localizedDescription)")
+        saveFailure = nil
+        let approved = rows.filter { $0.isSelected && $0.isValid && !savedIDs.contains($0.id) }.compactMap { row -> LabApprovedRow? in
+            guard let value = row.value else { return nil }
+            return LabApprovedRow(id: row.id, marker: row.marker, value: value, unit: row.unitSymbol,
+                                  reference: row.printedRange ?? .unbounded, note: importNote(for: row))
+        }
+        let outcome = await coordinator.save(approved, drawnAt: drawDate)
+        savedIDs.formUnion(outcome.savedIDs)
+        if let failure = outcome.failure {
+            saveFailure = "\(savedIDs.count) satır kaydedildi. \(failure) Kalanları kontrol edip yeniden deneyebilirsin."
+            phase = .reviewing
+        } else {
+            phase = .finished(savedCount: savedIDs.count)
         }
     }
 
@@ -208,6 +232,8 @@ final class LabImportViewModel {
     private func importNote(for row: Row) -> String {
         var parts = [fileName.isEmpty ? "PDF içe aktarım" : fileName]
         parts.append("s.\(row.pageNumber)")
+        parts.append("Kaynak satır: \(row.sourceLine)")
+        parts.append("Okuma güveni: \(row.confidence.displayName)")
         if source == .opticalRecognition { parts.append("görüntüden okundu") }
         if row.isThreshold { parts.append("eşik değer olarak basılmış") }
         return parts.joined(separator: " · ")

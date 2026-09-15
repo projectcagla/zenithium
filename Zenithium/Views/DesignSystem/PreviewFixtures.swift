@@ -43,6 +43,7 @@ enum PreviewScreen: String, CaseIterable, Sendable {
 final class PreviewFixtures {
 
     static let shared = PreviewFixtures()
+    nonisolated static let now = Date(timeIntervalSince1970: 1_780_300_800)
 
     private var doluDependencies: AppDependencies?
     private var kalibrasyonDependencies: AppDependencies?
@@ -57,7 +58,9 @@ final class PreviewFixtures {
         case .dolu:
             if let existing = doluDependencies { return existing }
             let deps = try AppDependencies.preview(configuration: .complete)
-            _ = try await deps.coordinator.recalculate(now: Date())
+            _ = try await deps.coordinator.recalculate(now: PreviewFixtures.now)
+            try await deps.coordinator.backfillHistoricalDays(now: PreviewFixtures.now, windowDays: 60)
+            await deps.dayRecords.invalidate()
             try await seedBloodMarkers(into: deps.store)
             try await seedStrengthSessions(into: deps.store)
             doluDependencies = deps
@@ -73,7 +76,7 @@ final class PreviewFixtures {
                 authorizationState: .authorized
             )
             let deps = try AppDependencies.preview(configuration: config)
-            _ = try? await deps.coordinator.recalculate(now: Date())
+            _ = try? await deps.coordinator.recalculate(now: PreviewFixtures.now)
             kalibrasyonDependencies = deps
             return deps
 
@@ -87,14 +90,14 @@ final class PreviewFixtures {
                 authorizationState: .authorized
             )
             let deps = try AppDependencies.preview(configuration: config)
-            _ = try? await deps.coordinator.recalculate(now: Date())
+            _ = try? await deps.coordinator.recalculate(now: PreviewFixtures.now)
             veriyokDependencies = deps
             return deps
         }
     }
 
     private func seedBloodMarkers(into store: ZenithiumStore) async throws {
-        let now = Date()
+        let now = PreviewFixtures.now
         try await store.saveBloodMarker(
             id: UUID(),
             marker: .ferritin,
@@ -140,7 +143,7 @@ final class PreviewFixtures {
     private func seedStrengthSessions(into store: ZenithiumStore) async throws {
         try await store.saveStrengthSession(
             id: UUID(),
-            performedAt: Date().addingTimeInterval(-3600 * 18),
+            performedAt: PreviewFixtures.now.addingTimeInterval(-3600 * 18),
             timeZoneIdentifier: TimeZone.current.identifier,
             pattern: .squat,
             entries: [StrengthEntry(id: UUID(), exerciseName: "Squat", sets: 4, reps: 8, rpe: 8)],
@@ -164,7 +167,8 @@ final class PreviewFixtures {
             sessions: deps.store,
             cycleSource: deps.health,
             goals: deps.store,
-            workoutSource: deps.health
+            workoutSource: deps.health,
+            nowProvider: { PreviewFixtures.now }
         )
         await vm.refresh()
         return vm
@@ -177,7 +181,8 @@ final class PreviewFixtures {
         let vm = SleepViewModel(
             coordinator: deps.coordinator,
             health: deps.health,
-            records: deps.dayRecords
+            records: deps.dayRecords,
+            nowProvider: { PreviewFixtures.now }
         )
         await vm.refresh()
         return vm
@@ -187,7 +192,7 @@ final class PreviewFixtures {
         guard let deps = try? await dependencies(for: state) else {
             return fallbackTrainingLoadViewModel()
         }
-        let vm = TrainingLoadViewModel(records: deps.dayRecords)
+        let vm = TrainingLoadViewModel(records: deps.dayRecords, nowProvider: { PreviewFixtures.now })
         await vm.load()
         return vm
     }
@@ -196,7 +201,7 @@ final class PreviewFixtures {
         guard let deps = try? await dependencies(for: state) else {
             return fallbackTrendsViewModel()
         }
-        let vm = TrendsViewModel(repository: deps.dayRecords)
+        let vm = TrendsViewModel(repository: deps.dayRecords, nowProvider: { PreviewFixtures.now })
         await vm.load()
         return vm
     }
@@ -209,7 +214,8 @@ final class PreviewFixtures {
             coordinator: deps.coordinator,
             repository: deps.store,
             painRepository: deps.store,
-            records: deps.dayRecords
+            records: deps.dayRecords,
+            nowProvider: { PreviewFixtures.now }
         )
         await vm.refresh()
         return vm
@@ -219,7 +225,7 @@ final class PreviewFixtures {
         guard let deps = try? await dependencies(for: state) else {
             return fallbackBloodworkViewModel()
         }
-        let vm = BloodworkViewModel(repository: deps.store, profile: deps.store)
+        let vm = BloodworkViewModel(repository: deps.store, profile: deps.store, records: deps.dayRecords, nowProvider: { PreviewFixtures.now })
         await vm.load()
         return vm
     }
@@ -332,9 +338,9 @@ final class PreviewFixtures {
         body: "Toparlanma skorun %78 ve son 14 günlük akut:kronik iş yükü oranın 1,08 ile dengeli aralıkta. Kardiyovasküler kapasiteyi korumak için 45-60 dakikalık Bölge 2 antrenmanı uygundur.",
         confidence: ConfidenceScore(value: 0.84),
         evidence: [
-            EvidenceNode(sourceCategory: "Toparlanma", summary: "HRV taban ortalamasının +0,6σ üzerinde (54 ms).", timestamp: Date()),
-            EvidenceNode(sourceCategory: "Uyku", summary: "Dün gece 7 sa 22 dk uyku ile uyku ihtiyacının %92'si karşılandı.", timestamp: Date()),
-            EvidenceNode(sourceCategory: "Yük", summary: "Akut/kronik oran 1,08 (tatlı nokta aralığı).", timestamp: Date())
+            EvidenceNode(sourceCategory: "Toparlanma", summary: "HRV taban ortalamasının +0,6σ üzerinde (54 ms).", timestamp: PreviewFixtures.now),
+            EvidenceNode(sourceCategory: "Uyku", summary: "Dün gece 7 sa 22 dk uyku ile uyku ihtiyacının %92'si karşılandı.", timestamp: PreviewFixtures.now),
+            EvidenceNode(sourceCategory: "Yük", summary: "Akut/kronik oran 1,08 (tatlı nokta aralığı).", timestamp: PreviewFixtures.now)
         ],
         referenceIDs: ["GABBETT-2016", "PLEWS-2013"],
         limitations: [

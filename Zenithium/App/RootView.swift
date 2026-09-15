@@ -98,10 +98,10 @@ struct RootView: View {
             )
         )
         _trendsViewModel = State(
-            initialValue: TrendsViewModel(repository: records)
+            initialValue: TrendsViewModel(repository: records, bloodMarkers: store)
         )
         _bloodworkViewModel = State(
-            initialValue: BloodworkViewModel(repository: store, profile: store)
+            initialValue: BloodworkViewModel(repository: store, profile: store, documents: store, records: records)
         )
         _settingsViewModel = State(
             initialValue: SettingsViewModel(
@@ -252,7 +252,7 @@ struct RootView: View {
             tabItem(.sleep, title: "Uyku", symbol: "moon.zzz.fill")
             tabItem(.load, title: "Yük", symbol: "flame.fill")
             tabItem(.trends, title: "Trend", symbol: "chart.line.uptrend.xyaxis")
-            tabItem(.muscle, title: "Kas", symbol: "figure.strengthtraining.traditional")
+            tabItem(.hub, title: "Keşfet", symbol: "square.grid.2x2")
         }
         .frame(height: 56)
         .background {
@@ -327,6 +327,7 @@ struct RootView: View {
             case .documents: DocumentsView(viewModel: documentsViewModel)
             case .dataTransfer: DataTransferView(service: dependencies.archive)
             case .settings: SettingsView(viewModel: settingsViewModel)
+            case .journal: JournalView(viewModel: journalViewModel)
             }
         }
     }
@@ -392,6 +393,6 @@ enum RootTab: Hashable, CaseIterable {
     case hub
 
     static var allCases: [RootTab] {
-        [.today, .sleep, .load, .trends, .muscle]
+        [.today, .sleep, .load, .trends, .hub]
     }
 }

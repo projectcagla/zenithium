@@ -25,12 +25,6 @@ final class RenderHarness: XCTestCase {
         return dir
     }
 
-    private var artifactDirectory: URL {
-        let dir = URL(fileURLWithPath: "/Users/cagla/.gemini/antigravity/brain/39b76099-fbcb-4ada-9184-40e0b8d509b6/renders", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
-    }
-
     @MainActor
     private func renderView(
         _ view: AnyView,
@@ -41,6 +35,8 @@ final class RenderHarness: XCTestCase {
         let styledView = view
             .environment(\.dynamicTypeSize, dynamicTypeSize)
             .environment(\.colorScheme, .dark)
+            .environment(\.locale, Locale(identifier: "tr_TR"))
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
             .frame(width: size.width, height: size.height)
 
         // Window-backed high fidelity snapshot
@@ -86,8 +82,6 @@ final class RenderHarness: XCTestCase {
         let targetURL = outputDirectory.appendingPathComponent(filename)
         try? data.write(to: targetURL)
 
-        let artifactURL = artifactDirectory.appendingPathComponent(filename)
-        try? data.write(to: artifactURL)
     }
 
     func testRenderAllScreensAndStates() async throws {
@@ -213,7 +207,7 @@ final class RenderHarness: XCTestCase {
         XCTAssertTrue(downsampled.last?.x == originalPoints.last?.x, "Son nokta korunmalıdır.")
 
         // 2. Swift Charts render testi
-        let now = Date()
+        let now = PreviewFixtures.now
         let trendPoints = (0..<14).map { i in
             TrendPoint(
                 date: Calendar.current.date(byAdding: .day, value: i - 13, to: now) ?? now,

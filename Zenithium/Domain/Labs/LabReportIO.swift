@@ -190,7 +190,7 @@ struct LabReportDraft: Sendable, Hashable {
 }
 
 /// Why an import could not proceed.
-enum LabImportFailure: Error, Sendable, Equatable {
+enum LabImportFailure: LocalizedError, Sendable, Equatable {
 
     /// The file could not be opened as a PDF.
     case unreadableDocument
@@ -206,11 +206,14 @@ enum LabImportFailure: Error, Sendable, Equatable {
 
     /// The security-scoped resource could not be accessed.
     case accessDenied
+    case documentTooLarge
+
+    var errorDescription: String? { message }
 
     var message: String {
         switch self {
         case .unreadableDocument:
-            return "Bu dosya PDF olarak açılamadı."
+            return "Bu dosya PDF veya görüntü olarak açılamadı."
         case .passwordProtected:
             return "PDF parola korumalı. Parolasız bir kopyasını dışa aktarıp tekrar dene."
         case .noRecognisableMarkers:
@@ -219,6 +222,8 @@ enum LabImportFailure: Error, Sendable, Equatable {
             return "Belgeden metin çıkaramadım. Tarama çok düşük çözünürlüklü olabilir."
         case .accessDenied:
             return "Dosyaya erişilemedi."
+        case .documentTooLarge:
+            return "Belge en fazla 40 MB ve 50 sayfa olabilir. İlgili sayfaları ayrı bir dosya olarak seç."
         }
     }
 }

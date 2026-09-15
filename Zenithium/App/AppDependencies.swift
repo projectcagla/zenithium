@@ -43,7 +43,8 @@ final class AppDependencies {
     private init(
         modelContainer: ModelContainer,
         store: ZenithiumStore,
-        health: any HealthDataProviding
+        health: any HealthDataProviding,
+        automaticallyBackfills: Bool = true
     ) {
         self.modelContainer = modelContainer
         self.store = store
@@ -51,7 +52,7 @@ final class AppDependencies {
         self.dayRecords = DayRecordCache(upstream: store)
         self.archive = ArchiveService(store: store, vault: DocumentVault())
 
-        let coordinator = DailyRecalculationCoordinator(health: health, store: store)
+        let coordinator = DailyRecalculationCoordinator(health: health, store: store, automaticallyBackfills: automaticallyBackfills)
         self.coordinator = coordinator
         self.relay = HealthObservationRelay(health: health, coordinator: coordinator)
         self.scheduler = BackgroundRefreshScheduler(coordinator: coordinator, store: store)
@@ -78,7 +79,8 @@ final class AppDependencies {
         return AppDependencies(
             modelContainer: container,
             store: ZenithiumStore(modelContainer: container),
-            health: MockHealthProvider(configuration: configuration)
+            health: MockHealthProvider(configuration: configuration),
+            automaticallyBackfills: false
         )
     }
 

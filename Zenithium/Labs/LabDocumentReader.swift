@@ -21,12 +21,13 @@ import Foundation
 import CoreGraphics
 import PDFKit
 import Vision
+import ImageIO
 
 actor LabDocumentReader {
 
     /// How much a page is scaled up before optical recognition. Below 2× the smaller print
     /// on a laboratory report starts losing digits, which is the one thing we cannot afford.
-    private static let renderScale: CGFloat = 2.0
+    private static let renderScale: CGFloat = 3.0
 
     /// A page whose text layer yields less than this is treated as an image. Reports with a
     /// thin text layer — a scanner that embedded only the header — would otherwise parse as
@@ -66,54 +67,83 @@ actor LabDocumentReader {
         let needsScope = fileURL.startAccessingSecurityScopedResource()
         defer { if needsScope { fileURL.stopAccessingSecurityScopedResource() } }
 
-        guard let document = PDFDocument(url: fileURL) else {
-            throw LabImportFailure.unreadableDocument
-        }
-        guard !document.isLocked else {
-            throw LabImportFailure.passwordProtected
-        }
-
-        var pages: [LabDocumentPage] = []
-        for index in 0..<document.pageCount {
-            guard let page = document.page(at: index) else { continue }
-            pages.append(try read(page: page, number: index + 1))
-        }
-
-        let text = LabDocumentText(pages: pages, fileName: fileURL.lastPathComponent)
-        guard !text.isEmpty else { throw LabImportFailure.noTextFound }
-        return text
+        let size = try fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size <= 40 * 1_024 * 1_024 else { throw LabImportFailure.documentTooLarge }
+        return try await read(data: Data(contentsOf: fileURL), fileName: fileURL.lastPathComponent)
     }
 
-    /// Read raw data rather than a file, for the share sheet and for tests.
-    func read(data: Data, fileName: String) async throws -> LabDocumentText {
-        guard let document = PDFDocument(data: data) else {
-            throw LabImportFailure.unreadableDocument
-        }
-        guard !document.isLocked else {
-            throw LabImportFailure.passwordProtected
-        }
-
+    /// Data stays in memory until the person explicitly approves the import.
+    func read(data: Data, fileName: String, laboratory: Bool = false) async throws -> LabDocumentText {
+        guard data.count <= 40 * 1_024 * 1_024 else { throw LabImportFailure.documentTooLarge }
         var pages: [LabDocumentPage] = []
-        for index in 0..<document.pageCount {
-            guard let page = document.page(at: index) else { continue }
-            pages.append(try read(page: page, number: index + 1))
+        if let document = PDFDocument(data: data) {
+            guard !document.isLocked else { throw LabImportFailure.passwordProtected }
+            guard document.pageCount <= 50 else { throw LabImportFailure.documentTooLarge }
+            for index in 0..<document.pageCount {
+                try Task.checkCancellation()
+                guard let page = document.page(at: index) else { continue }
+                pages.append(try read(page: page, number: index + 1, laboratory: laboratory))
+            }
+        } else {
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+                  let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceThumbnailMaxPixelSize: 3_000
+                  ] as CFDictionary) else { throw LabImportFailure.unreadableDocument }
+            pages = [LabDocumentPage(pageNumber: 1, lines: try recogniseText(on: image), source: .opticalRecognition)]
         }
-
         let text = LabDocumentText(pages: pages, fileName: fileName)
         guard !text.isEmpty else { throw LabImportFailure.noTextFound }
         return text
     }
 
-    private func read(page: PDFPage, number: Int) throws -> LabDocumentPage {
+    private func read(page: PDFPage, number: Int, laboratory: Bool) throws -> LabDocumentPage {
         let embedded = page.string ?? ""
-        if embedded.trimmingCharacters(in: .whitespacesAndNewlines).count >= Self.minimumTextLayerCharacters {
-            return LabDocumentPage(pageNumber: number, lines: split(embedded), source: .textLayer)
+        let controls = embedded.unicodeScalars.filter { CharacterSet.controlCharacters.contains($0) && !CharacterSet.whitespacesAndNewlines.contains($0) }.count
+        if embedded.count >= Self.minimumTextLayerCharacters, controls * 50 < embedded.count {
+            let lines = laboratory ? positionedLines(on: page, text: embedded) : split(embedded)
+            let candidate = LabDocumentPage(pageNumber: number, lines: lines, source: .textLayer)
+            if !laboratory || !LabReportParser.parse(LabDocumentText(pages: [candidate], fileName: "")).isEmpty {
+                return candidate
+            }
         }
         let recognised = try recogniseText(on: page)
         return LabDocumentPage(pageNumber: number, lines: recognised, source: .opticalRecognition)
     }
 
+    nonisolated static func fileExtension(for data: Data) throws -> String {
+        if data.starts(with: [0x25, 0x50, 0x44, 0x46]) { return "pdf" }
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil), let type = CGImageSourceGetType(source) else {
+            throw LabImportFailure.unreadableDocument
+        }
+        switch type as String {
+        case "public.png": return "png"
+        case "public.heic", "public.heif": return "heic"
+        case "public.tiff": return "tiff"
+        case "com.compuserve.gif": return "gif"
+        case "public.jpeg": return "jpg"
+        default: throw LabImportFailure.unreadableDocument
+        }
+    }
+
     // MARK: - Text layer
+
+    /// PDF object order is not table order. Group whole words by their printed positions,
+    /// preserving exact digits and keeping result/reference columns on the same row.
+    private func positionedLines(on page: PDFPage, text: String) -> [String] {
+        guard let pattern = try? NSRegularExpression(pattern: "\\S+") else { return [] }
+        let string = text as NSString
+        let fragments = pattern.matches(in: text, range: NSRange(location: 0, length: string.length)).compactMap { match -> LabTextFragment? in
+            guard let selection = page.selection(for: match.range) else { return nil }
+            let bounds = selection.bounds(for: page)
+            guard !bounds.isNull, bounds.height > 0, bounds.height.isFinite, bounds.midY.isFinite else { return nil }
+            return LabTextFragment(text: string.substring(with: match.range), midY: Double(bounds.midY),
+                minX: Double(bounds.minX), height: Double(bounds.height))
+        }
+        return LabTextFragment.assembleLines(from: fragments, bandHeightFactor: 0.45,
+            fallbackTolerance: 3, estimateRotation: false)
+    }
 
     /// Break a page's embedded text into trimmed, non-empty lines.
     private func split(_ text: String) -> [String] {
@@ -133,6 +163,10 @@ actor LabDocumentReader {
     private func recogniseText(on page: PDFPage) throws -> [String] {
         guard let image = self.image(of: page) else { return [] }
 
+        return try recogniseText(on: image, estimateRotation: false)
+    }
+
+    private func recogniseText(on image: CGImage, estimateRotation: Bool = true) throws -> [String] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
@@ -142,17 +176,18 @@ actor LabDocumentReader {
         try handler.perform([request])
 
         guard let observations = request.results else { return [] }
-        return assembleLines(from: observations)
+        return assembleLines(from: observations, estimateRotation: estimateRotation)
     }
 
     /// Rasterise one page.
     private func image(of page: PDFPage) -> CGImage? {
         let bounds = page.bounds(for: .mediaBox)
-        guard bounds.width > 0, bounds.height > 0 else { return nil }
+        guard bounds.width.isFinite, bounds.height.isFinite,
+              bounds.width > 0, bounds.height > 0, bounds.width <= 4_000, bounds.height <= 4_000 else { return nil }
 
         let width = Int((bounds.width * Self.renderScale).rounded())
         let height = Int((bounds.height * Self.renderScale).rounded())
-        guard width > 0, height > 0 else { return nil }
+        guard width > 0, height > 0, width <= 8_000, height <= 8_000, width * height <= 24_000_000 else { return nil }
 
         guard let context = CGContext(
             data: nil,
@@ -181,7 +216,7 @@ actor LabDocumentReader {
     /// scattered fragments — "Ferritin" in one, "45,2" in another, "ng/mL" in a third — and
     /// a parser handed those separately can never pair a marker with its value. Fragments
     /// sharing a horizontal band are therefore merged, left to right, into one line.
-    private func assembleLines(from observations: [VNRecognizedTextObservation]) -> [String] {
+    private func assembleLines(from observations: [VNRecognizedTextObservation], estimateRotation: Bool) -> [String] {
         let fragments: [LabTextFragment] = observations.compactMap { observation in
             guard let candidate = observation.topCandidates(1).first else { return nil }
             let box = observation.boundingBox
@@ -197,7 +232,8 @@ actor LabDocumentReader {
         return LabTextFragment.assembleLines(
             from: fragments,
             bandHeightFactor: Self.bandHeightFactor,
-            fallbackTolerance: Self.lineGroupingTolerance
+            fallbackTolerance: Self.lineGroupingTolerance,
+            estimateRotation: estimateRotation
         )
     }
 }

@@ -4,11 +4,8 @@
 //
 //  Where the files live. Faz 26.
 //
-//  ## Why the app's own container and not the App Group
-//
-//  Everything else shared lives in the group so the widgets can read it. These files should
-//  not be readable by an extension that has no reason to open them, and a scan of somebody's
-//  discharge note is the last thing that belongs in a container three targets can reach.
+//  Originals live in the shared on-device container. Extensions do not read these files.
+//  Legacy files remain readable until the next successful migration.
 //
 //  ## Protection
 //
@@ -23,16 +20,14 @@ actor DocumentVault {
 
     /// The directory holding stored documents.
     ///
-    /// Under Application Support rather than Documents: these are the app's own copies of
-    /// files the user already has elsewhere, not documents the user manages through Files.
+    /// Excluded from automatic device backups; explicit export includes the originals.
     nonisolated static var directoryURL: URL? {
-        guard let base = try? FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        ) else { return nil }
-        return base.appending(path: "Documents", directoryHint: .isDirectory)
+        AppGroup.containerURL?.appending(path: "LaboratoryDocuments", directoryHint: .isDirectory)
+    }
+
+    private nonisolated static var legacyDirectoryURL: URL? {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
+            .appending(path: "Documents", directoryHint: .isDirectory)
     }
 
     /// The full path of a stored file.
@@ -41,7 +36,10 @@ actor DocumentVault {
     /// changes between installs — an absolute path saved today is a broken path after the
     /// next restore.
     nonisolated static func url(forFileName name: String) -> URL? {
-        directoryURL?.appending(path: name, directoryHint: .notDirectory)
+        guard name == (name as NSString).lastPathComponent, !name.contains("..") else { return nil }
+        if let current = directoryURL?.appending(path: name), FileManager.default.fileExists(atPath: current.path) { return current }
+        if let legacy = legacyDirectoryURL?.appending(path: name), FileManager.default.fileExists(atPath: legacy.path) { return legacy }
+        return directoryURL?.appending(path: name)
     }
 
     init() {}
@@ -52,28 +50,60 @@ actor DocumentVault {
     /// name would collide the first time somebody imports two files called `rapor.pdf`, and
     /// renaming on collision leaves the vault full of `rapor-3.pdf` nobody can identify.
     func store(source: URL, id: UUID) throws -> String {
-        guard let directory = Self.directoryURL else {
-            throw ZenithiumError.persistenceWriteFailed(detail: "Belge klasörü bulunamadı.")
-        }
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
         let needsScope = source.startAccessingSecurityScopedResource()
         defer { if needsScope { source.stopAccessingSecurityScopedResource() } }
+        return try store(data: Data(contentsOf: source), fileExtension: source.pathExtension, id: id)
+    }
 
-        let ext = source.pathExtension.isEmpty ? "pdf" : source.pathExtension
-        let fileName = "\(id.uuidString).\(ext)"
-        let destination = directory.appending(path: fileName, directoryHint: .notDirectory)
-
-        let data = try Data(contentsOf: source)
-        try data.write(to: destination, options: [.atomic, .completeFileProtection])
-        return fileName
+    func store(data: Data, fileExtension: String, id: UUID) throws -> String {
+        guard let directory = Self.directoryURL else { throw ZenithiumError.appGroupUnavailable(identifier: AppGroup.identifier) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var folder = directory
+        try folder.setResourceValues(values)
+        let ext = fileExtension.lowercased()
+        guard ["pdf", "jpg", "jpeg", "png", "heic", "tiff", "gif"].contains(ext) else { throw LabImportFailure.unreadableDocument }
+        let name = "\(id.uuidString).\(ext)"
+        try data.write(to: directory.appending(path: name), options: [.atomic, .completeFileProtection])
+        return name
     }
 
     /// Remove a stored file. Missing is not an error — the metadata row is the record, and a
     /// vault entry whose file has gone should still be deletable.
-    func remove(fileName: String) {
-        guard let url = Self.url(forFileName: fileName) else { return }
-        try? FileManager.default.removeItem(at: url)
+    func remove(fileName: String) throws {
+        guard fileName == (fileName as NSString).lastPathComponent, !fileName.contains("..") else {
+            throw ZenithiumError.invalidEngineInput(reason: "Belge adı geçersiz.")
+        }
+        for folder in [Self.directoryURL, Self.legacyDirectoryURL].compactMap({ $0 }) {
+            let url = folder.appending(path: fileName)
+            if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+        }
+    }
+
+    /// Move originals without replacing an existing copy. A failed move leaves the source.
+    func migrateLegacyFiles() throws {
+        guard let legacy = Self.legacyDirectoryURL, FileManager.default.fileExists(atPath: legacy.path) else { return }
+        guard let directory = Self.directoryURL else { throw ZenithiumError.appGroupUnavailable(identifier: AppGroup.identifier) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for source in try FileManager.default.contentsOfDirectory(at: legacy, includingPropertiesForKeys: [.isRegularFileKey]) {
+            guard try source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else { continue }
+            let target = directory.appending(path: source.lastPathComponent)
+            if !FileManager.default.fileExists(atPath: target.path) {
+                try FileManager.default.moveItem(at: source, to: target)
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: target.path)
+            }
+        }
+        var folder = directory
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try folder.setResourceValues(values)
+    }
+
+    func removeAll() throws {
+        for folder in [Self.directoryURL, Self.legacyDirectoryURL].compactMap({ $0 }) {
+            if FileManager.default.fileExists(atPath: folder.path) { try FileManager.default.removeItem(at: folder) }
+        }
     }
 
     /// Total bytes held, for the settings read-out.
