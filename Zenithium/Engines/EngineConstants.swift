@@ -20,7 +20,7 @@ import Foundation
 enum EngineConstants {
 
     /// The version stamped on every computed record. Bumping it triggers a backfill (§7).
-    static let engineVersion: Int = 1
+    static let engineVersion: Int = 2
 
     // MARK: - Baseline (§4)
 

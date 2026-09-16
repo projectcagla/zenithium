@@ -10,6 +10,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct StrengthView: View {
 
@@ -47,9 +48,47 @@ struct StrengthView: View {
                 deloadCard(deload)
             }
             volumeCard(content)
+            exerciseProgress(content.exerciseProgress)
             balanceCard(content.balance)
             if !content.oneRepMaxes.isEmpty {
                 oneRepMaxCard(content.oneRepMaxes)
+            }
+        }
+    }
+
+    private func exerciseProgress(_ exercises: [ExerciseProgress]) -> some View {
+        SectionCard(title: "Egzersiz ilerlemesi", subtitle: "Kayıtlı günler · son 180 gün") {
+            ForEach(exercises) { exercise in
+                DisclosureGroup(exercise.name) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if let latest = exercise.points.last {
+                            Text("Son kayıt: \(latest.sets) set · \(latest.repetitions) tekrar").zenithiumCaption()
+                        }
+                        Chart(exercise.points) { point in
+                            if let volume = point.volumeKilograms {
+                                BarMark(x: .value("Gün", point.date, unit: .day), y: .value("Hacim, kg × tekrar", volume))
+                                    .foregroundStyle(ZenithiumColor.accent)
+                                    .accessibilityLabel(point.date.formatted(date: .abbreviated, time: .omitted))
+                                    .accessibilityValue("\(ZenithiumFormat.metric(volume, digits: 0)) kilogram çarpı tekrar")
+                            }
+                        }
+                        .frame(height: 150)
+                        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { AxisValueLabel(format: .dateTime.day().month(.abbreviated)) } }
+                        Text("Hacim = set × tekrar × kaydedilen ağırlık. Ağırlığı eksik günler çizilmez.").zenithiumCaption()
+                        Chart(exercise.points) { point in
+                            if let maximum = point.estimatedMaximum {
+                                PointMark(x: .value("Gün", point.date), y: .value("Tahmini 1TM, kg", maximum))
+                                    .foregroundStyle(ZenithiumColor.accent)
+                                    .accessibilityLabel(point.date.formatted(date: .abbreviated, time: .omitted))
+                                    .accessibilityValue("Tahmini tek tekrar maksimumu \(ZenithiumFormat.metric(maximum, digits: 1)) kilogram")
+                            }
+                        }
+                        .frame(height: 150)
+                        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 3)) { AxisValueLabel(format: .dateTime.day().month(.abbreviated)) } }
+                        Text("Tahmini 1TM: yalnızca 1–10 tekrarlı ağırlıklı setler. Formül tahminidir; ölçülmüş maksimum veya klinik güven aralığı değildir.").zenithiumCaption()
+                    }
+                    .padding(.vertical, 12)
+                }
             }
         }
     }

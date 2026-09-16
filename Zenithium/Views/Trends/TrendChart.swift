@@ -52,14 +52,20 @@ struct TrendChart: View {
             scrubReadout
 
             Chart {
+                if let baseline, let sigma {
+                    RectangleMark(yStart: .value("Alt taban", baseline - sigma), yEnd: .value("Üst taban", baseline + sigma))
+                        .foregroundStyle(tint.opacity(0.10))
+                    RuleMark(y: .value("Taban", baseline))
+                        .foregroundStyle(tint.opacity(0.4))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
+                }
                 ForEach(displayPoints) { point in
-                    LineMark(
+                    PointMark(
                         x: .value("Gün", point.date),
                         y: .value(content.metric.displayName, point.value)
                     )
                     .foregroundStyle(tint)
-                    .lineStyle(ZenithiumChartLine.strokeStyle)
-                    .interpolationMethod(.monotone)
+                    .symbolSize(16)
                 }
 
                 if let last = displayPoints.last, scrubbedPoint == nil {
@@ -91,12 +97,6 @@ struct TrendChart: View {
                 }
             }
             .chartYScale(domain: chartRange)
-            .chartPlotStyle { plot in
-                plot.background {
-                    BaselineBand(values: [], baseline: baseline, sigma: sigma, unit: content.metric.unitSymbol, style: .full, tint: tint, valueRange: chartRange, showsAxisLabels: false, showsSeries: false, referenceLabel: referenceLabel)
-                        .accessibilityHidden(true)
-                }
-            }
             .zenithiumChart(yValues: 3...4, showBaseline: true)
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { _ in

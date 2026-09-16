@@ -30,7 +30,7 @@ enum TrainingLoadEngine {
     // MARK: - Entry point
 
     static func analyse(_ input: TrainingLoadInput) -> TrainingLoadOutput {
-        let series = densifiedSeries(input)
+        let series = contiguousSeries(input)
         let constants = EngineConstants.TrainingLoad.self
 
         let track = exponentialTrack(series)
@@ -40,7 +40,7 @@ enum TrainingLoadEngine {
         // A ratio needs a denominator that means something. Both tests matter: the chronic
         // term can be non-zero off a single hard day, and eight scattered days is the point
         // where the twenty-eight-day term starts describing a habit rather than an incident.
-        let canDivide = track.chronic > 0 && activeDays >= constants.minimumActiveDaysForRatio
+        let canDivide = series.count >= constants.chronicWindowDays && track.chronic > 0 && activeDays >= constants.minimumActiveDaysForRatio
         let recentRatios = canDivide ? Array(track.dailyRatios.suffix(constants.acuteWindowDays)) : []
         let smoothed = recentRatios.isEmpty ? nil : MathSupport.mean(recentRatios)
 
@@ -49,7 +49,7 @@ enum TrainingLoadEngine {
         let weekLoad = thisWeek.reduce(0) { $0 + $1.load }
         let previousWeekLoad = lastWeek.reduce(0) { $0 + $1.load }
 
-        let monotony = monotony(of: Array(thisWeek))
+        let monotony = thisWeek.count == constants.acuteWindowDays ? monotony(of: Array(thisWeek)) : nil
 
         return TrainingLoadOutput(
             acuteLoad: track.acute,
@@ -60,44 +60,44 @@ enum TrainingLoadEngine {
             band: smoothed.map(LoadBand.band(forRatio:)),
             weekLoad: weekLoad,
             previousWeekLoad: previousWeekLoad,
-            rampRate: previousWeekLoad > 0 ? (weekLoad - previousWeekLoad) / previousWeekLoad : nil,
+            rampRate: series.count >= 14 && previousWeekLoad > 0 ? (weekLoad - previousWeekLoad) / previousWeekLoad : nil,
             monotony: monotony,
             fosterStrain: monotony.map { weekLoad * $0 },
             fitnessFatigue: fitnessFatigue(series),
-            activeDaysInChronicWindow: activeDays
+            activeDaysInChronicWindow: activeDays,
+            consecutiveObservedDays: series.count
         )
     }
 
     // MARK: - Series
 
-    /// Fill the gaps.
-    ///
-    /// A day with no session is a zero, not a missing value. Dropping rest days would make
-    /// a three-sessions-a-week athlete look like they train every day, and their ratio
-    /// would never move.
+    /// Legacy name retained for callers; returns recorded days only, without filling gaps.
     static func densifiedSeries(_ input: TrainingLoadInput) -> [DailyLoad] {
         let calendar = input.calendar
         let end = calendar.startOfDay(for: input.referenceDay)
-        guard let earliest = input.days.map(\.dayStart).min() else {
-            return [DailyLoad(dayStart: end, load: 0)]
-        }
-        let start = calendar.startOfDay(for: min(earliest, end))
-
         var byDay: [Date: Double] = [:]
         for day in input.days {
             let key = calendar.startOfDay(for: day.dayStart)
-            guard key <= end else { continue }
+            guard key <= end, day.load.isFinite, day.load >= 0 else { continue }
             byDay[key, default: 0] += day.load
         }
-
-        var series: [DailyLoad] = []
-        var cursor = start
-        while cursor <= end {
-            series.append(DailyLoad(dayStart: cursor, load: byDay[cursor] ?? 0))
-            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
+        return byDay.keys.sorted().compactMap { date in
+            guard let load = byDay[date], load.isFinite else { return nil }
+            return DailyLoad(dayStart: date, load: load)
         }
-        return series
+    }
+
+    /// A gap breaks the model history rather than becoming an invented day of rest.
+    static func contiguousSeries(_ input: TrainingLoadInput) -> [DailyLoad] {
+        var expected = input.calendar.startOfDay(for: input.referenceDay)
+        var latest: [DailyLoad] = []
+        for day in densifiedSeries(input).reversed() {
+            guard day.dayStart == expected else { break }
+            latest.append(day)
+            guard let prior = input.calendar.date(byAdding: .day, value: -1, to: expected) else { break }
+            expected = prior
+        }
+        return latest.reversed()
     }
 
     /// Both exponential terms, and the ratio on every day along the way.
@@ -188,6 +188,7 @@ enum TrainingLoadEngine {
 
     /// The unsmoothed ratio one day on.
     static func projectedInstantRatio(after load: Double, from output: TrainingLoadOutput) -> Double? {
+        guard output.hasEnoughHistory, load.isFinite, load >= 0 else { return nil }
         let constants = EngineConstants.TrainingLoad.self
         let acute = constants.acuteAlpha * load + (1 - constants.acuteAlpha) * output.acuteLoad
         let chronic = constants.chronicAlpha * load + (1 - constants.chronicAlpha) * output.chronicLoad
@@ -215,7 +216,7 @@ enum TrainingLoadEngine {
     /// a negative allowance.
     static func loadCeiling(forInstantRatio ceiling: Double, from output: TrainingLoadOutput) -> Double? {
         let constants = EngineConstants.TrainingLoad.self
-        guard output.chronicLoad > 0 else { return nil }
+        guard output.hasEnoughHistory, output.chronicLoad > 0 else { return nil }
 
         let denominator = constants.acuteAlpha - ceiling * constants.chronicAlpha
         guard denominator > 0 else { return nil }
@@ -233,7 +234,7 @@ enum TrainingLoadEngine {
             let needed = max(0, EngineConstants.TrainingLoad.minimumActiveDaysForRatio - output.activeDaysInChronicWindow)
             return needed > 0
                 ? "Yük oranı için \(needed) antrenman günü daha gerekiyor."
-                : "Yük oranı için yeterli geçmiş yok."
+                : "Yük oranı için 28 kesintisiz kayıtlı gün gerekiyor; eksik gün dinlenme sayılmaz."
         }
         return "Yük oranın \(ZenithiumFormat.metric(ratio, digits: 2)) — \(band.displayName.lowercased()) bant. \(band.explanation)"
     }

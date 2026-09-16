@@ -223,13 +223,14 @@ struct RecommendationEngineTests {
         #expect(card?.contradictions.isEmpty == false)
     }
 
-    @Test("Doğrulanmamış kaynak kartta işaretleniyor")
-    func anUnverifiedSourceIsSurfaced() {
+    @Test("Doğrulanmış yük kaynakları hâlâ yalnızca gözlem üretir")
+    func verifiedLoadSourcesRemainObservational() {
         let card = RecommendationEngine.recommendations(
             input: Self.input(acwr: 1.8)
         ).first { $0.id == "training.loadRatio" }
 
-        #expect(card?.limitations.contains { $0.code == "SOURCE-UNVERIFIED" } == true)
+        #expect(card?.limitations.contains { $0.code == "SOURCE-UNVERIFIED" } == false)
+        #expect(card?.strength == .observation)
     }
 
     @Test("Normal aralıktaki yük oranı kart üretmiyor")

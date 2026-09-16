@@ -86,7 +86,11 @@ final class TrainingLoadViewModel {
                 return
             }
 
-            let loads = days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) }
+            let loads = days.compactMap(\.recordedTrainingLoad)
+            guard !loads.isEmpty else {
+                state = .noData(reason: .notEnoughHistory(daysAvailable: 0, daysRequired: 28))
+                return
+            }
             let input = TrainingLoadInput(days: loads, referenceDay: now, calendar: calendar)
             let output = TrainingLoadEngine.analyse(input)
             let series = TrainingLoadEngine.densifiedSeries(input)
@@ -94,11 +98,12 @@ final class TrainingLoadViewModel {
             // The ratio line only starts where the ratio starts meaning something. Plotting
             // it from day one would draw the exponential terms settling out of their seed,
             // which looks like a trend and is not one.
-            let ratios = TrainingLoadEngine.exponentialTrack(series).dailyRatios
+            let contiguous = TrainingLoadEngine.contiguousSeries(input)
+            let ratios = TrainingLoadEngine.exponentialTrack(contiguous).dailyRatios
             let warmUp = EngineConstants.TrainingLoad.chronicWindowDays
-            let ratioPoints: [RatioPoint] = output.ratio == nil || series.count <= warmUp
+            let ratioPoints: [RatioPoint] = output.ratio == nil || series.count < warmUp
                 ? []
-                : zip(series, ratios).dropFirst(warmUp).map { RatioPoint(dayStart: $0.dayStart, ratio: $1) }
+                : zip(contiguous, ratios).dropFirst(warmUp - 1).map { RatioPoint(dayStart: $0.dayStart, ratio: $1) }
 
             let ceiling = TrainingLoadEngine.loadCeiling(forInstantRatio: 1.30, from: output)
             state = .loaded(

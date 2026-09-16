@@ -210,6 +210,7 @@ struct MockHealthProvider: HealthDataProviding {
     }
 
     func fetchIntradayHeartRates(in interval: DateInterval) async throws -> [HeartRateSample] {
+        guard configuration.daysOfHistory > 0 else { return [] }
         try requireAuthorization()
         guard interval.duration > 0 else { return [] }
         let step = Self.intradayStepSeconds
@@ -233,6 +234,7 @@ struct MockHealthProvider: HealthDataProviding {
     }
 
     func fetchWorkouts(in interval: DateInterval) async throws -> [WorkoutSummary] {
+        guard configuration.daysOfHistory > 0 else { return [] }
         try requireAuthorization()
         var workouts: [WorkoutSummary] = []
         var cursor = interval.start

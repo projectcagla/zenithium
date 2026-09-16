@@ -140,6 +140,48 @@ final class RenderHarness: XCTestCase {
         await dependencies.stop()
     }
 
+    func testPhaseThreeDetailsAtLargestTextSize() async throws {
+        let dependencies = try AppDependencies.preview(configuration: .complete)
+        let now = PreviewFixtures.now
+        _ = try await dependencies.coordinator.recalculate(now: now)
+        let settings = SettingsViewModel(repository: dependencies.store, baselines: dependencies.store,
+            health: dependencies.health, coordinator: dependencies.coordinator,
+            preferences: dependencies.preferences, nowProvider: { now })
+        await settings.load()
+        let plan = PlanViewModel(goals: dependencies.store, records: dependencies.store,
+            preferences: dependencies.preferences, health: dependencies.health, nowProvider: { now })
+        await plan.save(kind: .race, name: "Sonbahar 10K", date: now.addingTimeInterval(42 * 86400),
+            planStart: now.addingTimeInterval(-14 * 86400),
+            raceTarget: RaceGoalTarget(distanceMetres: 10_000, finishSeconds: 2700))
+        XCTAssertNil(plan.saveError)
+        let coordinator = WatchLogCoordinator(sessions: dependencies.store, journal: dependencies.store,
+            root: FileManager.default.temporaryDirectory)
+        let entry = StrengthEntry(id: UUID(), exerciseName: "Squat", sets: 3, reps: 8, rpe: 7, weightKilograms: 40)
+        try await coordinator.receive(WatchLogMessage(id: UUID(), createdAt: now, timeZoneIdentifier: "UTC",
+            payload: .strength(pattern: .squat, entries: [entry])), now: now)
+        let strength = StrengthViewModel(sessions: dependencies.store, records: dependencies.store,
+            muscles: dependencies.store, nowProvider: { now })
+        await strength.load()
+        XCTAssertEqual(strength.state.value?.exerciseProgress.first?.points.first?.volumeKilograms, 960)
+        let change = RecoveryChange(previousScore: 65, currentScore: 72, contributions: [
+            .init(driver: .heartRateVariability, points: 6.5, coverageChanged: false),
+            .init(driver: .restingHeartRate, points: -1, coverageChanged: false)
+        ], baselineAndModelPoints: 1.5)
+        let views: [(String, AnyView)] = [
+            ("skor-farki", AnyView(ScrollView { RecoveryChangeView(change: change, note: nil).padding() }.background(ZenithiumColor.background))),
+            ("baglam", AnyView(NavigationStack { PersonalContextView(viewModel: settings) })),
+            ("yaris-hedefi", AnyView(PlanView(viewModel: plan))),
+            ("kuvvet-gecmisi", AnyView(StrengthView(viewModel: strength)))
+        ]
+        for (name, view) in views {
+            for size in [DynamicTypeSize.large, .accessibility5] {
+                let data = try XCTUnwrap(renderView(view, size: size17Pro, dynamicTypeSize: size))
+                savePNG(data: data, filename: "\(name)-\(size == .large ? "default" : "ax5").png")
+            }
+        }
+        await dependencies.stop()
+    }
+
     func testImageRendererDirect() throws {
         let view = Text("ZENITHIUM TEST")
             .font(.largeTitle)

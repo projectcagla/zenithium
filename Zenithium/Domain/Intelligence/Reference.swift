@@ -64,9 +64,9 @@ enum EvidenceGrade: Int, Sendable, Codable, CaseIterable, Comparable {
         case .mechanistic:
             return "Mekanizmaya veya uzman görüşüne dayanıyor; insanda doğrudan ölçülmemiş."
         case .observational:
-            return "Tek bir zamanda gözlenmiş bir ilişki; neden-sonuç göstermez."
+            return "Müdahalesiz gözlemsel veri; neden-sonuç göstermez."
         case .cohort:
-            return "Bir grup insan zaman içinde izlenmiş; ilişki güçlü ama müdahale yok."
+            return "Bir grup insan zaman içinde izlenmiş; tek başına neden-sonuç göstermez."
         case .controlled:
             return "Katılımcılar rastgele gruplara ayrılmış; neden-sonuç için en güçlü tekil tasarım."
         case .synthesis:

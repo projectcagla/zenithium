@@ -136,11 +136,11 @@ struct DecisionTraceCard: View {
                 isLast: false
             )
 
-            // 6. Güven ve Taban Sağlığı
+            // 6. Kapsam ve Taban Sağlığı
             verticalChainStep(
                 number: 6,
-                title: "Güven Düzeyi",
-                detail: "%\(Int((result.confidence.value * 100).rounded())) güven. \(result.confidence.penaltyReasons.isEmpty ? "14 günlük eksiksiz taban" : result.confidence.penaltyReasons.joined(separator: ", "))",
+                title: "Veri ve kanıt kapsamı",
+                detail: "%\(Int((result.confidence.value * 100).rounded())) kapsam. \(result.confidence.penaltyReasons.isEmpty ? "ek kapsam kısıtı bildirilmedi" : result.confidence.penaltyReasons.joined(separator: ", "))",
                 badge: result.confidence.rating.displayName,
                 isLast: false
             )
@@ -299,7 +299,7 @@ struct DecisionTraceCard: View {
             Circle()
                 .fill(color)
                 .frame(width: 6, height: 6)
-            Text("%\(pct) Güven")
+            Text("%\(pct) Kapsam")
                 .font(ZenithiumFont.caption2)
                 .foregroundStyle(ZenithiumColor.textSecondary)
         }

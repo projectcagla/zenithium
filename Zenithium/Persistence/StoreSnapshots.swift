@@ -58,6 +58,12 @@ struct BiometricDaySnapshot: Sendable, Equatable, Identifiable, Hashable, Codabl
         recoveryScore.map(RecoveryBand.band(forScore:))
     }
 
+    /// A recorded zero can be rest. No heart-rate integration means unknown load.
+    var recordedTrainingLoad: DailyLoad? {
+        guard maxHeartRateUsed != nil, trimp.isFinite, trimp >= 0 else { return nil }
+        return DailyLoad(dayStart: dayStart, load: trimp)
+    }
+
     /// The night's shortfall against a need, in hours, for the sleep-debt window (§5.2).
     func sleepShortfallHours(against need: Double) -> Double {
         max(0, need - TimeConversion.hours(fromSeconds: sleepDurationSeconds))

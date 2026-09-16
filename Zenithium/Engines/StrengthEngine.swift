@@ -39,7 +39,7 @@ enum StrengthEngine {
     /// Returns `nil` above 36 reps, where Brzycki's denominator collapses, and for
     /// non-positive weight.
     static func estimateOneRepMax(weight: Double, reps: Int) -> Double? {
-        guard weight > 0, reps >= 1, reps < 36 else { return nil }
+        guard weight.isFinite, weight > 0, reps >= 1, reps < 36 else { return nil }
         if reps == 1 { return weight }
         let epley = weight * (1 + Double(reps) / 30)
         let brzycki = weight * 36 / (37 - Double(reps))
@@ -65,7 +65,7 @@ enum StrengthEngine {
         let cutoff = now.addingTimeInterval(-Double(progressionWindowDays) * 86_400)
 
         var byExercise: [String: [ScoredSet]] = [:]
-        for session in sessions where session.performedAt >= cutoff {
+        for session in sessions where session.performedAt >= cutoff && session.performedAt <= now {
             for entry in session.entries {
                 guard let weight = entry.weightKilograms,
                       let estimate = estimateOneRepMax(weight: weight, reps: entry.reps) else { continue }
@@ -126,7 +126,7 @@ enum StrengthEngine {
         let cutoff = now.addingTimeInterval(-Double(volumeWindowDays) * 86_400)
         var totals: [MuscleGroup: Double] = [:]
 
-        for session in sessions where session.performedAt >= cutoff {
+        for session in sessions where session.performedAt >= cutoff && session.performedAt <= now {
             let involvement = MuscleInvolvementMatrix.involvement(for: session.pattern)
             let sets = session.entries.reduce(0) { $0 + Double($1.sets) }
             for (muscle, share) in involvement where share >= setCountingThreshold {
@@ -150,7 +150,7 @@ enum StrengthEngine {
 
         var push = 0.0
         var pull = 0.0
-        for session in sessions where session.performedAt >= cutoff {
+        for session in sessions where session.performedAt >= cutoff && session.performedAt <= now {
             let sets = session.entries.reduce(0) { $0 + Double($1.sets) }
             switch session.pattern {
             case .push: push += sets
@@ -223,5 +223,34 @@ enum StrengthEngine {
         }
         let direction = change > 0 ? "yukarıda" : "aşağıda"
         return "\(estimate.exerciseName): tahmini 1TM \(value) kg — önceki en iyisinin \(ZenithiumFormat.percentTR(change)) \(direction)."
+    }
+}
+
+extension StrengthEngine {
+    static func exerciseProgress(from sessions: [StrengthSessionSnapshot], now: Date, calendar: Calendar = .current) -> [ExerciseProgress] {
+        let start = now.addingTimeInterval(-Double(progressionWindowDays) * 86_400)
+        var grouped: [String: [Date: [StrengthEntry]]] = [:]
+        var names: [String: String] = [:]
+        for session in sessions.sorted(by: { $0.performedAt < $1.performedAt }) where session.performedAt >= start && session.performedAt <= now {
+            for entry in session.entries where entry.isValid {
+                let key = normalizedName(entry.exerciseName)
+                guard !key.isEmpty else { continue }
+                names[key] = entry.exerciseName
+                grouped[key, default: [:]][calendar.startOfDay(for: session.performedAt), default: []].append(entry)
+            }
+        }
+        return grouped.map { key, days in
+            let points = days.map { date, entries in
+                let knownWeight = entries.allSatisfy { $0.weightKilograms.map { $0.isFinite && $0 >= 0 } ?? false }
+                let volume = knownWeight ? entries.reduce(0) { $0 + Double($1.sets * $1.reps) * ($1.weightKilograms ?? 0) } : nil
+                let maximum = entries.compactMap { entry -> Double? in
+                    guard (1...10).contains(entry.reps), let weight = entry.weightKilograms else { return nil }
+                    return estimateOneRepMax(weight: weight, reps: entry.reps)
+                }.max()
+                return ExerciseProgress.Point(date: date, sets: entries.reduce(0) { $0 + $1.sets },
+                    repetitions: entries.reduce(0) { $0 + $1.sets * $1.reps }, volumeKilograms: volume, estimatedMaximum: maximum)
+            }.sorted { $0.date < $1.date }
+            return ExerciseProgress(name: names[key] ?? key, points: points)
+        }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }

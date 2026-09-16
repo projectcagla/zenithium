@@ -6,12 +6,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct TrendsView: View {
 
-    @Environment(\.modelContext) private var modelContext
-    @State private var baselineSnapshots: [BaselineSnapshot] = []
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State var viewModel: TrendsViewModel
@@ -60,7 +57,7 @@ struct TrendsView: View {
                         Text(transitionPreview.label).zenithiumEyebrow()
                         Text(transitionPreview.value).heroNumeral()
                         BaselineBand(values: transitionPreview.bandValues, baseline: transitionPreview.baseline,
-                                     sigma: transitionPreview.sigma, unit: transitionPreview.unit, style: .full)
+                                     sigma: transitionPreview.sigma, unit: transitionPreview.unit, style: .full, dates: transitionPreview.dates)
                             .matchedGeometryEffect(id: transitionID, in: transitionNamespace)
                         Text("Geçmiş okunuyor…").zenithiumCaption()
                     }
@@ -69,7 +66,7 @@ struct TrendsView: View {
                     state: viewModel.state,
                     loadingLabel: "Geçmiş yükleniyor",
                     loadingLayout: .chart,
-                    actionCallout: "En az 3 günlük veri toplandığında eğilimler burada görünecek.",
+                    actionCallout: "Kaydedilmiş ölçümlerin burada görünecek. Eksik günler doldurulmaz.",
                     retry: { await viewModel.load() },
                     requestAccess: nil
                 ) { content in
@@ -149,9 +146,6 @@ struct TrendsView: View {
                     .zenithiumCaption()
             }
         }
-        .task(id: content) {
-            baselineSnapshots = ((try? modelContext.fetch(FetchDescriptor<BaselineState>())) ?? []).compactMap(\.snapshot)
-        }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: content.metric)
     }
 
@@ -163,7 +157,7 @@ struct TrendsView: View {
         default: kind = nil
         }
         if let kind {
-            if let snapshot = baselineSnapshots.first(where: { $0.metric == kind && $0.isSeeded }) {
+            if let snapshot = viewModel.baselineSnapshots[kind].flatMap({ $0.isSeeded ? $0 : nil }) {
                 return (snapshot.mean, snapshot.standardDeviation, "Mevcut 60 günlük ağırlıklı kişisel taban")
             }
             return (nil, nil, "Kişisel taban henüz oluşmadı")

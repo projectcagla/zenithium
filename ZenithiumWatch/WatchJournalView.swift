@@ -16,6 +16,8 @@ struct WatchJournalView: View {
 
     @State private var logged: Set<JournalBehavior> = PendingJournalStore.loggedToday()
 
+    @State private var error: String?
+
     var body: some View {
         ScrollView {
             VStack(spacing: ZenithiumSpacing.s) {
@@ -24,10 +26,18 @@ struct WatchJournalView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
+                if let error { Text(error).font(.caption2) }
+                Text("\(WatchSessionSender.shared.pendingLogs.count) kayıt eşitleme bekliyor").font(.caption2)
                 ForEach(JournalBehaviorWidgetSet.featured, id: \.self) { behavior in
                     Button {
-                        PendingJournalStore.toggle(behavior)
-                        logged = PendingJournalStore.loggedToday()
+                        do {
+                            let message = WatchLogMessage(id: UUID(), createdAt: Date(), timeZoneIdentifier: TimeZone.current.identifier,
+                                payload: .journal(behavior: behavior, enabled: !logged.contains(behavior)))
+                            try WatchSessionSender.shared.queue(message)
+                            PendingJournalStore.toggle(behavior)
+                            logged = PendingJournalStore.loggedToday()
+                            error = nil
+                        } catch { self.error = error.localizedDescription }
                         // A journal entry has no visible consequence on the wrist, so the
                         // haptic is the confirmation. Without it a tap feels ignored.
                         WKInterfaceDevice.current().play(.click)
@@ -56,6 +66,8 @@ struct WatchJournalView: View {
             }
             .padding(.horizontal, ZenithiumSpacing.xxs)
         }
+        .onChange(of: WatchSessionSender.shared.eraseRevision) { _, _ in logged = PendingJournalStore.loggedToday() }
+        .onAppear { logged = PendingJournalStore.loggedToday() }
         .containerBackground(ZenithiumColor.spectrumViolet.gradient.opacity(0.22), for: .tabView)
     }
 }

@@ -23,8 +23,8 @@ settings:
     # its own copy: two of the three used to hardcode "1.0" while the watch read the build
     # setting — which project.yml never set, so an XcodeGen build gave the watch app an
     # empty CFBundleShortVersionString. App Store Connect rejects that outright.
-    MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "9"
+    MARKETING_VERSION: "1.1"
+    CURRENT_PROJECT_VERSION: "10"
     # Spec §2.1 — Swift 6 language mode with complete strict concurrency, and warnings
     # treated as errors so a concurrency diagnostic cannot be ignored.
     SWIFT_VERSION: "6.0"
@@ -186,9 +186,43 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
     dependencies:
+      - target: ZenithiumWatchWidgets
+        embed: true
       - sdk: SwiftUI.framework
       - sdk: HealthKit.framework
       - sdk: WatchConnectivity.framework
+
+  ZenithiumWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources:
+      - path: ZenithiumWatchWidgets
+        excludes:
+          - "Info.plist"
+          - "ZenithiumWatchWidgets.entitlements"
+      - path: Zenithium/Domain
+      - path: Zenithium/Support/AppGroup.swift
+      - path: Zenithium/Support/ZenithiumLog.swift
+      - path: Zenithium/Engines/EngineConstants.swift
+      - path: Zenithium/Engines/MathSupport.swift
+      - path: Zenithium/Persistence/WidgetSnapshot.swift
+      - path: Zenithium/Resources/Zenithium.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zenithium.app.watchkitapp.widgets
+        PRODUCT_NAME: ZenithiumWatchWidgets
+        INFOPLIST_FILE: ZenithiumWatchWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ZenithiumWatchWidgets/ZenithiumWatchWidgets.entitlements
+        SDKROOT: watchos
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: NO
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+    dependencies:
+      - sdk: SwiftUI.framework
+      - sdk: WidgetKit.framework
 
   ZenithiumTests:
     type: bundle.unit-test

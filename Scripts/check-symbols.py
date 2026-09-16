@@ -139,7 +139,7 @@ FRAMEWORK_SYMBOLS = {
     "ContainerBackground", "WidgetAccentedRenderingMode",
     # Swift Testing / XCTest
     "Test", "Suite", "Issue", "Comment", "SourceLocation", "Tag", "ConfirmationError",
-    "CustomTestStringConvertible", "XCTestCase", "XCTAssertGreaterThanOrEqual", "XCTAssertNotNil", "XCTAssertTrue", "XCTUnwrap",
+    "CustomTestStringConvertible", "XCTestCase", "XCTAssertGreaterThanOrEqual", "XCTAssertNotNil", "XCTAssertEqual", "XCTAssertNil", "XCTAssertTrue", "XCTUnwrap",
     # SwiftUI / UIKit Graphics
     "ImageRenderer", "UIHostingController", "UIWindow", "UIWindowScene", "RunLoop", "UIGraphicsImageRenderer", "UIGraphicsImageRendererFormat",
 }
@@ -619,7 +619,7 @@ def check_labels(files: list[Path], labels: dict[str, set[str]]) -> list[str]:
     return problems
 
 
-TARGETS = ["Zenithium", "ZenithiumWidgets", "ZenithiumWatch"]
+TARGETS = ["Zenithium", "ZenithiumWidgets", "ZenithiumWatch", "ZenithiumWatchWidgets"]
 
 
 def main() -> int:
@@ -668,7 +668,7 @@ def main() -> int:
 
     print("\n=== argüman etiketleri ===")
     every_file = sorted(set(app_files) | set(test_files)
-                        | set(target_sources("ZenithiumWatch"))
+                        | set(target_sources("ZenithiumWatch")) | set(target_sources("ZenithiumWatchWidgets"))
                         | set(target_sources("ZenithiumWidgets")))
     labels = known_labels(type_bodies(every_file))
     label_problems = check_labels(every_file, labels)
@@ -680,7 +680,7 @@ def main() -> int:
 
     print("\n=== yasaklı yapılar ve denge ===")
     all_files = sorted(set(app_files) | set(test_files)
-                       | set(target_sources("ZenithiumWatch"))
+                       | set(target_sources("ZenithiumWatch")) | set(target_sources("ZenithiumWatchWidgets"))
                        | set(target_sources("ZenithiumWidgets")))
     for problem in check_banned(all_files) + check_balance(all_files) + check_decimal_separator(all_files) + check_force_unwrap(all_files):
         failures += 1

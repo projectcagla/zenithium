@@ -84,25 +84,26 @@ enum EvidenceLibrary {
             authors: "Banister EW",
             year: 1991,
             title: "Modeling elite athletic performance",
-            venue: "Physiological Testing of Elite Athletes (Human Kinetics)",
+            venue: "Physiological Testing of the High-Performance Athlete, pp. 403–424 (Human Kinetics)",
+            isbn: "9780873223003",
             grade: .mechanistic,
             population: StudiedPopulation(sex: .male, trainingStatus: .elite),
             doesNotShow: "Model, bir sporcunun performansını ileriye dönük tahmin etmek için doğrulanmış değildir; antrenman yükünü tek bir sayıya indirgeyen bir muhasebe aracıdır.",
-            needsVerification: true
+            needsVerification: false
         ),
 
         Reference(
             id: "MORTON-1997",
             authors: "Morton RH",
             year: 1997,
-            title: "Modelling training and overtraining",
+            title: "Modeling training and overtraining",
             venue: "Journal of Sports Sciences",
             doi: "10.1080/026404197367344",
-            pmid: "9232558",
+            pmid: "9232559",
             grade: .mechanistic,
             population: StudiedPopulation(sex: .unreported, trainingStatus: .mixed),
             doesNotShow: "Aşırı antrenmanı teşhis etmez ve bir eşik vermez; yorgunluk ile uyumun farklı hızlarda söndüğü bir matematiksel çerçeve sunar.",
-            needsVerification: true
+            needsVerification: false
         ),
 
         Reference(
@@ -166,11 +167,11 @@ enum EvidenceLibrary {
             title: "Mathematical coupling causes spurious correlation within the conventional acute-to-chronic workload ratio calculations",
             venue: "British Journal of Sports Medicine",
             doi: "10.1136/bjsports-2017-098110",
-            pmid: "29065984",
-            grade: .synthesis,
+            pmid: "29101104",
+            grade: .mechanistic,
             population: StudiedPopulation.unreported,
             doesNotShow: "Yük takibinin işe yaramadığını söylemez; akut değerin kronik değerin içinde yer almasının, gerçek bir ilişki olmasa bile korelasyon üreteceğini gösterir.",
-            needsVerification: true,
+            needsVerification: false,
             contradicts: ["GABBETT-2016", "HULIN-2016"]
         ),
 
@@ -267,10 +268,11 @@ enum EvidenceLibrary {
             title: "Feasibility of continuous fever monitoring using wearable devices",
             venue: "Scientific Reports",
             doi: "10.1038/s41598-020-78355-6",
+            pmid: "33318528",
             grade: .observational,
-            population: StudiedPopulation(sex: .mixed, trainingStatus: .mixed),
-            doesNotShow: "Bilek sıcaklığındaki bir sapmanın nedenini söylemez ve hastalık tespiti için doğrulanmış bir eşik vermez.",
-            needsVerification: true
+            population: StudiedPopulation(sex: .mixed, ageRange: 24...76, trainingStatus: .mixed, sampleSize: 50),
+            doesNotShow: "Parmak yüzüğü sıcaklığı ve öz bildirime dayanan küçük bir gözlemsel çalışmadır. Apple Watch bilek sıcaklığına aktarılabilir bir tanı eşiği veya Zenithium puanının doğruluğunu göstermez.",
+            needsVerification: false
         )
     ]
 

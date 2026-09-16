@@ -9,7 +9,7 @@ Her kaydın **ne göstermediği** satırı zorunludur. Bir çalışmanın neyi
 kanıtlamadığını yazmak, neyi kanıtladığını yazmaktan daha çok düşünmeyi
 gerektirir ve aşırı iddiayı kaynağında keser.
 
-Toplam 16 kaynak: 12 doğrulanmış, 4 doğrulama bekliyor.
+Toplam 16 kaynak: 16 doğrulanmış, 0 doğrulama bekliyor.
 
 ## Doğrulanmış kaynaklar
 
@@ -133,20 +133,22 @@ Roenneberg T, Wirz-Justice A, Merrow M (2003). *Life between clocks: daily tempo
 - **Ne göstermiyor:** Kronotipe göre uyku saatini kaydırmanın bir fayda ürettiğini göstermez; kronotipin nüfusta nasıl dağıldığını betimler.
 - **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift
 
-## Doğrulama bekleyen kaynaklar
+#### SMARR-2020
 
-Aşağıdaki kayıtların bulguları yerleşiktir; doğrulanamayan şey künyenin kendisidir
-— basılı yılın çevrimiçi yıldan farklı olması, bir kitap bölümünün baskısı, ya da
-başlığın tam olarak hatırlanamaması gibi. Bu kayıtlar uygulamada kullanılmaya
-devam eder ama **hiçbiri bir tavsiyeyi destekleyemez**: dayandıkları kart en fazla
-öneri seviyesinde kalır. Künyesi elle doğrulanan bir kaydın
-`needsVerification` alanı `false` yapılmalıdır.
+Smarr BL, Aschbacher K, Fisher SM, et al. (2020). *Feasibility of continuous fever monitoring using wearable devices*. Scientific Reports.
+
+- **Tanımlayıcı:** doi:10.1038/s41598-020-78355-6
+- **Kanıt derecesi:** Gözlemsel
+- **Ne göstermiyor:** Parmak yüzüğü sıcaklığı ve öz bildirime dayanan küçük bir gözlemsel çalışmadır. Apple Watch bilek sıcaklığına aktarılabilir bir tanı eşiği veya Zenithium puanının doğruluğunu göstermez.
+- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift
+
+### Mekanizma
 
 #### BANISTER-1991
 
-Banister EW (1991). *Modeling elite athletic performance*. Physiological Testing of Elite Athletes (Human Kinetics).
+Banister EW (1991). *Modeling elite athletic performance*. Physiological Testing of the High-Performance Athlete, pp. 403–424 (Human Kinetics).
 
-- **Tanımlayıcı:** tanımlayıcı yok
+- **Tanımlayıcı:** ISBN:9780873223003
 - **Kanıt derecesi:** Mekanizma
 - **Ne göstermiyor:** Model, bir sporcunun performansını ileriye dönük tahmin etmek için doğrulanmış değildir; antrenman yükünü tek bir sayıya indirgeyen bir muhasebe aracıdır.
 - **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift
@@ -156,25 +158,27 @@ Banister EW (1991). *Modeling elite athletic performance*. Physiological Testing
 Lolli L, Batterham AM, Hawkins R, Kelly DM, Strudwick AJ, Thorpe RT, Gregson W, Atkinson G (2019). *Mathematical coupling causes spurious correlation within the conventional acute-to-chronic workload ratio calculations*. British Journal of Sports Medicine.
 
 - **Tanımlayıcı:** doi:10.1136/bjsports-2017-098110
-- **Kanıt derecesi:** Derleme / konsensüs
+- **Kanıt derecesi:** Mekanizma
 - **Ne göstermiyor:** Yük takibinin işe yaramadığını söylemez; akut değerin kronik değerin içinde yer almasının, gerçek bir ilişki olmasa bile korelasyon üreteceğini gösterir.
 - **Çelişki:** GABBETT-2016, HULIN-2016
 - **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift, Zenithium/Engines/RecommendationEngine.swift
 
 #### MORTON-1997
 
-Morton RH (1997). *Modelling training and overtraining*. Journal of Sports Sciences.
+Morton RH (1997). *Modeling training and overtraining*. Journal of Sports Sciences.
 
 - **Tanımlayıcı:** doi:10.1080/026404197367344
 - **Kanıt derecesi:** Mekanizma
 - **Ne göstermiyor:** Aşırı antrenmanı teşhis etmez ve bir eşik vermez; yorgunluk ile uyumun farklı hızlarda söndüğü bir matematiksel çerçeve sunar.
 - **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift
 
-#### SMARR-2020
+## Doğrulama bekleyen kaynaklar
 
-Smarr BL, Aschbacher K, Fisher SM, et al. (2020). *Feasibility of continuous fever monitoring using wearable devices*. Scientific Reports.
+Aşağıdaki kayıtların bulguları yerleşiktir; doğrulanamayan şey künyenin kendisidir
+— basılı yılın çevrimiçi yıldan farklı olması, bir kitap bölümünün baskısı, ya da
+başlığın tam olarak hatırlanamaması gibi. Bu kayıtlar uygulamada kullanılmaya
+devam eder ama **hiçbiri bir tavsiyeyi destekleyemez**: dayandıkları kart en fazla
+öneri seviyesinde kalır. Künyesi elle doğrulanan bir kaydın
+`needsVerification` alanı `false` yapılmalıdır.
 
-- **Tanımlayıcı:** doi:10.1038/s41598-020-78355-6
-- **Kanıt derecesi:** Gözlemsel
-- **Ne göstermiyor:** Bilek sıcaklığındaki bir sapmanın nedenini söylemez ve hastalık tespiti için doğrulanmış bir eşik vermez.
-- **Kullanan:** Zenithium/Domain/Intelligence/ScientificBoundaryRegistry.swift
+Şu anda doğrulama bekleyen kaynak yok.

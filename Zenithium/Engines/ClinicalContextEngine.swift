@@ -76,7 +76,7 @@ enum ClinicalContextEngine {
                 }
             } else if let targetECG = modifier.targetECGClassification {
                 // Find most recent ECG record
-                guard let latestECG = ecgRecords.filter { $0.recordedAt <= now }.sorted(by: { $0.recordedAt < $1.recordedAt }).last else { continue }
+                guard let latestECG = ecgRecords.filter({ $0.recordedAt <= now }).sorted(by: { $0.recordedAt < $1.recordedAt }).last else { continue }
 
                 // Staleness check for ECG: only records within 30 days are relevant
                 let days = calendar.dateComponents([.day], from: latestECG.recordedAt, to: now).day ?? 0

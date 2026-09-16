@@ -71,6 +71,7 @@ struct WidgetRefreshPublisher: Sendable {
         readSnapshot: @escaping @Sendable () -> WidgetSnapshot = { WidgetSnapshotStore.read() },
         writeSnapshot: @escaping @Sendable (WidgetSnapshot) throws -> Void = {
             try WidgetSnapshotStore.write($0)
+            WatchSnapshotTransport.publish($0)
         }
     ) {
         self.refresher = refresher

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Zenithium's privacy manifest. Required for App Store submission since May 2024.
+
+	  Every list below is empty on purpose, and the emptiness is the product: the app has no
+	  network layer, no accounts and no analytics, so there is nothing to declare as
+	  collected and nothing to declare as tracking. `Scripts/check-privacy-manifest.py`
+	  checks that claim against the source rather than leaving it as a promise.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!--
+	  Nothing is collected. Health data is read from HealthKit with the user's permission,
+	  computed on device and written to a local store; it never leaves the device, so it is
+	  not "collected" in the manifest's sense (which is about data sent off device).
+	-->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!--
+			  `UserDefaults(suiteName:)` — the App Group suite the app, the widget and the
+			  watch share for the HealthKit anchor and the journal outbox. CA92.1 is the
+			  reason for exactly that: access limited to the app group the app belongs to.
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

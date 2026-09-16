@@ -14,6 +14,8 @@ import SwiftUI
 
 struct WatchLiveSessionView: View {
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @State private var viewModel = LiveWorkoutViewModel()
 
     var body: some View {
@@ -87,7 +89,7 @@ struct WatchLiveSessionView: View {
                 .monospacedDigit()
                 .foregroundStyle(ZenithiumColor.textPrimary)
                 .contentTransition(.numericText())
-                .animation(.snappy, value: viewModel.output?.dayStrain)
+                .animation(reduceMotion ? nil : .snappy, value: viewModel.output?.dayStrain)
             Text("gün zorlanması")
                 .font(ZenithiumFont.caption2)
                 .foregroundStyle(ZenithiumColor.textSecondary)
@@ -113,7 +115,7 @@ struct WatchLiveSessionView: View {
                         .foregroundStyle(ZenithiumColor.textPrimary)
                 }
                 .frame(width: 74, height: 74)
-                .animation(.snappy, value: progress)
+                .animation(reduceMotion ? nil : .snappy, value: progress)
 
                 Text(output.band.summary)
                     .font(ZenithiumFont.caption2)
@@ -131,7 +133,7 @@ struct WatchLiveSessionView: View {
         VStack(spacing: ZenithiumSpacing.xs) {
             row("Süre", ZenithiumFormat.longClock(seconds: viewModel.elapsedSeconds))
             if let heartRate = viewModel.heartRate {
-                row("Nabız", "\(Int(heartRate.rounded()))")
+                row("Nabız", "\(Int(heartRate.rounded())) atım/dk")
             }
             if let seconds = viewModel.output?.secondsToCeiling {
                 row("Tavana", ZenithiumFormat.longClock(seconds: seconds))

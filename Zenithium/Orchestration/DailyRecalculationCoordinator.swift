@@ -35,6 +35,10 @@ struct RecalculationResult: Sendable, Equatable {
 
     /// Baseline confidence for the required metrics, `n/14` (§4.2.4).
     let calibrationProgress: Double
+    let calibration: CalibrationState
+    let dataQuality: DataQualityAssessment
+    let overnight: OvernightData
+    let baselines: [MetricKind: BaselineSnapshot]
 }
 
 actor DailyRecalculationCoordinator {
@@ -139,7 +143,9 @@ actor DailyRecalculationCoordinator {
         // Yol haritası v4, A8.
         for dayStart in stale.suffix(limit) {
             try Task.checkCancellation()
-            _ = try? await recalculateDay(wakeDay: dayStart, now: now)
+            let calendar = calendarProvider()
+            let end = calendar.date(byAdding: .day, value: 1, to: dayStart)?.addingTimeInterval(-1) ?? dayStart
+            _ = try await recalculateDay(wakeDay: dayStart, now: min(now, end))
         }
     }
 
@@ -178,7 +184,7 @@ actor DailyRecalculationCoordinator {
             try Task.checkCancellation()
             // Set now to near the end of that day so strain and sleep compute against that day's window
             let dayNow = resolver.day(byAdding: 1, to: wakeDay).addingTimeInterval(-60)
-            _ = try? await recalculateDay(wakeDay: wakeDay, now: dayNow)
+            _ = try await recalculateDay(wakeDay: wakeDay, now: dayNow)
         }
 
         // Recompute today now that the entire history is committed to the local store
@@ -387,6 +393,12 @@ actor DailyRecalculationCoordinator {
             )
         )
 
+        let calibration = CalibrationState(
+            recordedDaysCount: min(baselines[.heartRateVariability]?.sampleCount ?? 0, baselines[.restingHeartRate]?.sampleCount ?? 0),
+            hasHRVBaseline: baselines[.heartRateVariability] .map { BaselineEngine.scoringBaseline(from: $0).isScorable } ?? false,
+            hasRHRBaseline: baselines[.restingHeartRate] .map { BaselineEngine.scoringBaseline(from: $0).isScorable } ?? false,
+            hasWristTemperatureBaseline: baselines[.wristTemperature] .map { BaselineEngine.scoringBaseline(from: $0).isScorable } ?? false,
+            hasSleepBaseline: history.filter { $0.sleepDurationSeconds > 0 }.count >= 14)
         return RecalculationResult(
             dayStart: dayWindow.dayStart,
             computedAt: now,
@@ -398,7 +410,12 @@ actor DailyRecalculationCoordinator {
             circadian: circadian,
             profile: profile,
             record: record,
-            calibrationProgress: recoveryOutput.confidence
+            calibrationProgress: recoveryOutput.confidence,
+            calibration: calibration,
+            dataQuality: DataQualityEngine.assess(overnight: overnight, sleepSegments: overnight.sleepSegments,
+                daySamples: [], calibration: calibration),
+            overnight: overnight,
+            baselines: baselines
         )
     }
 
@@ -846,8 +863,16 @@ actor DailyRecalculationCoordinator {
         // The prescription is built here rather than on the watch, so every surface shows
         // the same suggestion. It needs the pass's own outputs, which is why the result is
         // handed in — a snapshot refresh triggered from anywhere else simply carries none.
-        let prescriptionLine = result.flatMap {
-            Self.prescriptionLine(result: $0, records: records, now: now)
+        var daily: DailyDecisionContext?
+        if let result {
+            do {
+                var choices = PersonalPreferences()
+                if let preferences { choices = try await preferences.load() } else { choices.decision = .progressive }
+                daily = try await DailyDecisionCoordinator(records: store, markers: store, health: health).evaluate(result, preferences: choices)
+            } catch { ZenithiumLog.widget.error("Widget decision inputs could not be read") }
+        }
+        let prescriptionLine = result.flatMap { result in
+            daily.flatMap { Self.prescriptionLine(result: result, context: $0) }
         }
         let snapshot = WidgetSnapshot(
             formatVersion: WidgetSnapshot.currentFormatVersion,
@@ -855,7 +880,7 @@ actor DailyRecalculationCoordinator {
             recoveryScore: latest.recoveryScore,
             recoveryBandRawValue: latest.recoveryBand?.rawValue,
             dayStrain: latest.dayStrain,
-            targetCeiling: latest.targetCeiling,
+            targetCeiling: daily?.decision.value.action.targetCeiling,
             sleepScore: latest.sleepScore,
             isCalibrating: latest.recoveryScore == nil,
             calibrationProgress: latest.recoveryConfidence,
@@ -869,31 +894,18 @@ actor DailyRecalculationCoordinator {
     ///
     /// Deliberately terse: it is read on a watch face and in a control, where a sentence
     /// does not fit and a paragraph is unreadable.
-    private static func prescriptionLine(
-        result: RecalculationResult,
-        records: [BiometricDaySnapshot],
-        now: Date
-    ) -> String? {
-        // Three days of history is not enough for a load ratio, and the engine says so by
-        // returning nil for it — which is the right answer here rather than a wrong number.
-        let load = records.count >= EngineConstants.TrainingLoad.chronicWindowDays
-            ? TrainingLoadEngine.analyse(
-                TrainingLoadInput(
-                    days: records.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
-                    referenceDay: now
-                )
-            )
-            : nil
-
+    private static func prescriptionLine(result: RecalculationResult, context: DailyDecisionContext) -> String? {
         guard let prescription = PrescriptionEngine.prescribe(
             recovery: result.recovery,
             lens: result.profile.trainingLens,
-            load: load,
+            load: context.load,
             muscles: Array(result.muscle.values),
             strainSoFar: result.strain?.strain ?? 0,
             biologicalSex: result.profile.biologicalSex,
             criticalSpeed: nil,
-            circadian: result.circadian
+            circadian: result.circadian,
+            preference: context.preferences.decision,
+            decision: context.decision.value.action
         ) else { return nil }
 
         let session = prescription.primary

@@ -41,6 +41,13 @@ enum LongevityEngine {
         days: [BiometricDaySnapshot],
         now: Date = Date()
     ) -> LongevityScore? {
+        let start = now.addingTimeInterval(-Double(windowDays) * 86_400)
+        let days = days.filter { $0.dayStart >= start && $0.dayStart <= now }.sorted { $0.dayStart < $1.dayStart }
+        let vitals = vitals.map { reading in
+            VitalsEngine.reading(for: reading.sign, samples: reading.history.filter {
+                $0.dayStart >= start && $0.dayStart <= now && $0.value.isFinite
+            })
+        }
         var components: [LongevityComponent] = []
 
         if let component = cardiorespiratory(vitals) { components.append(component) }
@@ -57,8 +64,8 @@ enum LongevityEngine {
         let weighted = components.reduce(0) { $0 + $1.contribution }
         let score = MathSupport.clamp(weighted / coverage, 0, 100)
 
-        let changes = components.compactMap(\.monthlyChange)
-        let monthlyChange = changes.isEmpty ? nil : MathSupport.mean(changes)
+        // Raw vital slopes are not changes in this composite percentile score.
+        let monthlyChange: Double? = nil
 
         return LongevityScore(
             score: score,
@@ -91,8 +98,8 @@ enum LongevityEngine {
     /// Deliberately the same numbers recovery is built on: if the composite disagreed with
     /// the daily score about how the autonomic side is going, one of them would be wrong.
     private static func autonomic(_ days: [BiometricDaySnapshot]) -> LongevityComponent? {
-        let hrv = days.compactMap(\.heartRateVariability)
-        let resting = days.compactMap(\.restingHeartRate)
+        let hrv = days.compactMap(\.heartRateVariability).filter(\.isFinite)
+        let resting = days.compactMap(\.restingHeartRate).filter(\.isFinite)
 
         var scores: [Double] = []
         if hrv.count >= minimumSamples, let latest = hrv.last {
@@ -132,10 +139,12 @@ enum LongevityEngine {
 
         var scores = [durationScore]
         let midpoints = days.compactMap(\.sleepMidpointMinutes)
-        if midpoints.count >= minimumSamples, let meanMidpoint = MathSupport.mean(midpoints) {
-            let variance = midpoints.reduce(0) { $0 + ($1 - meanMidpoint) * ($1 - meanMidpoint) }
-                / Double(midpoints.count)
-            let deviationMinutes = variance.squareRoot()
+        if midpoints.count >= minimumSamples {
+            let angles = midpoints.filter(\.isFinite).map { $0 / 1440 * 2 * Double.pi }
+            let cosine = MathSupport.mean(angles.map { cos($0) }) ?? 0
+            let sine = MathSupport.mean(angles.map { sin($0) }) ?? 0
+            let resultant = min(1, max(1e-12, hypot(cosine, sine)))
+            let deviationMinutes = sqrt(-2 * log(resultant)) * 1440 / (2 * Double.pi)
             // A standard deviation of 30 minutes scores full; 150 minutes scores zero.
             scores.append(MathSupport.clamp(100 - (deviationMinutes - 30) / 120 * 100, 0, 100))
         }
@@ -156,6 +165,7 @@ enum LongevityEngine {
     /// days out of seven" is the whole question, and a strain figure would answer a
     /// different one.
     private static func activity(_ days: [BiometricDaySnapshot]) -> LongevityComponent? {
+        let days = days.filter { $0.recordedTrainingLoad != nil }
         guard days.count >= minimumSamples else { return nil }
         let active = days.filter { $0.dayStrain > 1 }.count
         let share = Double(active) / Double(days.count)

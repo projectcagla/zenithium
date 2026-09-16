@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 /// A floating reference corridor. Missing measurements never become a synthetic last point.
 struct BaselineBand: View {
@@ -9,6 +10,7 @@ struct BaselineBand: View {
     let sigma: Double?
     let unit: String
     var style: Style = .inline
+    var dates: [Date] = []
     var tint: Color = ZenithiumColor.accent
     var valueRange: ClosedRange<Double>? = nil
     var showsAxisLabels: Bool = true
@@ -21,6 +23,15 @@ struct BaselineBand: View {
     private var finiteValues: [Double] { values.filter(\.isFinite) }
     private var validBaseline: Double? { baseline.flatMap { $0.isFinite ? $0 : nil } }
     private var spread: Double? { sigma.flatMap { $0.isFinite && $0 >= 0 ? $0 : nil } }
+
+    private var timeRange: ClosedRange<Double> {
+        let coordinates = dates.count == values.count
+            ? dates.map(\.timeIntervalSince1970) : values.indices.map(Double.init)
+        let lower = coordinates.min() ?? 0
+        let upper = coordinates.max() ?? 1
+        let padding = max((upper - lower) * 0.025, dates.isEmpty ? 0.5 : 3600)
+        return (lower - padding)...(upper + padding)
+    }
 
     private var range: ClosedRange<Double> {
         if let valueRange, valueRange.upperBound > valueRange.lowerBound { return valueRange }
@@ -72,54 +83,30 @@ struct BaselineBand: View {
     }
 
     private var drawing: some View {
-        Canvas { context, size in
-            guard size.width > 0, size.height > 0 else { return }
-            let domain = range
-            let span = domain.upperBound - domain.lowerBound
-            let inset: CGFloat = showsSeries ? 5 : 0
-            func y(_ value: Double) -> CGFloat {
-                CGFloat((domain.upperBound - value) / span) * (size.height - inset * 2) + inset
-            }
+        Chart {
             if let baseline = validBaseline, let spread {
-                let upper = y(baseline + spread)
-                let lower = y(baseline - spread)
-                let corridor = CGRect(x: 0, y: upper, width: size.width, height: max(lower - upper, 1))
-                context.fill(Path(corridor), with: .color(tint.opacity(0.10)))
-                var guide = Path()
-                guide.move(to: CGPoint(x: 0, y: y(baseline)))
-                guide.addLine(to: CGPoint(x: size.width, y: y(baseline)))
-                context.stroke(guide, with: .color(tint.opacity(0.4)), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
+                RectangleMark(yStart: .value("Alt", baseline - spread), yEnd: .value("Üst", baseline + spread))
+                    .foregroundStyle(tint.opacity(0.10))
+                RuleMark(y: .value("Taban", baseline))
+                    .foregroundStyle(tint.opacity(0.4))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
             }
-            guard showsSeries else { return }
-            let samples = finiteValues
-            guard !samples.isEmpty else {
-                for index in 0..<9 {
-                    let x = (size.width - 4) * CGFloat(index) / 8 + 2
-                    context.fill(Path(ellipseIn: CGRect(x: x - 1, y: size.height / 2 - 1, width: 2, height: 2)), with: .color(ZenithiumColor.textPrimary.opacity(0.06)))
+            if showsSeries {
+                ForEach(Array(values.enumerated()), id: \.offset) { index, value in
+                    if value.isFinite {
+                        PointMark(x: .value("Kayıt", dates.count == values.count ? dates[index].timeIntervalSince1970 : Double(index)),
+                                  y: .value(unit, value))
+                            .foregroundStyle(tint.opacity(index == values.count - 1 ? 1 : 0.55))
+                            .symbolSize(style == .micro ? 8 : 20)
+                    }
                 }
-                return
             }
-            let points = samples.enumerated().map { index, value in
-                CGPoint(x: samples.count == 1 ? size.width - inset : inset + (size.width - inset * 2) * CGFloat(index) / CGFloat(samples.count - 1), y: y(value))
-            }
-            if let first = points.first {
-                var path = Path()
-                path.move(to: first)
-                for point in points.dropFirst() { path.addLine(to: point) }
-                context.stroke(path, with: .color(tint.opacity(0.75)), style: StrokeStyle(lineWidth: style == .micro ? 1.2 : 1.8, lineCap: .round, lineJoin: .round))
-            }
-            guard let point = points.last, let last = samples.last else { return }
-            let outside = validBaseline.map { abs(last - $0) > (spread ?? .infinity) } ?? false
-            let pointColor = outside && highlightsDeviation ? ZenithiumColor.yellow : tint
-            if outside, let baseline = validBaseline, let spread {
-                var guide = Path()
-                guide.move(to: point)
-                guide.addLine(to: CGPoint(x: point.x, y: y(baseline + (last > baseline ? spread : -spread))))
-                context.stroke(guide, with: .color(pointColor.opacity(0.65)), lineWidth: 1)
-            }
-            let radius: CGFloat = style == .micro ? 2.5 : 3.5
-            context.fill(Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)), with: .color(pointColor))
         }
+        .chartYScale(domain: range)
+        .chartXScale(domain: timeRange)
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
     }
 
     private var clinicalDrawing: some View {
@@ -138,7 +125,7 @@ struct BaselineBand: View {
             if let secondaryRange {
                 context.fill(Path(roundedRect: CGRect(x: x(secondaryRange.lowerBound), y: y - 5, width: x(secondaryRange.upperBound) - x(secondaryRange.lowerBound), height: 10), cornerRadius: 3), with: .color(tint.opacity(0.22)))
             }
-            let pointColor = value < lower || value > upper ? ZenithiumColor.yellow : ZenithiumColor.textPrimary
+            let pointColor = tint
             var marker = Path()
             marker.move(to: CGPoint(x: x(value), y: y - 10))
             marker.addLine(to: CGPoint(x: x(value), y: y + 10))

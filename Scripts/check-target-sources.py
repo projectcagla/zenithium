@@ -38,6 +38,7 @@ GENERATOR = ROOT / "Scripts" / "generate-project.py"
 TARGETS = {
     "ZenithiumWidgets": ("WIDGET_SHARED", "WIDGET_SHARED_DIRS"),
     "ZenithiumWatch": ("WATCH_SHARED", "WATCH_SHARED_DIRS"),
+    "ZenithiumWatchWidgets": ("WATCH_WIDGET_SHARED", "WATCH_WIDGET_SHARED_DIRS"),
 }
 
 # Paths both files carry but that are not Swift sources, so they are compared separately or
@@ -91,6 +92,7 @@ VERSION_PLISTS = [
     "Zenithium/Info.plist",
     "ZenithiumWidgets/Info.plist",
     "ZenithiumWatch/Info.plist",
+    "ZenithiumWatchWidgets/Info.plist",
 ]
 
 
@@ -145,6 +147,7 @@ def check_version() -> int:
 APP_GROUP_FILES = [
     "Zenithium/Zenithium.entitlements",
     "ZenithiumWatch/ZenithiumWatch.entitlements",
+    "ZenithiumWatchWidgets/ZenithiumWatchWidgets.entitlements",
     "ZenithiumWidgets/ZenithiumWidgets.entitlements",
 ]
 

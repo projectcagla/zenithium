@@ -62,7 +62,7 @@ enum DataQualityEngine {
         var missing: [String] = []
         var issues: [String] = []
 
-        let sleepSeconds = sleepSegments.asleepSeconds
+        let sleepSeconds = sleepSegments.resolvedNonOverlapping.asleepSeconds
         let nocturnalHours = TimeConversion.hours(fromSeconds: sleepSeconds)
 
         let hasHRV = (overnight?.heartRateVariability != nil)
@@ -86,16 +86,16 @@ enum DataQualityEngine {
         }
 
         if nocturnalHours < minimumNocturnalHours {
-            issues.append("Yetersiz gece saati takma süresi (en az 2,0 saat gereklidir).")
+            issues.append("Kayıtlı uyku süresi iki saatten kısa. Bu süre saatin takılma süresini ölçmez.")
         }
         if sleepSegments.hasOverlappingSegments {
             issues.append("Çakışan uyku kayıtları tespit edildi.")
         }
 
         // Compute wear time during the day
-        let daySampleCount = daySamples.count
-        let estimatedDayWearHours = min(16.0, Double(daySampleCount) * 0.1) // approximation from sample density
-        let totalWearHours = min(24.0, nocturnalHours + estimatedDayWearHours)
+        // Sparse heart-rate samples cannot establish wear duration. Retain the legacy
+        // field as recorded sleep coverage; never invent hours from the number of samples.
+        let totalWearHours = min(24.0, nocturnalHours)
 
         // Confidence calculation
         var confidence = calibration.tier.confidenceMultiplier

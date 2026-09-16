@@ -73,6 +73,8 @@ final class LiveSessionRelay {
     /// run and call it the session.
     private var pendingChunks: (sessionID: UUID, samples: [LiveHeartRateSample], droppedCount: Int)?
 
+    var logHandler: (@Sendable (WatchLogMessage) async throws -> Void)?
+
     init() {}
 
     func stopAndClear() async {
@@ -102,6 +104,21 @@ final class LiveSessionRelay {
             },
             onUserInfo: { [weak self] batch in
                 Task { @MainActor in self?.receiveBacklog(batch) }
+            },
+            onLog: { [weak self] message in
+                Task { @MainActor in
+                    guard let self, let logHandler = self.logHandler else { return }
+                    do {
+                        if let cutoff = AppGroup.defaults?.object(forKey: "watchEraseBefore") as? Date, message.createdAt <= cutoff {
+                            self.session?.transferUserInfo(["zenithiumLogAck": message.id.uuidString])
+                            return
+                        }
+                        try await logHandler(message)
+                        self.session?.transferUserInfo(["zenithiumLogAck": message.id.uuidString])
+                    } catch {
+                        self.unavailableReason = "Saat kaydı kaydedilemedi; saat kopyası korunuyor."
+                    }
+                }
             }
         )
         let session = WCSession.default
@@ -120,6 +137,7 @@ final class LiveSessionRelay {
     // MARK: - Receiving
 
     private func receive(_ incoming: LiveSessionSnapshot) {
+        if let cutoff = AppGroup.defaults?.object(forKey: "watchEraseBefore") as? Date, incoming.generatedAt <= cutoff { return }
         // Coalesced delivery can hand over an older payload after a newer one.
         if let snapshot, incoming.generatedAt <= snapshot.generatedAt,
            incoming.sessionID == snapshot.sessionID {
@@ -316,13 +334,16 @@ private final class LiveSessionBridge: NSObject, WCSessionDelegate, @unchecked S
 
     private let onContext: @Sendable (LiveSessionSnapshot) -> Void
     private let onUserInfo: @Sendable (LiveSessionSampleBatch) -> Void
+    private let onLog: @Sendable (WatchLogMessage) -> Void
 
     init(
         onContext: @escaping @Sendable (LiveSessionSnapshot) -> Void,
-        onUserInfo: @escaping @Sendable (LiveSessionSampleBatch) -> Void
+        onUserInfo: @escaping @Sendable (LiveSessionSampleBatch) -> Void,
+        onLog: @escaping @Sendable (WatchLogMessage) -> Void
     ) {
         self.onContext = onContext
         self.onUserInfo = onUserInfo
+        self.onLog = onLog
     }
 
     func session(
@@ -331,6 +352,7 @@ private final class LiveSessionBridge: NSObject, WCSessionDelegate, @unchecked S
         error: (any Error)?
     ) {
         guard activationState == .activated else { return }
+        WatchSnapshotTransport.publish(WidgetSnapshotStore.read())
         if let snapshot = LiveSessionSnapshot.from(applicationContext: session.receivedApplicationContext) {
             onContext(snapshot)
         }
@@ -344,6 +366,8 @@ private final class LiveSessionBridge: NSObject, WCSessionDelegate, @unchecked S
 
     /// The backlog channel. FIFO and not coalesced, unlike the application context.
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        if let data = userInfo["zenithiumLog"] as? Data, data.count <= 60_000,
+           let message = try? JSONDecoder().decode(WatchLogMessage.self, from: data) { onLog(message) }
         if let batch = LiveSessionSampleBatch.from(userInfo: userInfo) {
             onUserInfo(batch)
         }

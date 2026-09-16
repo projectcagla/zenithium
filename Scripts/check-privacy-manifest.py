@@ -31,6 +31,7 @@ MANIFESTS = {
     "Zenithium": ROOT / "Zenithium" / "PrivacyInfo.xcprivacy",
     "ZenithiumWidgets": ROOT / "ZenithiumWidgets" / "PrivacyInfo.xcprivacy",
     "ZenithiumWatch": ROOT / "ZenithiumWatch" / "PrivacyInfo.xcprivacy",
+    "ZenithiumWatchWidgets": ROOT / "ZenithiumWatchWidgets" / "PrivacyInfo.xcprivacy",
 }
 
 # Anything here would contradict "no data leaves the device".
@@ -64,7 +65,7 @@ REQUIRED_REASON = {
 
 def swift_sources() -> list[Path]:
     files: list[Path] = []
-    for folder in ("Zenithium", "ZenithiumWidgets", "ZenithiumWatch"):
+    for folder in ("Zenithium", "ZenithiumWidgets", "ZenithiumWatch", "ZenithiumWatchWidgets"):
         files.extend(sorted((ROOT / folder).rglob("*.swift")))
     return files
 

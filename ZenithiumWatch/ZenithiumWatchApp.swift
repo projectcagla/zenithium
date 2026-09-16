@@ -34,7 +34,8 @@ struct ZenithiumWatchApp: App {
 /// Four pages, in the order a wrist is used: what am I at, what should I do, do it, log it.
 struct WatchRootView: View {
 
-    @State private var snapshot = WidgetSnapshotStore.read()
+    @State private var sender = WatchSessionSender.shared
+    private var snapshot: WidgetSnapshot { sender.latestSnapshot }
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -47,15 +48,16 @@ struct WatchRootView: View {
             // order the day happens in. Yol haritası v4, C1.
             WatchLiveSessionView()
                 .tag(2)
-            WatchJournalView()
-                .tag(3)
+            WatchStrengthView().tag(3)
+            WatchJournalView().tag(4)
         }
         .tabViewStyle(.verticalPage)
+        .task { sender.start(); sender.flushLogs() }
         .onChange(of: scenePhase) { _, phase in
             // Re-read on every foreground. The phone may have written a new snapshot while
             // the wrist was down, and there is nothing to observe on a file in a shared
             // container — a poll on activation is both the simplest and the cheapest answer.
-            if phase == .active { snapshot = WidgetSnapshotStore.read() }
+            if phase == .active { sender.start(); sender.flushLogs() }
         }
     }
 }

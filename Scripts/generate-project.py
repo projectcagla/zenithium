@@ -66,6 +66,15 @@ WATCH_SHARED = [
 ]
 WATCH_SHARED_DIRS = ["Zenithium/Domain"]
 
+WATCH_WIDGET_SHARED = [
+    "Zenithium/Support/AppGroup.swift",
+    "Zenithium/Support/ZenithiumLog.swift",
+    "Zenithium/Engines/EngineConstants.swift",
+    "Zenithium/Engines/MathSupport.swift",
+    "Zenithium/Persistence/WidgetSnapshot.swift",
+]
+WATCH_WIDGET_SHARED_DIRS = ["Zenithium/Domain"]
+
 # The colour asset catalog. Every target that draws needs it in its own bundle, because
 # `Color(_:bundle:)` resolves against the bundle it is asked from and an extension's bundle is
 # its own. Written by Scripts/generate-colors.py. Yol haritası v4, B6.
@@ -77,8 +86,9 @@ PRIVACY_MANIFESTS = {
     "Zenithium": "Zenithium/PrivacyInfo.xcprivacy",
     "ZenithiumWidgets": "ZenithiumWidgets/PrivacyInfo.xcprivacy",
     "ZenithiumWatch": "ZenithiumWatch/PrivacyInfo.xcprivacy",
+    "ZenithiumWatchWidgets": "ZenithiumWatchWidgets/PrivacyInfo.xcprivacy",
 }
-CATALOG_TARGETS = ["Zenithium", "ZenithiumWidgets", "ZenithiumWatch"]
+CATALOG_TARGETS = ["Zenithium", "ZenithiumWidgets", "ZenithiumWatch", "ZenithiumWatchWidgets"]
 
 # App icons live beside the target that shows them, not in the shared catalog.
 #
@@ -227,6 +237,7 @@ def main() -> int:
     app_sources = swift_files("Zenithium")
     ext_sources = widget_sources()
     watch_target_sources = watch_sources()
+    watch_widget_sources = sorted(set(swift_files("ZenithiumWatchWidgets") + swift_files("Zenithium/Domain") + WATCH_WIDGET_SHARED))
     test_sources = swift_files("ZenithiumTests")
 
     if not app_sources:
@@ -241,6 +252,7 @@ def main() -> int:
         "Zenithium": (uid("product", "Zenithium"), "Zenithium.app", "wrapper.application"),
         "ZenithiumWidgets": (uid("product", "ZenithiumWidgets"), "ZenithiumWidgets.appex", "wrapper.app-extension"),
         "ZenithiumWatch": (uid("product", "ZenithiumWatch"), "ZenithiumWatch.app", "wrapper.application"),
+        "ZenithiumWatchWidgets": (uid("product", "ZenithiumWatchWidgets"), "ZenithiumWatchWidgets.appex", "wrapper.app-extension"),
         "ZenithiumTests": (uid("product", "ZenithiumTests"), "ZenithiumTests.xctest", "wrapper.cfbundle"),
     }
 
@@ -250,6 +262,7 @@ def main() -> int:
         ("Zenithium", app_sources),
         ("ZenithiumWidgets", ext_sources),
         ("ZenithiumWatch", watch_target_sources),
+        ("ZenithiumWatchWidgets", watch_widget_sources),
         ("ZenithiumTests", test_sources),
     ):
         for path in sources:
@@ -263,6 +276,11 @@ def main() -> int:
     objects.append(
         f"\t\t{uid('embed', 'ZenithiumWidgets')} /* ZenithiumWidgets.appex in Embed Foundation Extensions */ = "
         f"{{isa = PBXBuildFile; fileRef = {ext_product_id} /* ZenithiumWidgets.appex */; "
+        f"settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
+    )
+    objects.append(
+        f"\t\t{uid('embed', 'ZenithiumWatchWidgets')} /* ZenithiumWatchWidgets.appex in Embed Watch Widgets */ = "
+        f"{{isa = PBXBuildFile; fileRef = {product_refs['ZenithiumWatchWidgets'][0]} /* ZenithiumWatchWidgets.appex */; "
         f"settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
     )
     watch_product_id = product_refs["ZenithiumWatch"][0]
@@ -291,6 +309,7 @@ def main() -> int:
     for dependent, dependency in (
         ("Zenithium", "ZenithiumWidgets"),
         ("Zenithium", "ZenithiumWatch"),
+        ("ZenithiumWatch", "ZenithiumWatchWidgets"),
         ("ZenithiumTests", "Zenithium"),
     ):
         objects.append(
@@ -332,6 +351,17 @@ def main() -> int:
         f"\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
         f"\t\t}};"
     )
+    objects.append(
+        f"\t\t{uid('copyPhase', 'WatchWidgets')} /* Embed Watch Widgets */ = {{\n"
+        f"\t\t\tisa = PBXCopyFilesBuildPhase;\n"
+        f"\t\t\tbuildActionMask = 2147483647;\n"
+        f"\t\t\tdstPath = \"\";\n"
+        f"\t\t\tdstSubfolderSpec = 13;\n"
+        f"\t\t\tfiles = ({uid('embed', 'ZenithiumWatchWidgets')} /* ZenithiumWatchWidgets.appex */,);\n"
+        f"\t\t\tname = \"Embed Watch Widgets\";\n"
+        f"\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
+        f"\t\t}};"
+    )
     objects.append("/* End PBXCopyFilesBuildPhase section */\n")
 
     # ---- PBXFileReference ----
@@ -346,9 +376,11 @@ def main() -> int:
         "ZenithiumWidgets/ZenithiumWidgets.entitlements",
         "ZenithiumWatch/Info.plist",
         "ZenithiumWatch/ZenithiumWatch.entitlements",
+        "ZenithiumWatchWidgets/Info.plist",
+        "ZenithiumWatchWidgets/ZenithiumWatchWidgets.entitlements",
     ]
     all_files = sorted(
-        set(app_sources + ext_sources + watch_target_sources + test_sources + resource_files)
+        set(app_sources + ext_sources + watch_target_sources + watch_widget_sources + test_sources + resource_files)
     )
     for path in all_files:
         name = Path(path).name
@@ -367,7 +399,7 @@ def main() -> int:
     # Empty: Swift auto-links every framework these targets `import`, so an explicit
     # frameworks phase would only be a second place to keep in sync.
     objects.append("/* Begin PBXFrameworksBuildPhase section */")
-    for target in ("Zenithium", "ZenithiumWidgets", "ZenithiumWatch", "ZenithiumTests"):
+    for target in ("Zenithium", "ZenithiumWidgets", "ZenithiumWatch", "ZenithiumWatchWidgets", "ZenithiumTests"):
         objects.append(
             f"\t\t{uid('frameworks', target)} /* Frameworks */ = {{\n"
             f"\t\t\tisa = PBXFrameworksBuildPhase;\n"
@@ -447,6 +479,7 @@ def main() -> int:
         "Zenithium": ("com.apple.product-type.application", "Zenithium.app"),
         "ZenithiumWidgets": ("com.apple.product-type.app-extension", "ZenithiumWidgets.appex"),
         "ZenithiumWatch": ("com.apple.product-type.application", "ZenithiumWatch.app"),
+        "ZenithiumWatchWidgets": ("com.apple.product-type.app-extension", "ZenithiumWatchWidgets.appex"),
         "ZenithiumTests": ("com.apple.product-type.bundle.unit-test", "ZenithiumTests.xctest"),
     }
     for target, (product_type, product_name) in target_specs.items():
@@ -458,12 +491,16 @@ def main() -> int:
         if target == "Zenithium":
             phases.append(f"\t\t\t\t{uid('copyPhase', 'Zenithium')} /* Embed Foundation Extensions */,")
             phases.append(f"\t\t\t\t{uid('copyPhase', 'ZenithiumWatch')} /* Embed Watch Content */,")
+        if target == "ZenithiumWatch":
+            phases.append(f"\t\t\t\t{uid('copyPhase', 'WatchWidgets')} /* Embed Watch Widgets */,")
         dependencies = ""
         if target == "Zenithium":
             dependencies = (
                 f"\t\t\t\t{uid('dependency', 'Zenithium', 'ZenithiumWidgets')} /* PBXTargetDependency */,\n"
                 f"\t\t\t\t{uid('dependency', 'Zenithium', 'ZenithiumWatch')} /* PBXTargetDependency */,\n"
             )
+        elif target == "ZenithiumWatch":
+            dependencies = f"\t\t\t\t{uid('dependency', 'ZenithiumWatch', 'ZenithiumWatchWidgets')} /* PBXTargetDependency */,\n"
         elif target == "ZenithiumTests":
             dependencies = f"\t\t\t\t{uid('dependency', 'ZenithiumTests', 'Zenithium')} /* PBXTargetDependency */,\n"
         objects.append(
@@ -535,6 +572,7 @@ def main() -> int:
         ("Zenithium", app_sources),
         ("ZenithiumWidgets", ext_sources),
         ("ZenithiumWatch", watch_target_sources),
+        ("ZenithiumWatchWidgets", watch_widget_sources),
         ("ZenithiumTests", test_sources),
     ):
         entries = "\n".join(
@@ -556,6 +594,7 @@ def main() -> int:
     for dependent, dependency in (
         ("Zenithium", "ZenithiumWidgets"),
         ("Zenithium", "ZenithiumWatch"),
+        ("ZenithiumWatch", "ZenithiumWatchWidgets"),
         ("ZenithiumTests", "Zenithium"),
     ):
         objects.append(
@@ -662,6 +701,21 @@ def main() -> int:
             "TARGETED_DEVICE_FAMILY": "4",
             "SUPPORTED_PLATFORMS": '"watchos watchsimulator"',
             "GENERATE_INFOPLIST_FILE": "NO",
+            "SKIP_INSTALL": "YES",
+            "CURRENT_PROJECT_VERSION": current_project_version,
+            "MARKETING_VERSION": marketing_version,
+        },
+        "ZenithiumWatchWidgets": {
+            "PRODUCT_BUNDLE_IDENTIFIER": f"{BUNDLE_PREFIX}.app.watchkitapp.widgets",
+            "PRODUCT_NAME": "ZenithiumWatchWidgets",
+            "INFOPLIST_FILE": "ZenithiumWatchWidgets/Info.plist",
+            "CODE_SIGN_ENTITLEMENTS": "ZenithiumWatchWidgets/ZenithiumWatchWidgets.entitlements",
+            "SDKROOT": "watchos",
+            "WATCHOS_DEPLOYMENT_TARGET": WATCH_DEPLOYMENT_TARGET,
+            "TARGETED_DEVICE_FAMILY": "4",
+            "SUPPORTED_PLATFORMS": '\"watchos watchsimulator\"',
+            "GENERATE_INFOPLIST_FILE": "NO",
+            "APPLICATION_EXTENSION_API_ONLY": "YES",
             "SKIP_INSTALL": "YES",
             "CURRENT_PROJECT_VERSION": current_project_version,
             "MARKETING_VERSION": marketing_version,

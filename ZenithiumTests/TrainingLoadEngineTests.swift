@@ -106,8 +106,8 @@ struct TrainingLoadEngineTests {
 
     /// A rest day is a data point, not an absence. Dropping them would make a
     /// three-sessions-a-week athlete look like they train daily.
-    @Test("Boş günler sıfır olarak doldurulur")
-    func fillsGapsWithZero() {
+    @Test("Eksik günler dinlenme sayılmaz ve oranı engeller")
+    func keepsGapsUnknown() {
         let sparse = [
             DailyLoad(dayStart: calendar.date(byAdding: .day, value: -10, to: reference) ?? reference, load: 20),
             DailyLoad(dayStart: reference, load: 10)
@@ -115,8 +115,9 @@ struct TrainingLoadEngineTests {
         let series = TrainingLoadEngine.densifiedSeries(
             TrainingLoadInput(days: sparse, referenceDay: reference, calendar: calendar)
         )
-        #expect(series.count == 11)
-        #expect(series.filter { $0.load == 0 }.count == 9)
+        #expect(series.count == 2)
+        #expect(series.filter { $0.load == 0 }.isEmpty)
+        #expect(TrainingLoadEngine.analyse(TrainingLoadInput(days: sparse, referenceDay: reference, calendar: calendar)).ratio == nil)
     }
 
     // MARK: - Monotony

@@ -146,10 +146,12 @@ final class TrendsViewModel {
     }
 
     private(set) var state: ViewState<Content> = .loading
+    private(set) var baselineSnapshots: [MetricKind: BaselineSnapshot] = [:]
     private(set) var metric: TrendMetric = .recovery
     private(set) var range: TrendRange = .month
 
     private let repository: any BiometricDayRepository
+    private let baselines: (any BaselineRepository)?
     private let bloodMarkers: (any BloodMarkerRepository)?
     private let nowProvider: @Sendable () -> Date
     private let calendarProvider: @Sendable () -> Calendar
@@ -158,10 +160,12 @@ final class TrendsViewModel {
     init(
         repository: any BiometricDayRepository,
         bloodMarkers: (any BloodMarkerRepository)? = nil,
+        baselines: (any BaselineRepository)? = nil,
         nowProvider: @escaping @Sendable () -> Date = { Date() },
         calendarProvider: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent }
     ) {
         self.repository = repository
+        self.baselines = baselines ?? (repository as? any BaselineRepository)
         self.bloodMarkers = bloodMarkers
         self.nowProvider = nowProvider
         self.calendarProvider = calendarProvider
@@ -186,9 +190,10 @@ final class TrendsViewModel {
             return
         }
         do {
+            if let baselines { baselineSnapshots = try await baselines.baselines() }
             let records = try await repository.dayRecords(from: start, through: today)
             let points = records.compactMap { record -> TrendPoint? in
-                guard let value = metric.value(from: record) else { return nil }
+                guard let value = metric.value(from: record), value.isFinite else { return nil }
                 return TrendPoint(date: record.dayStart, value: value)
             }
             // A single point is not a trend. Saying so is more useful than drawing a dot and
@@ -227,6 +232,7 @@ final class TrendsViewModel {
                 }
             }
 
+            guard !Task.isCancelled else { return }
             state = .loaded(
                 Content(
                     points: points,

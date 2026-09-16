@@ -146,7 +146,7 @@ struct RootView: View {
             initialValue: StrengthViewModel(sessions: store, records: records, muscles: store)
         )
         _planViewModel = State(
-            initialValue: PlanViewModel(goals: store, records: records)
+            initialValue: PlanViewModel(goals: store, records: records, preferences: dependencies.preferences, health: dependencies.health)
         )
         _documentsViewModel = State(
             initialValue: DocumentsViewModel(repository: store)

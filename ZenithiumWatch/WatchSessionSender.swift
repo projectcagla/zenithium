@@ -29,9 +29,12 @@
 
 import Foundation
 import WatchConnectivity
+import Observation
+import WidgetKit
 
 /// Pushes session snapshots to the phone.
 @MainActor
+@Observable
 final class WatchSessionSender {
 
     /// The shortest gap between two pushes.
@@ -56,15 +59,87 @@ final class WatchSessionSender {
 
     private var reachabilityDelegate: ReachabilityWatchDelegate?
 
-    init() {}
+    static let shared = WatchSessionSender()
+    private(set) var eraseRevision = 0
+    private(set) var latestSnapshot = WidgetSnapshotStore.read()
+    private(set) var pendingLogs: [WatchLogMessage] = []
+    private(set) var logError: String?
+    private var pendingURL: URL? { AppGroup.containerURL?.appendingPathComponent("watch-pending-logs.json") }
+
+    init() {
+        if let url = AppGroup.containerURL?.appendingPathComponent("watch-pending-logs.json"),
+           FileManager.default.fileExists(atPath: url.path) {
+            do { pendingLogs = try JSONDecoder().decode([WatchLogMessage].self, from: Data(contentsOf: url)) }
+            catch { logError = "Bekleyen saat kayıtları okunamadı." }
+        }
+    }
+
+    func queue(_ message: WatchLogMessage) throws {
+        guard message.isValid(now: Date()), pendingLogs.count < 500 else {
+            throw ZenithiumError.invalidEngineInput(reason: "Kayıt geçersiz veya eşitleme kuyruğu dolu.")
+        }
+        guard logError == nil else { throw ZenithiumError.persistenceWriteFailed(detail: logError ?? "Kayıt okunamadı.") }
+        let updated = pendingLogs + [message]
+        try persist(updated)
+        pendingLogs = updated
+        start()
+        flushLogs()
+    }
+
+    private func persist(_ messages: [WatchLogMessage]) throws {
+        guard let pendingURL else { throw ZenithiumError.appGroupUnavailable(identifier: AppGroup.identifier) }
+        try JSONEncoder().encode(messages).write(to: pendingURL, options: [.atomic, .completeFileProtectionUnlessOpen])
+    }
+
+    private func acknowledge(_ id: UUID) {
+        let remaining = pendingLogs.filter { $0.id != id }
+        do { try persist(remaining); pendingLogs = remaining }
+        catch { logError = "Eşitleme onayı saklanamadı; kayıt korunuyor." }
+    }
+
+    func flushLogs() {
+        guard let session, session.activationState == .activated else { return }
+        for message in pendingLogs {
+            let alreadyQueued = session.outstandingUserInfoTransfers.contains {
+                ($0.userInfo["zenithiumLogID"] as? String) == message.id.uuidString
+            }
+            guard !alreadyQueued, let data = try? JSONEncoder().encode(message) else { continue }
+            session.transferUserInfo(["zenithiumLog": data, "zenithiumLogID": message.id.uuidString])
+        }
+    }
+
+    private func receive(_ snapshot: WidgetSnapshot, eraseBefore: Date?) {
+        do {
+            if let eraseBefore, eraseBefore > (AppGroup.defaults?.object(forKey: "watchAppliedEraseBefore") as? Date ?? .distantPast) {
+                let remaining = pendingLogs.filter { $0.createdAt > eraseBefore }
+                try persist(remaining)
+                pendingLogs = remaining
+                for transfer in session?.outstandingUserInfoTransfers ?? [] {
+                    if let data = transfer.userInfo["zenithiumLog"] as? Data,
+                       let message = try? JSONDecoder().decode(WatchLogMessage.self, from: data), message.createdAt <= eraseBefore { transfer.cancel() }
+                }
+                if let url = PendingJournalStore.url, FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+                outbox = LiveSessionOutbox()
+                AppGroup.defaults?.set(eraseBefore, forKey: "watchAppliedEraseBefore")
+                eraseRevision += 1
+            }
+            try WidgetSnapshotStore.write(snapshot)
+            latestSnapshot = snapshot
+            WidgetCenter.shared.reloadAllTimelines()
+        } catch { logError = "Telefondan gelen güncelleme saklanamadı." }
+    }
 
     /// Activate the channel. Safe to call more than once.
     func start() {
         guard WCSession.isSupported(), session == nil else { return }
         let session = WCSession.default
-        let delegate = ReachabilityWatchDelegate { [weak self] in
-            Task { @MainActor in self?.flush() }
-        }
+        let delegate = ReachabilityWatchDelegate(onReachable: { [weak self] in
+            Task { @MainActor in self?.flush(); self?.flushLogs() }
+        }, onSnapshot: { [weak self] snapshot, cutoff in
+            Task { @MainActor in self?.receive(snapshot, eraseBefore: cutoff) }
+        }, onAck: { [weak self] id in
+            Task { @MainActor in self?.acknowledge(id) }
+        })
         session.delegate = delegate
         session.activate()
         self.session = session
@@ -178,9 +253,27 @@ final class WatchSessionSender {
 private final class ReachabilityWatchDelegate: NSObject, WCSessionDelegate, @unchecked Sendable {
 
     private let onReachable: @Sendable () -> Void
+    private let onSnapshot: @Sendable (WidgetSnapshot, Date?) -> Void
+    private let onAck: @Sendable (UUID) -> Void
 
-    init(onReachable: @escaping @Sendable () -> Void) {
+    init(onReachable: @escaping @Sendable () -> Void,
+         onSnapshot: @escaping @Sendable (WidgetSnapshot, Date?) -> Void,
+         onAck: @escaping @Sendable (UUID) -> Void) {
         self.onReachable = onReachable
+        self.onSnapshot = onSnapshot
+        self.onAck = onAck
+    }
+
+    private func receive(_ context: [String: Any]) {
+        guard let data = context["zenithiumSnapshot"] as? Data,
+              let snapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: data),
+              snapshot.formatVersion == WidgetSnapshot.currentFormatVersion else { return }
+        onSnapshot(snapshot, (context["zenithiumEraseBefore"] as? Double).map { Date(timeIntervalSince1970: $0) })
+    }
+
+    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) { receive(applicationContext) }
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        if let id = (userInfo["zenithiumLogAck"] as? String).flatMap(UUID.init(uuidString:)) { onAck(id) }
     }
 
     func session(
@@ -188,7 +281,7 @@ private final class ReachabilityWatchDelegate: NSObject, WCSessionDelegate, @unc
         activationDidCompleteWith activationState: WCSessionActivationState,
         error: (any Error)?
     ) {
-        if activationState == .activated { onReachable() }
+        if activationState == .activated { receive(session.receivedApplicationContext); onReachable() }
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {

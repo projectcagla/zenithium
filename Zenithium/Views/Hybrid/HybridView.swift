@@ -293,21 +293,6 @@ struct HybridView: View {
             subtitle: "Aşağı inmesi iyi"
         ) {
             Chart(displayPoints) { point in
-                AreaMark(
-                    x: .value("Tarih", point.date),
-                    y: .value("Ceza", point.penalty * 100)
-                )
-                .foregroundStyle(ZenithiumChartGradient.area(for: ZenithiumColor.accent))
-                .interpolationMethod(.monotone)
-
-                LineMark(
-                    x: .value("Tarih", point.date),
-                    y: .value("Ceza", point.penalty * 100)
-                )
-                .foregroundStyle(ZenithiumColor.accent)
-                .lineStyle(ZenithiumChartLine.strokeStyle)
-                .interpolationMethod(.monotone)
-
                 PointMark(
                     x: .value("Tarih", point.date),
                     y: .value("Ceza", point.penalty * 100)

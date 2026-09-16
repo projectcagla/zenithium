@@ -10,6 +10,8 @@ import Charts
 import UniformTypeIdentifiers
 
 struct RacePlanView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Environment(\.displayUnits) private var units
 
     @State private var viewModel: RacePlanViewModel
@@ -150,7 +152,7 @@ struct RacePlanView: View {
                             .font(ZenithiumFont.displayValue.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textPrimary)
                             .contentTransition(.numericText())
-                            .animation(.snappy, value: content.plan.targetFinishSeconds)
+                            .animation(reduceMotion ? nil : .snappy, value: content.plan.targetFinishSeconds)
                         Text("ortalama \(ZenithiumFormat.pace(secondsPerKilometre: content.plan.averagePace, units: units))")
                             .font(ZenithiumFont.caption.monospacedDigit())
                             .foregroundStyle(ZenithiumColor.textSecondary)

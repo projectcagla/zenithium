@@ -13,6 +13,8 @@ import SwiftUI
 import Charts
 
 struct EnduranceView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     @Environment(\.displayUnits) private var units
 
     @ScaledMetric private var chartHeight: CGFloat = 150
@@ -274,7 +276,7 @@ struct EnduranceView: View {
                         }
                     }
                     .frame(height: 10)
-                    .animation(.snappy, value: state.adaptation)
+                    .animation(reduceMotion ? nil : .snappy, value: state.adaptation)
                     .accessibilityHidden(true)
 
                     Text(summary)

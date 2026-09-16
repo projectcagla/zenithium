@@ -4,12 +4,8 @@
 //
 //  The optional Apple Foundation Models layer. Faz 24.
 //
-//  ASSUMPTION AI-1: this file is compiled only where `FoundationModels` exists, and it has
-//  never been compiled in this repository — the container has no Swift toolchain and no
-//  iOS 26 SDK. It is written against the framework's documented shape. If the API differs,
-//  the failure is contained to this file and the app falls back to `NarrativeEngine`, which
-//  is what runs everywhere else anyway. Reversal: delete the file; nothing else references
-//  its type outside `#if canImport` guards.
+//  Compiled and weak-linked with FoundationModels on iOS 26+. Older systems use the
+//  deterministic narrator. Numerical body and evidence always stay untouched.
 //
 //  What the model is and is not allowed to do:
 //
@@ -33,21 +29,11 @@ enum FoundationModelNarrator {
     /// Instructions the session is created with. Constraints first, because they are the
     /// part that must survive a long context.
     static let instructions = """
-    Sen Zenithium adlı sağlık ve antrenman uygulamasının anlatıcısısın. Sana verilen
-    briefing zaten doğru ve zaten hesaplanmış. Görevin onu daha akıcı bir Türkçeyle
-    yeniden yazmak.
-
-    Kesin kurallar:
-    - Sana verilmeyen hiçbir sayıyı, oranı veya olguyu uydurma.
-    - Teşhis koyma, hastalık adı verme, ilaç veya takviye önerme, doz söyleme.
-    - Kalori, kilo veya diyet hedefi verme.
-    - Kullanıcıya bir belirtiyi görmezden gelmesini asla söyleme.
-    - Referans aralığı dışındaki bir kan değeri için tek söyleyeceğin şey hekime
-      danışması gerektiğidir.
-    - Sakin ve doğrudan yaz. Abartma, motivasyon konuşması yapma, ünlem kullanma.
-
-    Çıktı biçimi: önce tek cümlelik başlık, sonra boş satır, sonra en fazla üç cümlelik
-    gövde. Madde işareti kullanma.
+    Zenithium için sana verilen başlığı aynı anlamı koruyarak sade Türkçeyle yeniden yaz.
+    Yalnızca tek kısa cümle döndür. Gövde, açıklama veya öneri ekleme.
+    Rakam, sayı sözcüğü, miktar, oran, süre, karşılaştırma veya yeni sağlık iddiası üretme.
+    Tanı, hastalık, ilaç, takviye, kalori, kilo ve diyet hakkında yorum yapma.
+    Anlamı koruyamıyorsan verilen başlığı aynen döndür.
     """
 
     /// Whether the system model is ready on this device.
@@ -77,48 +63,16 @@ enum FoundationModelNarrator {
 
     /// The prompt: the briefing to rewrite, and nothing the user cannot already see.
     static func prompt(for briefing: Briefing, context: BriefingContext) -> String {
-        var lines: [String] = []
-        lines.append("Başlık: \(briefing.headline)")
-        lines.append("Gövde: \(briefing.body)")
-        for point in briefing.points {
-            lines.append("Destekleyici: \(point)")
-        }
-        lines.append("Kullanıcının merceği: \(context.lens.displayName)")
-        return """
-        Aşağıdaki briefingi yeniden yaz.
-
-        \(lines.joined(separator: "\n"))
-        """
+        // The model never sees quantitative body text and cannot author it.
+        briefing.headline
     }
 
-    /// Split the model's answer back into a headline and a body.
-    ///
-    /// The supporting points are *not* taken from the model. They carry the lab and
-    /// correlation sentences, which are the ones with the strictest wording requirements,
-    /// so they stay exactly as the engine wrote them.
     static func parse(_ text: String, from original: Briefing) -> Briefing? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let blocks = trimmed
-            .components(separatedBy: "\n\n")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        guard let headline = blocks.first else { return nil }
-        let body = blocks.count > 1 ? blocks.dropFirst().joined(separator: " ") : original.body
-
-        // A model that ignored the format and returned one long paragraph is not usable as
-        // a headline, so the original wins rather than truncating mid-thought.
-        guard headline.count <= 160 else { return nil }
-
-        return Briefing(
-            headline: headline,
-            body: body,
-            points: original.points,
-            requiresClinicianPrompt: original.requiresClinicianPrompt,
-            source: .onDeviceModel
-        )
+        let headline = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !headline.isEmpty, headline.count <= 160, !headline.contains("\n"),
+              NarrationGuard.containsNoQuantity(headline) else { return nil }
+        return Briefing(headline: headline, body: original.body, points: original.points,
+            requiresClinicianPrompt: original.requiresClinicianPrompt, source: .onDeviceModel)
     }
 
     private static func description(of reason: SystemLanguageModel.Availability.UnavailableReason) -> String {

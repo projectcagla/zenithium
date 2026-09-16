@@ -32,6 +32,31 @@ final class TodayViewModel {
 
     private(set) var state: ViewState<Content> = .loading
     private(set) var isRefreshing = false
+    private(set) var scoreDetails = ScoreDetails()
+    private(set) var baselineSnapshots: [MetricKind: BaselineSnapshot] = [:]
+
+    func history(_ id: String, current: Double?, date: Date) -> [TrendPoint] {
+        var points = scoreDetails.history.compactMap { record -> TrendPoint? in
+            let value: Double?
+            switch id {
+            case "hrv": value = record.heartRateVariability
+            case "rhr": value = record.restingHeartRate
+            case "sleep": value = record.sleepDurationSeconds > 0 ? record.sleepDurationSeconds / 3600 : nil
+            case "temp": value = record.wristTemperatureDelta
+            default: value = nil
+            }
+            guard let value, value.isFinite else { return nil }
+            return TrendPoint(date: record.dayStart, value: value)
+        }
+        if let current, current.isFinite { points.append(TrendPoint(date: date, value: current)) }
+        return points
+    }
+
+    func makeTrendsViewModel() -> TrendsViewModel? {
+        guard let records else { return nil }
+        return TrendsViewModel(repository: records, bloodMarkers: bloodMarkers,
+            baselines: records as? any BaselineRepository, nowProvider: nowProvider)
+    }
 
     /// The narrated briefing. `nil` until the first pass has produced one; the card is
     /// simply absent until then rather than showing a placeholder.
@@ -185,6 +210,9 @@ final class TodayViewModel {
         athleticDecision = nil
         prescription = nil
         recommendations = []
+        baselineSnapshots = result.baselines
+        scoreDetails = (try? await ScoreDetailsCoordinator(records: records, health: workoutSource ?? cycleSource)
+            .load(for: result)) ?? ScoreDetails(comparisonNote: "Geçmiş şu anda okunamıyor. Yenileyerek tekrar deneyebilirsin.")
         switch result.recovery.availability {
         case .calibrating(let collected, let required):
             state = .calibrating(
@@ -203,8 +231,10 @@ final class TodayViewModel {
                 else { choices.decision = .progressive }
                 let context = await briefingContext(for: result)
                 planPosition = await nextPlanPosition(for: result)
-                prescription = await suggestion(for: result, context: context, preference: choices.decision)
-                athleticDecision = await synthesizeDecision(for: result, context: context, preference: choices.decision)
+                let daily = try await DailyDecisionCoordinator(records: records, markers: bloodMarkers, health: workoutSource)
+                    .evaluate(result, preferences: choices)
+                athleticDecision = daily.decision
+                prescription = await suggestion(for: result, context: context, preference: choices.decision, load: daily.load)
                 recommendations = await synthesizeRecommendations(for: result, context: context)
                 guard !Task.isCancelled else { return }
                 startBriefing(context: context)
@@ -253,22 +283,20 @@ final class TodayViewModel {
         context: BriefingContext
     ) async -> [Recommendation] {
         var load: TrainingLoadOutput?
-        var daysCount = 14
         var sleepDebtLedger: SleepDebtLedger?
         var socialJetlag: SocialJetlag?
         if let records {
             let window = context.date.addingTimeInterval(-120 * 86_400)
             if let days = try? await records.dayRecords(from: window, through: context.date) {
-                daysCount = days.count
                 load = TrainingLoadEngine.analyse(
                     TrainingLoadInput(
-                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
+                        days: days.compactMap(\.recordedTrainingLoad),
                         referenceDay: context.date
                     )
                 )
                 sleepDebtLedger = SleepDebtEngine.ledger(
                     days: days,
-                    needHours: 8.0,
+                    needHours: result.profile.baselineSleepNeedHours,
                     now: context.date,
                     calendar: Calendar.autoupdatingCurrent
                 )
@@ -280,33 +308,8 @@ final class TodayViewModel {
             }
         }
 
-        let calibration = CalibrationState(recordedDaysCount: max(1, daysCount))
-        let overnight = OvernightData(
-            night: DateInterval(start: result.record.dayStart.addingTimeInterval(-8 * 3600), duration: 8 * 3600),
-            heartRateVariability: result.record.heartRateVariability,
-            restingHeartRate: result.record.restingHeartRate,
-            wristTemperature: result.record.wristTemperatureDelta,
-            respiratoryRate: result.record.respiratoryRate
-        )
-
-        let sleepStart = result.record.sleepStart ?? result.record.dayStart.addingTimeInterval(-8 * 3600)
-        var sleepSegments: [SleepSegment] = []
-        if result.record.deepSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart, duration: result.record.deepSeconds), stage: .asleepDeep, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-        if result.record.remSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds), duration: result.record.remSeconds), stage: .asleepREM, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-        if result.record.coreSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds + result.record.remSeconds), duration: result.record.coreSeconds), stage: .asleepCore, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-
-        let dataQuality = DataQualityEngine.assess(
-            overnight: overnight,
-            sleepSegments: sleepSegments,
-            daySamples: [],
-            calibration: calibration
-        )
+        let calibration = result.calibration
+        let dataQuality = result.dataQuality
 
         let userAge: Int? = result.profile.dateOfBirth.flatMap {
             Calendar.autoupdatingCurrent.dateComponents([.year], from: $0, to: context.date).year
@@ -338,91 +341,6 @@ final class TodayViewModel {
         return RecommendationEngine.recommendations(input: input)
     }
 
-    /// Synthesizes the deterministic athletic decision trace.
-    private func synthesizeDecision(
-        for result: RecalculationResult,
-        context: BriefingContext,
-        preference: DecisionPreference
-    ) async -> EngineResult<AthleticDecision>? {
-        var load: TrainingLoadOutput?
-        var daysCount = 14
-        if let records {
-            let window = context.date.addingTimeInterval(-120 * 86_400)
-            if let days = try? await records.dayRecords(from: window, through: context.date) {
-                daysCount = days.count
-                load = TrainingLoadEngine.analyse(
-                    TrainingLoadInput(
-                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
-                        referenceDay: context.date
-                    )
-                )
-            }
-        }
-
-        let calibration = CalibrationState(recordedDaysCount: max(1, daysCount))
-        let overnight = OvernightData(
-            night: DateInterval(start: result.record.dayStart.addingTimeInterval(-8 * 3600), duration: 8 * 3600),
-            heartRateVariability: result.record.heartRateVariability,
-            restingHeartRate: result.record.restingHeartRate,
-            wristTemperature: result.record.wristTemperatureDelta,
-            respiratoryRate: result.record.respiratoryRate
-        )
-
-        let sleepStart = result.record.sleepStart ?? result.record.dayStart.addingTimeInterval(-8 * 3600)
-        var sleepSegments: [SleepSegment] = []
-        if result.record.deepSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart, duration: result.record.deepSeconds), stage: .asleepDeep, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-        if result.record.remSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds), duration: result.record.remSeconds), stage: .asleepREM, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-        if result.record.coreSeconds > 0 {
-            sleepSegments.append(SleepSegment(interval: DateInterval(start: sleepStart.addingTimeInterval(result.record.deepSeconds + result.record.remSeconds), duration: result.record.coreSeconds), stage: .asleepCore, sourceBundleIdentifier: "com.apple.health", timeZoneIdentifier: result.record.timeZoneIdentifier))
-        }
-
-        let dataQuality = DataQualityEngine.assess(
-            overnight: overnight,
-            sleepSegments: sleepSegments,
-            daySamples: [],
-            calibration: calibration
-        )
-
-        var markers: [BloodMarkerSnapshot] = []
-        if let bloodMarkers {
-            markers = (try? await bloodMarkers.bloodMarkers()) ?? []
-        }
-        var ecgRecords: [ECGRecord] = []
-        if let workoutSource {
-            ecgRecords = (try? await workoutSource.fetchECGRecords(days: 30, now: nowProvider())) ?? []
-        }
-        let disabledIDs = ClinicalPreferences.disabledModifierIDs()
-        let clinicalContext = ClinicalContextEngine.assess(
-            markers: markers,
-            ecgRecords: ecgRecords,
-            disabledModifierIDs: disabledIDs,
-            sex: result.profile.biologicalSex,
-            now: nowProvider()
-        )
-
-        let input = DecisionInput(
-            recoveryScore: result.recovery.score,
-            recoveryBand: result.recovery.band,
-            sleepScore: result.record.sleepScore,
-            acuteLoad: load?.acuteLoad,
-            chronicLoad: load?.chronicLoad,
-            acwr: load?.ratio,
-            muscleReadiness: result.muscle,
-            dataQuality: dataQuality,
-            calibration: calibration,
-            lens: result.profile.trainingLens,
-            clinical: clinicalContext,
-            preference: preference,
-            evaluatedAt: context.date
-        )
-
-        return DecisionEngine.decide(input: input)
-    }
-
     /// Today's prescription.
     ///
     /// Built from the same context the narrator saw, plus the load reading and the muscle
@@ -431,21 +349,9 @@ final class TodayViewModel {
     private func suggestion(
         for result: RecalculationResult,
         context: BriefingContext,
-        preference: DecisionPreference
+        preference: DecisionPreference,
+        load: TrainingLoadOutput?
     ) async -> Prescription? {
-        var load: TrainingLoadOutput?
-        if let records {
-            let window = context.date.addingTimeInterval(-120 * 86_400)
-            if let days = try? await records.dayRecords(from: window, through: context.date) {
-                load = TrainingLoadEngine.analyse(
-                    TrainingLoadInput(
-                        days: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
-                        referenceDay: context.date
-                    )
-                )
-            }
-        }
-
         return PrescriptionEngine.prescribe(
             recovery: result.recovery,
             lens: result.profile.trainingLens,
@@ -465,7 +371,8 @@ final class TodayViewModel {
                     todayHRV: result.record.heartRateVariability
                 )
             },
-            preference: preference
+            preference: preference,
+            decision: athleticDecision?.value.action
         )
     }
 
@@ -577,34 +484,9 @@ final class TodayViewModel {
         for result: RecalculationResult,
         now: Date
     ) async -> (phase: CyclePhaseEstimate?, hrvMean: Double?) {
-        guard result.profile.tracksMenstrualCycle, let cycleSource else { return (nil, nil) }
-
-        let calendar = Calendar.autoupdatingCurrent
-        guard let flowDays = try? await cycleSource.fetchMenstrualFlowDays(
-            days: CycleEngine.historyWindowDays,
-            now: now,
-            calendar: calendar
-        ), !flowDays.isEmpty else { return (nil, nil) }
-
-        guard let phase = CycleEngine.phase(on: now, flowDays: flowDays, calendar: calendar) else {
-            return (nil, nil)
-        }
-
-        // The phase-aware mean needs a long HRV history, and it is only used when the phase
-        // itself is confident — scoring against the wrong phase is worse than pooling.
-        guard phase.isConfident, let records else { return (phase, nil) }
-        let window = now.addingTimeInterval(-Double(CycleEngine.historyWindowDays) * 86_400)
-        guard let days = try? await records.dayRecords(from: window, through: now) else {
-            return (phase, nil)
-        }
-
-        let values = days.compactMap { day -> (day: Date, value: Double)? in
-            guard let hrv = day.heartRateVariability else { return nil }
-            return (day.dayStart, hrv)
-        }
-        let partitioned = CycleEngine.partition(values: values, flowDays: flowDays, calendar: calendar)
-        let baseline = CycleEngine.phaseBaseline(for: phase.phase.baselineGroup, partitioned: partitioned)
-        return (phase, baseline?.mean)
+        // Bleeding dates do not confirm ovulation or an individual's autonomic response.
+        // Preserve imported preferences, but do not infer a correction or explain away a low score.
+        return (nil, nil)
     }
 
     /// Rank the journal correlations.

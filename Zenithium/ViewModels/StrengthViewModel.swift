@@ -21,6 +21,7 @@ final class StrengthViewModel {
         /// How many logged sessions fell in the volume window, so an empty chart can say
         /// whether the week was quiet or the log is.
         let sessionsThisWeek: Int
+        var exerciseProgress: [ExerciseProgress] = []
     }
 
     private(set) var state: ViewState<Content> = .loading
@@ -71,7 +72,7 @@ final class StrengthViewModel {
             } ?? []
             let loadRatio = (try? await records.dayRecords(from: now.addingTimeInterval(-120 * 86_400), through: now))
                 .map { days -> Double? in
-                    let loads = days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) }
+                    let loads = days.compactMap(\.recordedTrainingLoad)
                     return TrainingLoadEngine.analyse(
                         TrainingLoadInput(days: loads, referenceDay: now)
                     ).ratio
@@ -88,7 +89,8 @@ final class StrengthViewModel {
                         muscleReadiness: readiness,
                         loadRatio: loadRatio
                     ),
-                    sessionsThisWeek: logged.filter { $0.performedAt >= weekStart }.count
+                    sessionsThisWeek: logged.filter { $0.performedAt >= weekStart }.count,
+                    exerciseProgress: StrengthEngine.exerciseProgress(from: logged, now: now)
                 )
             )
         } catch {

@@ -216,7 +216,7 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 15px 0;
+  padding-block: 15px;
   flex-wrap: wrap;
 }
 .mark {
@@ -254,7 +254,7 @@ header {
   display: grid;
   gap: clamp(32px, 5vw, 64px);
   align-items: center;
-  padding: clamp(48px, 6vw, 84px) 0 clamp(48px, 6vw, 76px);
+  padding-block: clamp(48px, 6vw, 84px) clamp(48px, 6vw, 76px);
 }
 @media (min-width: 940px) {
   .hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
@@ -894,7 +894,14 @@ footer {
 
     <div style="display:grid; gap:20px; max-width:var(--measure);">
 
-      <!-- Şartname Gereği Eklenen Yeni SSS: Skor Vermeme / Kalibrasyon -->
+      <div class="panel" style="padding:20px;">
+        <h3>Ayarlar ve tahliller nerede?</h3>
+        <p>Keşfet bölümünden Ayarlar, Kan Değerleri ve Belgeler ekranlarına ulaşabilirsin. Tahlil içe aktarırken okunan her satırı doğrula. Arşiv, içe aktarma ve tümünü silme işlemleri Ayarlar → Veri bölümündedir.</p>
+      </div>
+      <div class="panel" style="padding:20px;">
+        <h3>Saat kayıtlarım neden bekliyor?</h3>
+        <p>iPhone ve Apple Watch uygulamasını aç; eşleşme ve Bluetooth bağlantısını kontrol et. Telefon kaydettiğini onaylayana kadar set kaydı saatte korunur. Aynı kaydı tekrar girmek gerekmez.</p>
+      </div>
       <div class="panel" style="padding:20px;">
         <span class="eyebrow" style="color:var(--moderate)">En Çok Sorulan</span>
         <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Uygulama neden bazı günler toparlanma skoru vermiyor?</h3>
@@ -904,25 +911,25 @@ footer {
       <div class="panel" style="padding:20px;">
         <span class="eyebrow">Kalibrasyon Dönemi</span>
         <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">İlk günlerde skor neden değişken veya kısıtlı?</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Her bireyin otonom sinir sistemi benzersizdir. Bir sporcuda 45 ms HRV toparlanma anlamına gelirken, bir diğerinde aşırı yorgunluk işaretidir. Bireysel taban aralığının (normal dağılım bandının) oturması için en az 14 gecelik sürekli ölçüm gereklidir. Kalibrasyon süresince öneriler düşük güven katsayısıyla verilir.</p>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Her bireyin otonom sinir sistemi benzersizdir. Aynı HRV değeri farklı kişilerde farklı geçmişlere karşılık gelir; tek başına yorgunluk tanısı koymaz. Kişisel tabanın olgunlaşması için 14 geçerli gece örneği kullanılır. Kalibrasyon süresince öneriler düşük güven katsayısıyla verilir.</p>
       </div>
 
       <div class="panel" style="padding:20px;">
         <span class="eyebrow">Öneri Dili</span>
         <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Neden bazı öneriler emir kipi ("yap") yerine "düşünebilirsin" diyor?</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Bir tavsiyenin ne kadar iddialı olabileceğini arkasındaki akademik çalışmanın kanıt gücü belirler. Eğer dayanak alınan literatür (örneğin Plews 2013) tekil gün sapmalarında kesin hüküm vermiyorsa, Zenithium kullanıcıya yapay kesinlik satmaz; sınırları korur.</p>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Bir tavsiyenin ne kadar iddialı olabileceğini arkasındaki akademik çalışmanın kanıt gücü belirler. Eğer dayanak alınan literatür (örneğin Plews 2013) tekil gün sapmalarında kesin hüküm vermiyorsa, öneri dili bu belirsizliği açıkça yansıtır.</p>
       </div>
 
       <div class="panel" style="padding:20px;">
         <span class="eyebrow">Tahlil Entegrasyonu</span>
         <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Kan tahlilim neden klinik olarak teşhis edilmiyor?</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium bir teşhis cihazı değildir. Tahlil modülü yalnızca belirteçlerin sporcu referans aralıklarındaki konumunu ve antrenman yüküyle olan kinetiğini gösterir. Anormal değerlerin klinik değerlendirmesi daima hekiminiz tarafından yapılmalıdır.</p>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Zenithium bir teşhis cihazı değildir. Tahlil modülü rapordaki referans aralığını, kayıt geçmişini ve antrenmanla zaman yakınlığını gösterir. Evrensel sporcu aralığı veya nedensellik iddia etmez. Anormal değerlerin klinik değerlendirmesi daima hekiminiz tarafından yapılmalıdır.</p>
       </div>
 
       <div class="panel" style="padding:20px;">
-        <span class="eyebrow">Yapay Zekâ ve Sohbet</span>
-        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Neden serbest sohbet edebileceğim bir yapay zekâ botu yok?</h3>
-        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Büyük dil modelleri (LLM) biyometrik veride halüsinasyon görmeye ve tutarsız tavsiyeler üretmeye yatkındır. Zenithium deterministik bir matematik motoruyla çalışır; aynı biyometrik girdi her zaman aynı şeffaf kanıt zincirini üretir.</p>
+        <span class="eyebrow">Hesap ve anlatım</span>
+        <h3 style="font-size:1.15rem; margin:6px 0 10px; color:var(--text);">Skorlar nasıl hesaplanıyor?</h3>
+        <p style="color:var(--dim); font-size:0.92rem; line-height:1.6;">Skorlar, eşikler ve kararlar cihazdaki hesap kodundan gelir. Uygun cihazlarda Apple Foundation Models yalnızca sayısız kısa bir başlığı yeniden ifade edebilir; puanı, sayısal açıklamayı veya kararı değiştiremez. Bu özellik olmadan aynı hesaplar hazır metinlerle çalışır.</p>
       </div>
 
     </div>

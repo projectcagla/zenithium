@@ -57,6 +57,14 @@ struct PlanView: View {
             if let position = content.position {
                 positionCard(position, taper: content.taperSummary, projection: content.taperProjection)
                 phaseTimeline(position)
+                SectionCard(title: "Hedef ve haftalık yük") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let summary = content.targetSummary { Text(summary).zenithiumBody() }
+                        if let load = content.weeklyLoad { Text("Haftalık planlama senaryosu: \(ZenithiumFormat.metric(load, digits: 0)) TRIMP").zenithiumBody() }
+                        else { Text("Haftalık yük hedefi için yeterli kayıt veya uygun bağlam yok.").zenithiumBody() }
+                        if let note = content.weeklyLoadNote { Text(note).zenithiumCaption() }
+                    }
+                }
             } else {
                 emptyCard
             }
@@ -207,6 +215,9 @@ private struct GoalEventEditorView: View {
     @State private var kind: GoalEventKind = .race
     @State private var name = ""
     @State private var date = Date().addingTimeInterval(60 * 86_400)
+    @State private var usesRaceTarget = false
+    @State private var raceDistance = 10.0
+    @State private var raceMinutes = 50.0
     @State private var usesPlanStart = false
     @State private var planStart = Date()
 
@@ -228,6 +239,15 @@ private struct GoalEventEditorView: View {
                     Text("Tapering süresi türe göre değişir: yarış 14 gün, Hyrox 10, kuvvet testi 5.")
                 }
 
+                if kind == .race {
+                    Section("Koşu hedefi") {
+                        Toggle("Mesafe ve süre ekle", isOn: $usesRaceTarget)
+                        if usesRaceTarget {
+                            LabeledContent("Mesafe, km") { TextField("10", value: $raceDistance, format: .number).keyboardType(.decimalPad) }
+                            LabeledContent("Hedef süre, dakika") { TextField("50", value: $raceMinutes, format: .number).keyboardType(.decimalPad) }
+                        }
+                    }
+                }
                 Section {
                     Toggle("Hazırlığın başlangıcını gir", isOn: $usesPlanStart)
                     if usesPlanStart {
@@ -260,7 +280,8 @@ private struct GoalEventEditorView: View {
                                 kind: kind,
                                 name: name,
                                 date: date,
-                                planStart: usesPlanStart ? planStart : nil
+                                planStart: usesPlanStart ? planStart : nil,
+                                raceTarget: usesRaceTarget && kind == .race ? RaceGoalTarget(distanceMetres: raceDistance * 1000, finishSeconds: raceMinutes * 60) : nil
                             )
                             if viewModel.saveError == nil { dismiss() }
                         }

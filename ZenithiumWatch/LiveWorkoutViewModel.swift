@@ -90,7 +90,7 @@ final class LiveWorkoutViewModel {
     private var sessionID = UUID()
 
     /// Pushes the session's state to the phone, which runs the Live Activity from it.
-    private let sender = WatchSessionSender()
+    private let sender = WatchSessionSender.shared
 
     /// Resting and maximum heart rate. Read from the snapshot where the phone has published
     /// them, otherwise the population defaults — a live screen that refuses to run because a
@@ -313,7 +313,11 @@ final class LiveWorkoutViewModel {
 
     private func readSnapshot() {
         let snapshot = WidgetSnapshotStore.read()
-        guard snapshot.hasData else { return }
+        guard snapshot.hasData, Calendar.current.isDateInToday(snapshot.generatedAt) else {
+            strainBeforeSession = 0
+            ceiling = nil
+            return
+        }
         strainBeforeSession = snapshot.dayStrain
         ceiling = snapshot.targetCeiling
     }

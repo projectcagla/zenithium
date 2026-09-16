@@ -13,6 +13,8 @@
 import SwiftUI
 
 struct VitalsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
 
     @State var viewModel: VitalsViewModel
     @State private var expanded: VitalSign?
@@ -192,7 +194,7 @@ struct VitalsView: View {
                     }
                 }
 
-                Text("Bu değer tıbbi bir teşhis değildir; kardiyovasküler ve toparlanma eğilimlerinizin ağırlıklı bileşik indeksidir.")
+                Text("Biyolojik yaş veya yaşam süresi tahmini değildir. Bileşen ağırlıkları ürün tercihidir; bu indeks için doğrulanmış klinik güven aralığı yoktur. Kapsam, doğruluk olasılığı anlamına gelmez.")
                     .font(ZenithiumFont.caption)
                     .foregroundStyle(ZenithiumColor.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -287,7 +289,7 @@ struct VitalsView: View {
                                 ledger.hours >= 1 ? ZenithiumColor.spectrumAmber : ZenithiumColor.textPrimary
                             )
                             .contentTransition(.numericText())
-                            .animation(.snappy, value: ledger.hours)
+                            .animation(reduceMotion ? nil : .snappy, value: ledger.hours)
                         Text("saat")
                             .font(ZenithiumFont.unit)
                             .foregroundStyle(ZenithiumColor.textSecondary)

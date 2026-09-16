@@ -873,7 +873,7 @@ actor HealthKitService: HealthDataProviding {
         }
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Value, any Error>) in
-                let query = build { result in
+                let query = build { [weak self] result in
                     Task { [weak self] in
                         // Resumption ownership is claimed on the actor. Exactly one of the
                         // completion path and the cancellation path can win.

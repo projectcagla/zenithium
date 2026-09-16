@@ -1,16 +1,12 @@
 import SwiftUI
-import SwiftData
 
 struct TodayView: View {
 
     @State var viewModel: TodayViewModel
     var embedInNavigation: Bool = true
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var baselineSnapshots: [BaselineSnapshot] = []
     @State private var metricTrendsViewModel: TrendsViewModel?
-    @State private var metricHistory: [String: [Double]] = [:]
     @State private var showingProfile = false
 
     @Namespace private var todayNamespace
@@ -95,6 +91,7 @@ struct TodayView: View {
                         .foregroundStyle(ZenithiumColor.textSecondary)
                         .frame(width: 44, height: 44)
                 }
+                .modifier(GlassControlSurface())
                 .accessibilityLabel("Profil özeti")
                 Spacer()
                 Text(content.record.dayStart.formatted(.dateTime.day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))))
@@ -106,6 +103,7 @@ struct TodayView: View {
             if let circadian = content.circadian { circadianStripSection(circadian) }
             DisclosureGroup("Ölçümler ve karar ayrıntıları") {
                 VStack(spacing: ZenithiumSpacing.sectionSpacing) {
+                    RecoveryChangeView(change: viewModel.scoreDetails.change, note: viewModel.scoreDetails.comparisonNote)
                     overnightSection(content)
                     evidenceSection(content)
                     if !viewModel.recommendations.isEmpty { recommendationsSection }
@@ -117,13 +115,12 @@ struct TodayView: View {
             disclaimerFooter
         }
         .padding(.top, ZenithiumSpacing.s)
-        .task(id: content.record.computedAt) { loadMetricHistory(before: content.record.dayStart) }
         .sheet(isPresented: $showingProfile) {
             NavigationStack {
                 VStack(alignment: .leading, spacing: ZenithiumSpacing.xl) {
                     Text("Sana göre bir ritim").screenTitle()
                     Text(content.profile.trainingLens.displayName).sectionTitle()
-                    Text("Toparlanma, uyku ve antrenman verilerin bu merceğe göre yorumlanıyor. Profil tercihlerini Daha fazla → Ayarlar bölümünden düzenleyebilirsin.")
+                    Text("Toparlanma, uyku ve antrenman verilerin bu merceğe göre yorumlanıyor. Profil tercihlerini Keşfet → Ayarlar bölümünden düzenleyebilirsin.")
                         .zenithiumSecondary()
                     QualityChip(quality: content.record.dataQuality, reasons: content.record.dataQualityReasons)
                     Spacer()
@@ -159,10 +156,10 @@ struct TodayView: View {
             Text(rationale)
                 .zenithiumBody()
                 .multilineTextAlignment(.center)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(rationale)
             if confidence < 0.70 {
-                Label("Kişisel tabanın gelişiyor · \(ZenithiumFormat.percent(confidence)) güven", systemImage: "circle.dotted")
+                Label("Kişisel tabanın gelişiyor · \(ZenithiumFormat.percent(confidence)) veri kapsamı", systemImage: "circle.dotted")
                     .zenithiumCaption()
             }
         }
@@ -229,30 +226,24 @@ struct TodayView: View {
     }
 
     private func baseline(_ metric: MetricKind) -> BaselineSnapshot? {
-        baselineSnapshots.first { $0.metric == metric && $0.isSeeded }
+        viewModel.baselineSnapshots[metric].flatMap { $0.isSeeded ? $0 : nil }
     }
 
     private func history(_ id: String, current: Double?) -> [Double] {
-        guard let current, current.isFinite else { return [] }
-        return (metricHistory[id] ?? []) + [current]
+        viewModel.history(id, current: current, date: viewModel.state.value?.record.dayStart ?? Date()).map(\.value)
     }
 
-    private func loadMetricHistory(before date: Date) {
-        baselineSnapshots = ((try? modelContext.fetch(FetchDescriptor<BaselineState>())) ?? []).compactMap(\.snapshot)
-        let start = Calendar.autoupdatingCurrent.date(byAdding: .day, value: -60, to: date) ?? date
-        var query = FetchDescriptor<BiometricDayRecord>(
-            predicate: #Predicate { $0.dayStart >= start && $0.dayStart < date },
-            sortBy: [SortDescriptor(\.dayStart, order: .reverse)]
-        )
-        query.fetchLimit = 60
-        guard let rows = try? modelContext.fetch(query) else { metricHistory = [:]; return }
-        let ordered = rows.reversed()
-        metricHistory = [
-            "hrv": ordered.compactMap(\.hrvSDNN),
-            "rhr": ordered.compactMap(\.restingHR),
-            "sleep": ordered.filter { $0.sleepDurationSeconds > 0 }.map { $0.sleepDurationSeconds / 3600 },
-            "temp": ordered.compactMap(\.wristTempDelta)
-        ]
+    private func historyDates(_ id: String) -> [Date] {
+        guard let record = viewModel.state.value?.record else { return [] }
+        let current: Double?
+        switch id {
+        case "hrv": current = record.heartRateVariability
+        case "rhr": current = record.restingHeartRate
+        case "sleep": current = record.sleepDurationSeconds > 0 ? record.sleepDurationSeconds / 3600 : nil
+        case "temp": current = record.wristTemperatureDelta
+        default: current = nil
+        }
+        return viewModel.history(id, current: current, date: record.dayStart).map(\.date)
     }
 
     private func supportingMetricItem(
@@ -267,8 +258,7 @@ struct TodayView: View {
     ) -> some View {
         Button {
             if id == "hrv" || id == "rhr" {
-                let store = ZenithiumStore(modelContainer: modelContext.container)
-                metricTrendsViewModel = TrendsViewModel(repository: store, bloodMarkers: store)
+                metricTrendsViewModel = viewModel.makeTrendsViewModel()
             } else {
                 metricTrendsViewModel = nil
             }
@@ -281,7 +271,8 @@ struct TodayView: View {
                     bandValues: bandValues,
                     baseline: baseline,
                     sigma: sigma,
-                    description: description
+                    description: description,
+                    dates: historyDates(id)
                 )
             }
         } label: {
@@ -304,7 +295,7 @@ struct TodayView: View {
                         baseline: baseline,
                         sigma: sigma,
                         unit: unit,
-                        style: .micro
+                        style: .micro, dates: historyDates(id)
                     )
                     .matchedGeometryEffect(id: "baseline-\(id)", in: todayNamespace)
                     .frame(height: 20)
@@ -378,7 +369,7 @@ struct TodayView: View {
                     HStack {
                         Label("Bu kararın nedeni", systemImage: "arrow.up.right")
                         Spacer()
-                        Text("\(ZenithiumFormat.percent(confidence)) güven")
+                        Text("\(ZenithiumFormat.percent(confidence)) veri kapsamı")
                     }
                     .font(ZenithiumFont.caption)
                     .foregroundStyle(ZenithiumColor.textSecondary)
@@ -553,7 +544,7 @@ struct TodayView: View {
 
     private func actionTitle(_ action: DecisionAction) -> String {
         switch action {
-        case .push: return "Yüksek Adaptasyon Kapasitesi"
+        case .push: return "Yükü artırmaya uygun plan"
         case .maintain: return "Dengeli Yüklenme"
         case .recover: return "Toparlanma Önceliği"
         case .calibrate: return "Kalibrasyon Süreci"
@@ -670,7 +661,7 @@ struct TodayView: View {
                     baseline: metric.baseline,
                     sigma: metric.sigma,
                     unit: metric.unit,
-                    style: .full
+                    style: .full, dates: metric.dates
                 )
                 .matchedGeometryEffect(id: "baseline-\(metric.id)", in: todayNamespace)
 
@@ -702,6 +693,7 @@ struct SupportingMetricDetail: Identifiable, Equatable {
     let baseline: Double?
     let sigma: Double?
     let description: String
+    var dates: [Date] = []
 }
 
 #Preview("Bugün · dolu") {

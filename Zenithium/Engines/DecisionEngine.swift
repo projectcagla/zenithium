@@ -23,6 +23,7 @@ struct DecisionInput: Sendable {
     let clinical: ClinicalContext
     let preference: DecisionPreference
     let evaluatedAt: Date
+    let personalContexts: [PersonalContextEntry]
 
     init(
         recoveryScore: Double?,
@@ -37,7 +38,8 @@ struct DecisionInput: Sendable {
         lens: TrainingLens = .endurance,
         clinical: ClinicalContext = .neutral,
         preference: DecisionPreference = .progressive,
-        evaluatedAt: Date = Date()
+        evaluatedAt: Date = Date(),
+        personalContexts: [PersonalContextEntry] = []
     ) {
         self.recoveryScore = recoveryScore
         self.recoveryBand = recoveryBand
@@ -52,6 +54,7 @@ struct DecisionInput: Sendable {
         self.clinical = clinical
         self.preference = preference
         self.evaluatedAt = evaluatedAt
+        self.personalContexts = personalContexts
     }
 }
 
@@ -68,7 +71,7 @@ enum DecisionEngine {
             TraceStep(
                 stepNumber: stepCounter,
                 engineName: "DataQualityEngine",
-                inputDescription: "Gece Takma: \(MathSupport.decimal(input.dataQuality.nocturnalWearHours)) sa, Kalibrasyon: \(input.calibration.tier.title)",
+                inputDescription: "Kayıtlı uyku: \(MathSupport.decimal(input.dataQuality.nocturnalWearHours)) sa, Kalibrasyon: \(input.calibration.tier.title)",
                 outputDescription: "Veri Kalitesi: \(input.dataQuality.grade.rawValue) (Güven: %\(Int(input.dataQuality.confidenceFactor * 100)))",
                 physiologicalImpact: input.dataQuality.isUsableForRecovery ? "Biyometrik sinyaller toparlanma hesaplaması için yeterli." : "Yetersiz gece saati verisi nedeniyle kararlar sınırlandırıldı."
             )
@@ -229,9 +232,9 @@ enum DecisionEngine {
                 TraceStep(
                     stepNumber: stepCounter,
                     engineName: "ClinicalContextEngine",
-                    inputDescription: "Klinik Çarpan: ×\(MathSupport.decimal(input.clinical.confidenceMultiplier, digits: 2))",
+                    inputDescription: "Kayıtlı tahlil ve EKG bağlamı",
                     outputDescription: input.clinical.penaltyReasons.joined(separator: "; "),
-                    physiologicalImpact: "Biyobelirteç ve EKG bağlamı karar güvenine ve hata payına yansıtıldı."
+                    physiologicalImpact: "Tahliller bağlam ve sınırlama olarak gösterilir; doğrulanmamış sayısal ceza uygulanmaz. Yakın tarihli ritim kaydı varsa HRV yorumu ihtiyaten durdurulur."
                 )
             )
             stepCounter += 1
@@ -285,6 +288,24 @@ enum DecisionEngine {
         }
         if case .push = action { activities = activitiesForLens(input.lens) }
         if case .maintain = action { activities = activitiesForLens(input.lens) }
+        let activeContexts = input.personalContexts.filter { $0.isActive(at: input.evaluatedAt) }
+        if !activeContexts.isEmpty {
+            if activeContexts.contains(where: { $0.kind == .illness }) {
+                action = .recover
+                headline = "Bugün dinlenmeye alan aç"
+                rationale = "Kendini hasta hissettiğini belirttin. Toparlanma puanın yüksek olsa da yoğun antrenman önerilmiyor. Bu kayıt bir tanı değildir."
+                activities = [.walking]
+            } else if case .push(let target) = action {
+                action = .maintain(targetStrain: min(target, 14))
+                headline = "Değişen düzenine alan bırak"
+                rationale = "Kaydettiğin bağlam nedeniyle bugün yük artışı sınırlandı. Bu, bildirdiğin koşullara dayalı bir planlama tercihidir; fizyolojik etki tahmini değildir."
+            }
+            steps.append(TraceStep(stepNumber: stepCounter, engineName: "DecisionEngine",
+                inputDescription: activeContexts.map { $0.kind.title }.joined(separator: ", "),
+                outputDescription: "Kullanıcının etkin tarihli bağlamı günlük planı sınırlandırdı.",
+                physiologicalImpact: "Ölçülen puan ve kişisel taban değiştirilmedi; bağlamdan hastalık veya etki büyüklüğü çıkarılmaz."))
+            stepCounter += 1
+        }
         steps.append(TraceStep(stepNumber: stepCounter, engineName: "DecisionEngine",
             inputDescription: "\(input.preference.title) · \(input.lens.displayName)",
             outputDescription: "Yüksek yük için toparlanma eşiği: \(Int(input.preference.pushThreshold))",

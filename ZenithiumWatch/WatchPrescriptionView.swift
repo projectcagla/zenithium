@@ -20,7 +20,7 @@ struct WatchPrescriptionView: View {
                 .font(.system(size: 22))
                 .foregroundStyle(ZenithiumColor.accent)
 
-            if let line = snapshot.prescriptionLine {
+            if Calendar.current.isDateInToday(snapshot.generatedAt), let line = snapshot.prescriptionLine {
                 Text(line)
                     .font(.system(size: 19, weight: .semibold))
                     .multilineTextAlignment(.center)
@@ -35,7 +35,7 @@ struct WatchPrescriptionView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if let ceiling = snapshot.targetCeiling {
+            if Calendar.current.isDateInToday(snapshot.generatedAt), let ceiling = snapshot.targetCeiling {
                 Divider()
                 Text("Tavan \(ZenithiumFormat.strain(ceiling)) · şu an \(ZenithiumFormat.strain(snapshot.dayStrain))")
                     .font(.system(size: 11).monospacedDigit())
@@ -46,6 +46,6 @@ struct WatchPrescriptionView: View {
         .containerBackground(ZenithiumColor.accent.gradient.opacity(0.22), for: .tabView)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Bugünün önerisi")
-        .accessibilityValue(snapshot.prescriptionLine ?? "Öneri yok")
+        .accessibilityValue(Calendar.current.isDateInToday(snapshot.generatedAt) ? snapshot.prescriptionLine ?? "Öneri yok" : "Güncelleme bekleniyor")
     }
 }

@@ -102,16 +102,16 @@ struct SleepView: View {
                 Text("Uyku puanı · \(ZenithiumFormat.score(content.score)) / 100")
                     .zenithiumCaption()
             }
-            HypnogramView(record: content.record)
+            HypnogramView(record: content.record, recordedSegments: content.recordedSegments)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func rationaleSentence(_ content: SleepViewModel.Content) -> String {
         if content.shortfallHours < 0.2 {
-            return "Uyku süren, hesaplanan gece ihtiyacına ulaştı."
+            return "Uyku süren, bu gece için tahmini ihtiyaca ulaştı."
         }
-        return "Hesaplanan ihtiyacına göre \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat daha az uyudun."
+        return "Uyku planına göre \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saat daha az uyudun."
     }
 
     // MARK: - 2. KADEME — Evreler ve Zamanlama (L1 Sessiz Şeritler)
@@ -192,7 +192,7 @@ struct SleepView: View {
             VStack(alignment: .leading, spacing: ZenithiumSpacing.m) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: ZenithiumSpacing.xxs) {
-                        Text("Gereken Uyku")
+                        Text("Tahmini ihtiyaç")
                             .zenithiumCaption()
                         HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
                             Text(ZenithiumFormat.metric(content.sleep.needHours, digits: 1))
@@ -211,7 +211,7 @@ struct SleepView: View {
                         HStack(alignment: .firstTextBaseline, spacing: ZenithiumSpacing.xxs) {
                             Text(ZenithiumFormat.metric(content.sleep.asleepHours, digits: 1))
                                 .metricNumeral()
-                                .foregroundStyle(content.shortfallHours > 0.5 ? ZenithiumColor.yellow : ZenithiumColor.green)
+                                .foregroundStyle(ZenithiumColor.textPrimary)
                             Text("sa")
                                 .metricUnit()
                         }
@@ -230,6 +230,7 @@ struct SleepView: View {
                     sigma: 0,
                     unit: "sa",
                     style: .inline,
+                    dates: content.history.sorted { $0.dayStart < $1.dayStart }.map(\.dayStart),
                     referenceLabel: "Uyku açığı olmayan gece"
                 )
                 Text("Son gecelerin uyku açığı · 0 sa çizgisine göre").zenithiumCaption()
@@ -239,7 +240,7 @@ struct SleepView: View {
                     HStack(alignment: .top, spacing: ZenithiumSpacing.xs) {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 13))
-                            .foregroundStyle(ZenithiumColor.yellow)
+                            .foregroundStyle(ZenithiumColor.textSecondary)
                         Text("Dün geceden \(ZenithiumFormat.metric(content.shortfallHours, digits: 1)) saatlik uyku açığı var. Uyku ihtiyacı; taban süre, modele yansıyan borç ve şekerleme payını içerir.")
                             .zenithiumCaption()
                             .foregroundStyle(ZenithiumColor.textSecondary)

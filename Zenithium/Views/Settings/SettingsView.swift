@@ -93,6 +93,12 @@ struct SettingsView: View {
             Text("İhtiyatlı yaklaşım yüksek yük önermeden önce daha güçlü toparlanma bekler. Hedef profil önerilen etkinlikleri değiştirir. Bu tercihler ölçülen toparlanma puanını değiştirmez; sakatlanma riskini hesaplamaz.")
         }
         sleepSection(content)
+        Section("Benim bağlamım") {
+            NavigationLink("Geçici koşullarımı düzenle") { PersonalContextView(viewModel: viewModel) }
+            let active = content.preferences.contexts.filter { $0.isActive(at: Date()) }
+            Text(active.isEmpty ? "Etkin bağlam kaydı yok." : active.map { $0.kind.title }.joined(separator: ", "))
+                .font(ZenithiumFont.caption)
+        }
         notificationsSection(content)
         Section("Bağlantılar") {
             LabeledContent("Widget'lar", value: viewModel.integrations.widgets)

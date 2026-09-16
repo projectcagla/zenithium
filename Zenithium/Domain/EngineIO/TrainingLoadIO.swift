@@ -29,7 +29,7 @@ struct DailyLoad: Sendable, Equatable, Hashable, Identifiable {
 
     init(dayStart: Date, load: Double) {
         self.dayStart = dayStart
-        self.load = max(0, load)
+        self.load = load.isFinite ? max(0, load) : load
     }
 }
 
@@ -67,8 +67,8 @@ enum LoadBand: String, Sendable, Equatable, Hashable, CaseIterable {
     var displayName: String {
         switch self {
         case .detraining: return "Azalan"
-        case .maintaining: return "Koruyan"
-        case .productive: return "Verimli"
+        case .maintaining: return "Yakın"
+        case .productive: return "Biraz yüksek"
         case .rising: return "Yükselen"
         case .spike: return "Sıçrama"
         }
@@ -78,11 +78,11 @@ enum LoadBand: String, Sendable, Equatable, Hashable, CaseIterable {
     var explanation: String {
         switch self {
         case .detraining:
-            return "Son haftan, son ayının belirgin altında. Kondisyon bu bantta korunmaz."
+            return "Son haftanın yükü son ayının altında. Bu oran kondisyon kaybını göstermez."
         case .maintaining:
-            return "Son haftan son ayına yakın. Bu bant mevcut durumu korur, ilerletmez."
+            return "Son haftanın yükü son ayına yakın. Performans değişimi bu orandan çıkarılamaz."
         case .productive:
-            return "Son haftan son ayının biraz üstünde — literatürde ilerlemenin en sık anıldığı bant."
+            return "Son haftanın yükü son ayının biraz üstünde. Bu bant ilerleme veya güvenlik garantisi değildir."
         case .rising:
             return "Yük, vücudunun son bir ayda alıştığından hızlı artıyor."
         case .spike:
@@ -118,8 +118,7 @@ struct FitnessFatigue: Sendable, Equatable, Hashable {
 /// What the engine is given.
 struct TrainingLoadInput: Sendable, Equatable {
 
-    /// Daily loads, any order, any gaps. Missing days count as zero — a rest day is a real
-    /// data point, not an absence.
+    /// Observed daily loads. Explicit zero is recorded rest; an absent date is unknown.
     let days: [DailyLoad]
 
     /// The day the reading is for.
@@ -181,6 +180,7 @@ struct TrainingLoadOutput: Sendable, Equatable {
 
     /// How many of the last 28 days carried any load at all.
     let activeDaysInChronicWindow: Int
+    var consecutiveObservedDays: Int = 0
 
     /// Whether there is enough history for the ratio to mean anything.
     var hasEnoughHistory: Bool { ratio != nil }

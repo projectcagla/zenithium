@@ -119,7 +119,7 @@ final class MuscleMapViewModel {
         painEntries = entries.sorted { $0.loggedAt > $1.loggedAt }
         painInsights = PainEngine.insights(
             entries: entries,
-            dailyLoads: days.map { DailyLoad(dayStart: $0.dayStart, load: $0.dayStrain) },
+            dailyLoads: days.compactMap(\.recordedTrainingLoad),
             calendar: calendarProvider()
         )
     }
@@ -236,8 +236,8 @@ final class MuscleMapViewModel {
 
     private func apply(_ result: RecalculationResult) {
         let ordered = MuscleGroup.allCases.compactMap { result.muscle[$0] }
-        guard ordered.count == MuscleGroup.allCases.count else {
-            state = .noData(reason: .nothingLogged(what: "training"))
+        guard ordered.count == MuscleGroup.allCases.count, ordered.contains(where: { $0.contributingSessionCount > 0 }) else {
+            state = .noData(reason: .nothingLogged(what: "antrenman"))
             return
         }
         state = .loaded(

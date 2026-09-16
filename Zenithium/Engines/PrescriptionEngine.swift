@@ -37,7 +37,7 @@ enum PrescriptionEngine {
     static let muscleConstraintThreshold: Double = 55
 
     /// Ratio above which the engine stops adding load regardless of how good the morning was.
-    static let spikeGuardRatio = 1.45
+    static let spikeGuardRatio = 1.50
 
     // MARK: - Entry point
 
@@ -51,7 +51,8 @@ enum PrescriptionEngine {
         criticalSpeed: CriticalSpeedModel?,
         circadian: CircadianArc?,
         cycle: CycleContext? = nil,
-        preference: DecisionPreference = .progressive
+        preference: DecisionPreference = .progressive,
+        decision: DecisionAction? = nil
     ) -> Prescription? {
         guard lens.expectsPrescription || lens == .health else { return nil }
         guard recovery.availability.isScored, let score = recovery.score else { return nil }
@@ -79,6 +80,14 @@ enum PrescriptionEngine {
             }
         }
 
+        if let decision {
+            switch decision {
+            case .calibrate: return nil
+            case .recover: intent = .recover
+            case .maintain: intent = min(intent, .moderate)
+            case .push: break
+            }
+        }
         let constrained = muscles
             .filter { $0.readiness < muscleConstraintThreshold }
             .sorted { $0.readiness < $1.readiness }
@@ -91,7 +100,7 @@ enum PrescriptionEngine {
         let candidates = sessionKinds(for: lens, intent: intent, constrained: constrainedGroups)
         guard !candidates.isEmpty else { return nil }
 
-        let ceiling = recovery.targetStrainCeiling.map { preference == .cautious && score < preference.pushThreshold ? min($0, 14) : $0 }
+        let ceiling = decision.map { $0.targetCeiling } ?? recovery.targetStrainCeiling.map { preference == .cautious && score < preference.pushThreshold ? min($0, 14) : $0 }
         let sessions = candidates.prefix(3).enumerated().map { index, kind in
             session(
                 kind: kind,
@@ -111,7 +120,7 @@ enum PrescriptionEngine {
 
         let window = trainingWindow(from: circadian)
         if window != nil {
-            rationale.append("Sirkadiyen eğrine göre günün en keskin aralığı bu.")
+            rationale.append("Uyku saatlerinden türetilen yaklaşık zaman penceresi; ölçülmüş performans zirvesi değildir.")
         }
 
         // Cycle context, and only context. See `cycleContextLine`.
@@ -126,7 +135,7 @@ enum PrescriptionEngine {
             suggestedWindow: window,
             ceiling: ceiling,
             projectedRatio: load.flatMap {
-                TrainingLoadEngine.projectedRatio(after: primary.forecastStrain, from: $0)
+                TrainingLoadEngine.projectedRatio(after: StrainEngine.trimp(forStrain: primary.forecastStrain) ?? 0, from: $0)
             },
             constrainedMuscles: constrained.map(\.muscle),
             cyclePhase: cycle?.estimate
@@ -283,7 +292,7 @@ enum PrescriptionEngine {
         criticalSpeed: CriticalSpeedModel?,
         isPrimary: Bool
     ) -> PrescribedSession {
-        guard kind != .rest else {
+        guard kind != .rest, ceiling.map({ strainSoFar < $0 }) ?? true else {
             return PrescribedSession(
                 kind: .rest,
                 minutes: 0,
@@ -298,9 +307,10 @@ enum PrescriptionEngine {
 
         // Trim to fit what is left of the day's ceiling.
         if let ceiling, ceiling > strainSoFar,
-           let remainingTRIMP = StrainEngine.trimp(forStrain: ceiling - strainSoFar),
+           let totalTRIMP = StrainEngine.trimp(forStrain: ceiling),
+           let currentTRIMP = StrainEngine.trimp(forStrain: strainSoFar),
            let allowed = StrainEngine.minutes(
-               forTRIMP: remainingTRIMP * sessionShareOfCeiling,
+               forTRIMP: max(0, totalTRIMP - currentTRIMP) * sessionShareOfCeiling,
                reserveFraction: intensity,
                biologicalSex: biologicalSex
            ) {
@@ -309,7 +319,10 @@ enum PrescriptionEngine {
 
         // Round to five minutes. Nobody trains to the minute, and a prescription that says
         // "43 dakika" claims a precision the model does not have.
-        let rounded = max(10, (minutes / 5).rounded() * 5)
+        let rounded = (minutes / 5).rounded(.down) * 5
+        guard rounded >= 5 else {
+            return PrescribedSession(kind: .rest, minutes: 0, forecastStrain: 0, paceBand: nil, isPrimary: isPrimary)
+        }
         let trimp = StrainEngine.trimp(
             forMinutes: rounded,
             reserveFraction: intensity,

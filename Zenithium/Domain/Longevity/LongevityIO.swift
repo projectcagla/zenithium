@@ -56,13 +56,13 @@ enum LongevityPillar: String, Sendable, Hashable, CaseIterable, Identifiable {
     var rationale: String {
         switch self {
         case .cardiorespiratory:
-            return "VO₂max ve nabız toparlanması, uzun vadeli sağlıkla en tutarlı ilişkilendirilen iki ölçüm."
+            return "Kaydedilen VO₂max ve nabız toparlanmasının kişisel geçmiş içindeki yeri."
         case .autonomic:
             return "HRV ve istirahat nabzının kendi taban çizgine göre durumu."
         case .sleep:
             return "Süre ve tutarlılık birlikte; ikisi de tek başına yeterli değil."
         case .mobility:
-            return "Yürüme hızı, denge ve merdiven hızı — fonksiyonel kapasitenin en erken göstergeleri."
+            return "Kaydedilen yürüme hızı, denge ve merdiven hızının kişisel geçmiş içindeki yeri."
         case .activity:
             return "Ne kadar sert değil, ne kadar düzenli hareket ettiğin."
         }
@@ -133,7 +133,7 @@ struct LongevityScore: Sendable, Equatable {
             let direction = monthlyChange > 0 ? "yükseliyor" : "düşüyor"
             sentence += " Son aylarda ayda \(ZenithiumFormat.metric(abs(monthlyChange), digits: 1)) puan \(direction)."
         } else {
-            sentence += " Son aylarda belirgin bir yön değişikliği yok."
+            sentence += " Bu bileşik puan için zaman içindeki değişim hesaplanmıyor."
         }
         if isPartial {
             sentence += " Bileşenlerin \(ZenithiumFormat.percentTR(coverage))'i ölçülebildi."

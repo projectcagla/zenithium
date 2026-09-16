@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
+<meta name="description" content="Apple Watch kayıtlarından toparlanma, uyku ve antrenman özeti. Açık hesaplar, cihaz içi tahlil okuma ve sana ait veriler.">
 <meta name="theme-color" content="#07090E">
 <meta name="color-scheme" content="dark">
-<meta property="og:title" content="Zenithium — Her Sayı Kendi İşini Gösterir">
-<meta property="og:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
+<meta property="og:title" content="Zenithium — Toparlanma, Uyku ve Antrenman">
+<meta property="og:description" content="Apple Watch kayıtlarından toparlanma, uyku ve antrenman özeti. Açık hesaplar, cihaz içi tahlil okuma ve sana ait veriler.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://projectcagla.github.io/zenithium/">
 <meta property="og:image" content="https://projectcagla.github.io/zenithium/og.png">
@@ -16,11 +16,11 @@
 <meta property="og:image:alt" content="Zenithium — Her sayı kendi işini gösterir">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Zenithium — Her Sayı Kendi İşini Gösterir">
-<meta name="twitter:description" content="Apple Watch verinden antrenman kararı üreten, tamamen cihaz üzerinde çalışan deterministik ölçüm ve karar sistemi. Sıfır sunucu, sıfır ağ yetkisi.">
+<meta name="twitter:title" content="Zenithium — Toparlanma, Uyku ve Antrenman">
+<meta name="twitter:description" content="Apple Watch kayıtlarından toparlanma, uyku ve antrenman özeti. Açık hesaplar, cihaz içi tahlil okuma ve sana ait veriler.">
 <meta name="twitter:image" content="https://projectcagla.github.io/zenithium/og.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307090E'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%231F2836' stroke-width='2.8'/%3E%3Cpath d='M16 6 A10 10 0 0 1 26 16' fill='none' stroke='%233ED0BE' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
-<title>Zenithium — Her Sayı Kendi İşini Gösterir</title>
+<title>Zenithium — Toparlanma, Uyku ve Antrenman</title>
 <style>
 
 :root {
@@ -216,7 +216,7 @@ header {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 15px 0;
+  padding-block: 15px;
   flex-wrap: wrap;
 }
 .mark {
@@ -254,7 +254,7 @@ header {
   display: grid;
   gap: clamp(32px, 5vw, 64px);
   align-items: center;
-  padding: clamp(48px, 6vw, 84px) 0 clamp(48px, 6vw, 76px);
+  padding-block: clamp(48px, 6vw, 84px) clamp(48px, 6vw, 76px);
 }
 @media (min-width: 940px) {
   .hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); }
@@ -875,88 +875,36 @@ footer {
 
 <div class="hero-band"><div class="wrap hero">
   <div class="hero-copy">
-    <span class="eyebrow">iOS 18 · watchOS 11 · Türkçe</span>
-    <h1>Her sayı kendi işini gösterir.<br><em>Arkasını saklamaz.</em></h1>
-    <p class="lede">Zenithium her sabah bir toparlanma skoru verir. Ayırt edici olan skor değil: o skorun hangi geceden çıktığını, hangi çalışmaya yaslandığını, o çalışmanın <strong>neyi göstermediğini</strong> ve fikrini neyin değiştireceğini açık bir kanıt zinciriyle verir.</p>
+    <span class="eyebrow">Sürüm 1.1 · iPhone · Apple Watch · Türkçe</span>
+    <h1>Günün ritmini anla.<br><em>Kararının nedenini gör.</em></h1>
+    <p class="lede">Uyku, toparlanma ve antrenman kayıtlarını aynı yerde gör. Bugünkü skorun neden değiştiğini incele; ölçümlerini, kişisel tabanını ve hesabın sınırlarını takip et. Yeterli veri olmadığında Zenithium bunu açıkça söyler.</p>
     <div class="hero-cta">
       <a class="btn solid" href="#karar">Nasıl Karar Veriyor?</a>
       <a class="btn" href="https://github.com/projectcagla/zenithium">Kaynak Kodu</a>
     </div>
     <div class="manifest">
-      <div class="mhead">Uygulamanın Sahip Olmadığı Yetkiler</div>
-      <div class="mrow"><span class="x">✕</span><span class="lab">Ağ bağlantı yetkisi</span><span class="st">Yok</span></div>
+      <div class="mhead">Veri sana ait</div>
+      <div class="mrow"><span class="x">✕</span><span class="lab">Uygulamada ağ isteği</span><span class="st">Yok</span></div>
       <div class="mrow"><span class="x">✕</span><span class="lab">Kullanıcı hesabı ve sunucu</span><span class="st">Yok</span></div>
       <div class="mrow"><span class="x">✕</span><span class="lab">Üçüncü parti paket ve SDK</span><span class="st">Yok</span></div>
       <div class="mrow"><span class="x">✕</span><span class="lab">Analitik ve çökme raporlama</span><span class="st">Yok</span></div>
-      <p class="foot">Bunlar kapatılmış ayarlar değil, işletim sisteminden hiç talep edilmemiş izinlerdir. Zenithium internete bağlanamaz — istese bile.</p>
+      <p class="foot">Uygulamaya ait sunucu veya hesap yoktur. Apple Sağlık ve Watch eşitlemesi sistem hizmetleriyle çalışır. Arşivini yalnızca sen paylaşmayı seçtiğinde dışa aktarırsın.</p>
     </div>
   </div>
 
-  <div class="art">
-    <div class="device" role="img" aria-label="Zenithium yeni ana ekran maketi: 64pt toparlanma skoru 59, açık yay göstergesi, 4'lü sessiz metrik şeridi ve günün önerisi kartı.">
-      <div class="frame"><div class="island"></div><div class="screen">
-        <div class="sbar"><span>09:41</span><span class="r">Zenithium<span class="bat"></span></span></div>
-        <div class="app-h"><span class="t">Bugün</span><span class="d">2 Eyl · Salı</span></div>
-
-        <!-- 64pt Kahraman Açık Yay -->
-        <div class="hero-score-box">
-          <svg class="hero-gauge-svg" viewBox="0 0 160 100">
-            <path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="#1F2836" stroke-width="12" stroke-linecap="round" />
-            <path d="M 20 90 A 60 60 0 0 1 95 32" fill="none" stroke="#F0B23F" stroke-width="12" stroke-linecap="round" />
-          </svg>
-          <div class="hero-score-val">59<span class="hero-score-unit">%</span></div>
-          <div class="hero-score-badge" style="color:var(--moderate)">
-            <span class="dot" style="background:var(--moderate)"></span>
-            <span>Orta Toparlanma</span>
-          </div>
-          <p class="hero-score-rationale">Gece HRV taban ortalamasının (%3,2) altında; toparlanma orta seviyede seyrediyor.</p>
-        </div>
-
-        <!-- 2. Kademe: L1 Sessiz 4'lü Metrik Şeridi -->
-        <div class="silent-metric-strip">
-          <div class="item">
-            <span class="lbl">HRV</span>
-            <span class="val">54<span class="unit"> ms</span><span class="arr" style="color:var(--recovering)">↓</span></span>
-          </div>
-          <div class="item">
-            <span class="lbl">İstirahat</span>
-            <span class="val">58<span class="unit"> bpm</span><span class="arr" style="color:var(--ready)">↑</span></span>
-          </div>
-          <div class="item">
-            <span class="lbl">Uyku</span>
-            <span class="val">7,4<span class="unit"> sa</span><span class="arr" style="color:var(--dim)">→</span></span>
-          </div>
-          <div class="item">
-            <span class="lbl">Sıcaklık</span>
-            <span class="val">+0,2<span class="unit"> °C</span><span class="arr" style="color:var(--moderate)">↑</span></span>
-          </div>
-        </div>
-
-        <!-- Tek L2 Kart: Günün Önerisi -->
-        <div class="app-l2-card">
-          <div class="head">
-            <span class="title">Günün Önerisi</span>
-            <span class="tag" style="background:rgba(240,178,63,0.18); color:var(--moderate)">Dengeli Yük</span>
-          </div>
-          <p class="body">Otonom sinir sistemi dengesi kısmi toparlanmaya işaret ediyor. Hedef zorlanma sınırları içinde kalınması önerilir.</p>
-          <div class="meta-row">
-            <span>Hedef Tavan: 14,2 / 21</span>
-            <span>Güven: %84</span>
-          </div>
-        </div>
-
-      </div></div>
-    </div>
-  </div>
+  <figure class="art" style="margin:0; display:grid; justify-items:center; gap:12px;">
+    <img src="qa/phase3/bugun-dolu.png" alt="Zenithium 1.1: toparlanma, kayıtlı ölçümler ve günlük plan" width="402" height="874" style="width:min(100%,350px); height:auto; border:1px solid var(--hairline); border-radius:32px;" />
+    <figcaption style="font-size:0.75rem; color:var(--dim);">Uygulamadan görünüm · örnek kayıtlar</figcaption>
+  </figure>
 </div></div>
 
-<!-- SAYAÇLAR (Gerçek Kod Değerleri: 29 Motor, 21 Kas Grubu, 50 Belirteç) -->
+<!-- Kullanıcıya açık temel kapsam -->
 <div class="wrap">
   <div class="counts">
-    <div><span class="v">29</span><span class="k">Hesap Motoru</span><span class="s">Cihazda yerel çalışır</span></div>
-    <div><span class="v">21</span><span class="k">Kas Grubu</span><span class="s">Biyomekanik yorgunluk izi</span></div>
+    <div><span class="v">30</span><span class="k">Hesap Modülü</span><span class="s">Cihazda yerel çalışır</span></div>
+    <div><span class="v">16</span><span class="k">Kas Grubu</span><span class="s">Kayıt temelli yük modeli</span></div>
     <div><span class="v">50</span><span class="k">Biyobelirteç</span><span class="s">Laboratuvar referans eşleşmesi</span></div>
-    <div><span class="v">14<i> gün</i></span><span class="k">Taban Çizgisi</span><span class="s">Bireysel fizyolojik pencere</span></div>
+    <div><span class="v">14<i> gün</i></span><span class="k">Taban Çizgisi</span><span class="s">Geçerli gece örnekleri</span></div>
   </div>
 </div>
 
@@ -973,7 +921,7 @@ footer {
       <div class="ladder-step">
         <span class="tier">1. Kademe · Gözlem</span>
         <h3>"Gece HRV değerin 41 ms."</h3>
-        <p>Doğrudan Apple Watch optik ve EKG sensörlerinden alınan ham ölçüm. Yorumsuz, filtresiz, kesin.</p>
+        <p>Apple Sağlık’taki SDNN kaydı. Sensör ve örnekleme koşulları ölçümü etkileyebilir.</p>
         <span class="claim-strength">Kanıt: Sensör doğrudan ölçümü</span>
       </div>
       <div class="ladder-step">
@@ -985,8 +933,8 @@ footer {
       <div class="ladder-step">
         <span class="tier">3. Kademe · Öneri Kısıtı</span>
         <h3>"Bugünü hafif tutmayı düşünebilirsin."</h3>
-        <p>Plews (2013) ve Banister modelleriyle sentezlenmiş tavsiye. Literatür sınırları emir kipine izin vermez.</p>
-        <span class="claim-strength">Kanıt: Akran denetimli spor bilimi</span>
+        <p>Ölçümler, kayıt geçmişi ve planlama tercihinden üretilen öneri. Kaynaklar yöntemin dayanağını ve sınırlarını açıklar.</p>
+        <span class="claim-strength">Kaynaklı yöntem · ürünün planlama kuralı</span>
       </div>
     </div>
   </section>
@@ -995,8 +943,8 @@ footer {
   <section id="uyku">
     <div class="sec-head">
       <span class="eyebrow">Gece & Uyku Mimarisi</span>
-      <h2>Skor uykudan çıkar, uykudan konuşur.</h2>
-      <p>Saatini takarak uyuduğun her gece dört sinyal bırakır: HRV, istirahat nabzı, bilek sıcaklığı ve solunum hızı. Zenithium bunları nüfus ortalamasıyla değil, senin son 14 gecenle kıyaslar.</p>
+      <h2>Geceyi, kaydedildiği gibi gör.</h2>
+      <p>Uyumlu saat ve yeterli kayıt olduğunda HRV, dinlenme nabzı, bilek sıcaklığı ve solunum hızı birlikte incelenir. Hangi sinyalin eksik olduğu ve kişisel tabanın ne kadar oluştuğu görünür.</p>
     </div>
 
     <div class="showcase">
@@ -1050,17 +998,17 @@ footer {
       </div>
 
       <div class="prose">
-        <h3>Dört gece yetmez, on dört yeter.</h3>
-        <p>Taban çizgin oturana kadar Zenithium skor uydurmaz. Kalibrasyon süresince kararın toplum normlarıyla harmanlandığını ve kaç gecelik veri kaldığını açıkça söyler.</p>
-        <p>Saatini takmadan uyuduğun bir gecenin ardından da uydurmaz: o sabah skor yerine hangi sinyalin eksik olduğunu yazar. Eksik veriyle üretilen bir skor ölçüme değil, tahmine dayanırdı.</p>
+        <h3>Tabanın gece gece oluşur.</h3>
+        <p>Taban çizgin oturana kadar Zenithium skor uydurmaz. İlk 14 gecede hangi ölçümlerin toplandığını ve kişisel karar için kaç gece kaldığını açıkça gösterir.</p>
+        <p>Saatini takmadan uyuduğun bir gecenin ardından da uydurmaz: o sabah skor yerine hangi sinyalin eksik olduğunu yazar. Eksik veriyle üretilen bir sayı göstermenin sınırları bu ekranda belirtilir.</p>
         <div style="display:grid; gap:12px; margin-top:8px;">
           <div style="border-left:2px solid var(--accent); padding-left:14px;">
-            <strong style="color:var(--text); font-size:0.92rem;">Evreler ölçülür, tahmin edilmez.</strong>
-            <p style="font-size:0.85rem; color:var(--dim); margin-top:2px;">Derin, REM ve hafif uyku süreleri Apple Health'in polisomnografiyle kalibre edilmiş kendi evre kayıtlarından okunur.</p>
+            <strong style="color:var(--text); font-size:0.92rem;">Evrelerin özgün zamanları korunur.</strong>
+            <p style="font-size:0.85rem; color:var(--dim); margin-top:2px;">Derin, REM ve hafif uyku aralıkları Apple Sağlık kayıtlarından okunur. Saatin evre sınıflandırması bir tahmindir; uyku laboratuvarı ölçümünün yerine geçmez.</p>
           </div>
           <div style="border-left:2px solid var(--moderate); padding-left:14px;">
-            <strong style="color:var(--text); font-size:0.92rem;">Borç birikir ve kapanır.</strong>
-            <p style="font-size:0.85rem; color:var(--dim); margin-top:2px;">Uyku borcu tek gecelik değil, hareketli bir bakiyedir; sirkadiyen ritmi bozmadan birkaç geceye yayılarak telafi edilir.</p>
+            <strong style="color:var(--text); font-size:0.92rem;">Uyku planın geçmişini dikkate alır.</strong>
+            <p style="font-size:0.85rem; color:var(--dim); margin-top:2px;">Hedef süre ile kaydedilen uyku arasındaki fark birkaç gecelik planlamada kullanılır. Hesaplanan ihtiyaç kişisel bir planlama tahminidir.</p>
           </div>
         </div>
       </div>
@@ -1071,8 +1019,8 @@ footer {
   <section id="karar">
     <div class="sec-head">
       <span class="eyebrow">Deterministik Karar</span>
-      <h2>Kara kutu yapay zekâ yok. 7 adımlı kanıt zinciri var.</h2>
-      <p>Zenithium'da hiçbir öneri bulanık bir dil modelinin halüsinasyonu değildir. Sinyalden karara uzanan her basamak matematiksel ve akran denetimli kaynaklarla doğrulanabilir.</p>
+      <h2>Dünden bugüne ne değişti?</h2>
+      <p>HRV, dinlenme nabzı, uyku ve diğer ölçümlerin puan değişimine katkısını ayrı gör. Kişisel tabanın güncellenmesinden gelen fark da ayrılır. Bu, hesabın açıklamasıdır; biyolojik nedenlerin kanıtı değildir.</p>
     </div>
 
     <div class="showcase reverse">
@@ -1100,15 +1048,15 @@ footer {
               <div class="trace-step">
                 <div class="trace-num">3</div>
                 <div class="trace-info">
-                  <div class="trace-title-row"><span>Katkı ve Ağırlık</span><span class="trace-badge">%60 Pay</span></div>
-                  <div class="trace-detail">Otonom toparlanma %60, uyku mimarisi %40</div>
+                  <div class="trace-title-row"><span>Katkı ve Ağırlık</span><span class="trace-badge">Ölçüme göre</span></div>
+                  <div class="trace-detail">Sürücü ağırlıkları ve eksik ölçümler görünür</div>
                 </div>
               </div>
               <div class="trace-step">
                 <div class="trace-num">4</div>
                 <div class="trace-info">
                   <div class="trace-title-row"><span>Kural / Eşik</span><span class="trace-badge">Tetiklendi</span></div>
-                  <div class="trace-detail">Z &lt; −1,0 eşiği toparlanma önceliği kuralını açtı</div>
+                  <div class="trace-detail">Toparlanma ve seçtiğin planlama tercihi birlikte değerlendirilir</div>
                 </div>
               </div>
               <div class="trace-step">
@@ -1121,8 +1069,8 @@ footer {
               <div class="trace-step">
                 <div class="trace-num">6</div>
                 <div class="trace-info">
-                  <div class="trace-title-row"><span>Güven Düzeyi</span><span class="trace-badge">%84</span></div>
-                  <div class="trace-detail">14 günlük eksiksiz taban verisiyle yüksek güven</div>
+                  <div class="trace-title-row"><span>Veri kapsamı</span><span class="trace-badge">Açık hesap</span></div>
+                  <div class="trace-detail">Kapsam katsayısı doğruluk olasılığı değildir</div>
                 </div>
               </div>
               <div class="trace-step">
@@ -1139,10 +1087,10 @@ footer {
       </div>
 
       <div class="prose">
-        <h3>Gerekçesini gösteremeyen öneri astrolojidir.</h3>
-        <p>Piyasadaki giyilebilir cihaz uygulamaları "Bugün zorlanmaya hazırsın" der ama nedenini söyleyemez. Bir tavsiyeyi sorgulayamıyorsan ona güvenemezsin.</p>
-        <p>Zenithium'da her sabah ekranın altındaki <strong>"Neden bu?"</strong> düğmesine dokunarak bu 7 adımı incelersin: hangi biyometrik sinyalin karara kaç puan etki ettiğini, hangi bilimsel eşiğin aşıldığını ve fikrini neyin değiştireceğini görürsün.</p>
-        <p>Yarın sabah HRV değerin tabanına dönerse karar anında değişir; çünkü sistem inanca değil, deterministik matematiğe dayanır.</p>
+        <h3>Skorun arkasındaki hesabı gör.</h3>
+        <p>Toparlanma puanı tek başına bütün hikâyeyi anlatmaz. Ölçümleri, kişisel tabanı ve eksik kayıtları birlikte inceleyebilirsin.</p>
+        <p><strong>“Bu kararın nedeni”</strong> bağlantısı hesap adımlarını açar. Ayrıntılarda dünden bugüne puan farkını ölçüm katkıları ve taban değişimiyle birlikte görürsün. Kaynak kartları, araştırmanın neyi göstermediğini de açıklar.</p>
+        <p>Karar yeni ölçümler ve etkin kişisel bağlamınla yeniden hesaplanır. Bu matematik izi fizyolojik neden-sonuç kanıtı değildir. Yan taraftaki akış örnek anlatımdır.</p>
       </div>
     </div>
   </section>
@@ -1152,7 +1100,7 @@ footer {
     <div class="sec-head">
       <span class="eyebrow">Biyomekanik & Tahlil</span>
       <h2>Kas yorgunluğu ve kan tablosu bir arada.</h2>
-      <p>Kuvvet antrenmanları kalp atışından ibaret değildir. 21 kas grubunun mekanik yük dağılımı ve laboratuvar kan tahlillerin, tek bir tutarlı modelde birleşir.</p>
+      <p>Egzersizlerini set, tekrar, zorluk ve isteğe bağlı ağırlıkla kaydet. Hacim ve tahmini 1TM geçmişini izle. 16 kas grubundaki yorgunluk görünümü bir modeldir; ölçülmüş kas hasarı değildir.</p>
     </div>
 
     <div class="showcase">
@@ -1200,9 +1148,9 @@ footer {
       </div>
 
       <div class="prose">
-        <h3>Kan tahlilinde teşhis yok, sakin gerçekler var.</h3>
-        <p>Hastaneden aldığın PDF tahlil sonucunu doğrudan cihaza aktarırsın. Sistem 50 farklı biyobelirteci ve 202 eş anlamlı laboratuvar adını cihaz üzerinde tarar.</p>
-        <p>Zenithium doktorculuk oynamaz: tahlili teşhis etmez; sadece değerin nerede durduğunu, referans aralığında olup olmadığını ve son antrenmanının sonucu etkileyip etkilemediğini söyler.</p>
+        <h3>Tahlil geçmişin elinin altında.</h3>
+        <p>PDF veya fotoğrafını içe aktar, cihazda okunan her satırı kontrol et ve onayla. İstersen ölçümü elle de ekleyebilirsin. Belgenin aslı ve ölçüm geçmişi cihazında kalır.</p>
+        <p>Raporda varsa laboratuvar referans aralığı gösterilir; yoksa aralık uydurulmaz. Antrenman ile ölçüm arasındaki zaman yakınlığı görülebilir, ancak antrenmanın sonucu değiştirdiği iddia edilmez. Klinik değerlendirme hekime aittir.</p>
         <div class="panel" style="margin-top:12px;">
           <div class="panel-head"><span class="panel-title">Tahlil Belirteç Örneği</span><span class="panel-note">Cihaz İçi Eşleme</span></div>
           <div class="panel-body">
@@ -1229,9 +1177,9 @@ footer {
   <!-- SAAT EKRANI VE SINIRLAR -->
   <section id="saat-sinirlar">
     <div class="sec-head">
-      <span class="eyebrow">Bilekteki Sadakat</span>
+      <span class="eyebrow">Apple Watch</span>
       <h2>Bileğinde bağırmayan bir gösterge.</h2>
-      <p>Apple Watch ekranı dikkat çekmek için yanıp sönmez. Günün skorunu ve hedef zorlanma sınırını yüksek kontrastlı tek bir bakışta sunar.</p>
+      <p>Toparlanma ve kararını saat kadranında veya Smart Stack içinde gör. Antrenmanda set kaydet; telefon yanında olmasa da kayıt saatte kalır ve bağlantı kurulduğunda eşitlenir.</p>
     </div>
 
     <div class="showcase">
@@ -1253,13 +1201,13 @@ footer {
       </div>
 
       <div class="prose">
-        <h3>Uygulamanın bilerek yapmadıkları.</h3>
-        <p>Bir ürünün kalitesini ne yaptığı kadar, neyi yapmayı <strong>reddettiği</strong> belirler. Zenithium pazarlama hevesiyle eklenmiş şu sahte özellikleri içermez:</p>
+        <h3>Tercihlerin günlük plana yansır.</h3>
+        <p>Geçici koşullarını kaydet, hatırlatıcıları seç ve kendi arşivini yönet. Ayarlar yalnızca görünümü değiştirmez; kullandığın plana da yansır.</p>
         <ul style="list-style:none; padding:0; margin:0; display:grid; gap:8px; font-size:0.9rem; color:var(--dim);">
-          <li><strong style="color:var(--text)">✕ Bildirim ve hatırlatıcı spam'i:</strong> Sabah saati açtığında veri oradadır; seni gün içinde taciz etmez.</li>
-          <li><strong style="color:var(--text)">✕ Yatış saati koçluğu:</strong> Bir algoritma senin ne zaman uyuyacağına dikte edemez.</li>
-          <li><strong style="color:var(--text)">✕ Biyolojik yaş uydurmacası:</strong> Tek bir formülle biyolojik yaş satmak bilimsel değil, astrolojiktir.</li>
-          <li><strong style="color:var(--text)">✕ Sahte sohbet botları:</strong> Karar bir dil modelinin tahmininden değil, deterministik formüllerden çıkar.</li>
+          <li><strong style="color:var(--text)">Hatırlatıcılar:</strong> Sabah, eksik gece ve haftalık özet bildirimlerini ayrı ayrı seç.</li>
+          <li><strong style="color:var(--text)">Uyku planı:</strong> Uyanma saatini ve uyku penceresini kendi rutinine göre düzenle.</li>
+          <li><strong style="color:var(--text)">Uzun vadeli görünüm:</strong> Bileşenleri açık bir indeks; biyolojik yaş veya yaşam süresi tahmini değildir.</li>
+          <li><strong style="color:var(--text)">Benim bağlamım:</strong> Hastalık, seyahat, rakım ve vardiya kayıtları günlük yük önerisini sınırlar.</li>
         </ul>
       </div>
     </div>

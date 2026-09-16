@@ -44,6 +44,7 @@ final class AppDependencies {
     /// Yol haritası v4, C10.
     #if canImport(ActivityKit) && canImport(WatchConnectivity)
     let liveSession = LiveSessionRelay()
+    private let watchLogs: WatchLogCoordinator
     #endif
 
     private init(
@@ -70,6 +71,15 @@ final class AppDependencies {
                 do { try await notifications.apply(try await preferences.load()) }
                 catch { ZenithiumLog.orchestration.error("Imported notification schedule failed: \(error.localizedDescription, privacy: .public)") }
             })
+        #if canImport(ActivityKit) && canImport(WatchConnectivity)
+        let watchLogs = WatchLogCoordinator(sessions: store, journal: store)
+        self.watchLogs = watchLogs
+        self.liveSession.logHandler = { message in
+            try await watchLogs.receive(message)
+            await cache.invalidate()
+            _ = try await coordinator.recalculate(now: Date())
+        }
+        #endif
         self.relay = HealthObservationRelay(health: health, coordinator: coordinator)
         self.scheduler = BackgroundRefreshScheduler(coordinator: coordinator, store: store)
     }
@@ -120,6 +130,7 @@ final class AppDependencies {
         // Started before the relay and the scheduler, because a session may already be
         // running on the wrist when the app is opened and its context is waiting.
         #if canImport(ActivityKit) && canImport(WatchConnectivity)
+        await watchLogs.resume()
         liveSession.start()
         #endif
 
@@ -136,10 +147,14 @@ final class AppDependencies {
     func eraseAll() async throws {
         await stop()
         await coordinator.suspendForErasure()
-        #if canImport(ActivityKit) && canImport(WatchConnectivity)
-        await liveSession.stopAndClear()
-        #endif
         do {
+        #if canImport(ActivityKit) && canImport(WatchConnectivity)
+            let cutoff = Date()
+            AppGroup.defaults?.set(cutoff, forKey: "watchEraseBefore")
+            WatchSnapshotTransport.publish(.placeholder, eraseBefore: cutoff)
+            try await watchLogs.clear()
+            await liveSession.stopAndClear()
+        #endif
             try await archive.eraseAll()
             await notifications.clearAll()
             try WidgetSnapshotStore.write(.placeholder)
@@ -149,6 +164,9 @@ final class AppDependencies {
             presentationID = UUID()
         } catch {
             await coordinator.resumeAfterErasure()
+            #if canImport(ActivityKit) && canImport(WatchConnectivity)
+            await watchLogs.resume()
+            #endif
             throw error
         }
     }

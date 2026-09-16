@@ -20,6 +20,7 @@ final class SleepViewModel {
         let history: [BiometricDaySnapshot]
         var plannedBedtimeMinute: Int? = nil
         var plannedWakeMinute: Int? = nil
+        var recordedSegments: [SleepSegment] = []
 
         var score: Double { sleep.score ?? 0 }
 
@@ -140,7 +141,8 @@ final class SleepViewModel {
                     profile: result.profile,
                     history: history,
                     plannedBedtimeMinute: planned?.bedtimeMinute(needHours: result.sleep.needHours),
-                    plannedWakeMinute: planned?.wakeMinute
+                    plannedWakeMinute: planned?.wakeMinute,
+                    recordedSegments: result.overnight.sleepSegments.filter { $0.stage != .inBed }.resolvedNonOverlapping
                 )
             )
         }
